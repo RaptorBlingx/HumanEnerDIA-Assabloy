@@ -53,6 +53,7 @@
     let currentAudio = null;  // Track currently playing audio
     let abortController = null;  // Track current request for cancellation
     let activeMessageAnimation = null;
+    let activeInsightsAnimation = null;
 
     const STREAMING_MIN_DELAY_MS = 22;
     const STREAMING_MAX_DELAY_MS = 70;
@@ -771,17 +772,33 @@
                         </button>
                     </div>
 
-                    <!-- Messages -->
-                    <div id="ovos-messages" class="ovos-messages">
-                        <div class="ovos-message ovos-bot">
-                            <div class="ovos-bubble">${CONFIG.welcomeMessage}</div>
+                    <div class="ovos-content">
+                        <!-- Messages -->
+                        <div id="ovos-messages" class="ovos-messages">
+                            <div class="ovos-message ovos-bot">
+                                <div class="ovos-bubble">${CONFIG.welcomeMessage}</div>
+                            </div>
+                            <!-- Quick Reply Buttons in Chat -->
+                            <div class="ovos-quick-replies">
+                                <button class="ovos-quick-btn" data-query="factory overview">Overview</button>
+                                <button class="ovos-quick-btn" data-query="any anomalies today?">Anomalies</button>
+                                <button class="ovos-quick-btn" data-query="top energy consumers">Top Consumers</button>
+                            </div>
                         </div>
-                        <!-- Quick Reply Buttons in Chat -->
-                        <div class="ovos-quick-replies">
-                            <button class="ovos-quick-btn" data-query="factory overview">Overview</button>
-                            <button class="ovos-quick-btn" data-query="any anomalies today?">Anomalies</button>
-                            <button class="ovos-quick-btn" data-query="top energy consumers">Top Consumers</button>
-                        </div>
+
+                        <aside id="ovos-insights-panel" class="ovos-insights-panel" aria-hidden="true">
+                            <div class="ovos-insights-header">
+                                <div>
+                                    <div class="ovos-insights-kicker">Extra Context</div>
+                                    <div id="ovos-insights-title" class="ovos-insights-title">Operational insights</div>
+                                    <div id="ovos-insights-subtitle" class="ovos-insights-subtitle"></div>
+                                </div>
+                                <button id="ovos-insights-close" class="ovos-insights-close" aria-label="Close extra insights">×</button>
+                            </div>
+                            <div id="ovos-insights-body" class="ovos-insights-body">
+                                <div class="ovos-insights-empty">Ask about a machine, anomalies, or factory performance to expand this view.</div>
+                            </div>
+                        </aside>
                     </div>
 
                     <!-- Controls (Audio + Wake Word) -->
@@ -928,19 +945,32 @@
                 box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
             }
 
+            #ovos-voice-widget,
+            #ovos-voice-widget button,
+            #ovos-voice-widget input {
+                font-family: "Manrope", "Avenir Next", "Segoe UI Variable", sans-serif;
+            }
+
             .ovos-window {
                 position: absolute;
                 bottom: 65px;
                 right: 0;
                 width: 380px;
                 height: 500px;
-                background: white;
-                border-radius: 16px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 253, 249, 0.98) 100%);
+                border: 1px solid rgba(16, 185, 129, 0.14);
+                border-radius: 22px;
+                box-shadow: 0 18px 60px rgba(6, 78, 59, 0.18);
                 display: none;
                 flex-direction: column;
                 overflow: hidden;
                 animation: ovos-slide-up 0.3s ease;
+                transition: width 0.35s ease, height 0.35s ease, box-shadow 0.35s ease;
+            }
+
+            .ovos-window.ovos-expanded {
+                width: 728px;
+                box-shadow: 0 26px 72px rgba(5, 150, 105, 0.2);
             }
 
             @keyframes ovos-slide-up {
@@ -956,7 +986,7 @@
             .ovos-header {
                 background: linear-gradient(135deg, #10B981 0%, #059669 100%);
                 color: white;
-                padding: 14px 18px;
+                padding: 15px 18px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -979,8 +1009,9 @@
             }
 
             .ovos-title {
-                font-weight: 600;
+                font-weight: 700;
                 font-size: 15px;
+                letter-spacing: -0.01em;
             }
 
             .ovos-status {
@@ -1005,6 +1036,13 @@
                 background: rgba(255, 255, 255, 0.2);
             }
 
+            .ovos-content {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                background: linear-gradient(180deg, #f5fdf9 0%, #ecfdf5 100%);
+            }
+
             .ovos-messages {
                 flex: 1;
                 overflow-y: auto;
@@ -1012,7 +1050,335 @@
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
-                background: #f0fdf4;
+                background: linear-gradient(180deg, rgba(240, 253, 244, 0.75) 0%, rgba(236, 253, 245, 0.95) 100%);
+                min-width: 0;
+            }
+
+            .ovos-insights-panel {
+                width: 0;
+                opacity: 0;
+                transform: translateX(18px);
+                overflow: hidden;
+                background: linear-gradient(180deg, #f8fffb 0%, #ecfdf5 100%);
+                border-left: 1px solid rgba(16, 185, 129, 0.18);
+                transition: width 0.32s ease, opacity 0.25s ease, transform 0.32s ease;
+                display: flex;
+                flex-direction: column;
+                pointer-events: none;
+                min-width: 0;
+            }
+
+            .ovos-window.ovos-expanded .ovos-insights-panel {
+                width: 320px;
+                opacity: 1;
+                transform: translateX(0);
+                pointer-events: auto;
+            }
+
+            .ovos-insights-header {
+                padding: 18px 18px 16px;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+                background: rgba(255, 255, 255, 0.74);
+                backdrop-filter: blur(10px);
+            }
+
+            .ovos-insights-header > div {
+                min-width: 0;
+            }
+
+            .ovos-insights-kicker {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #059669;
+                margin-bottom: 5px;
+            }
+
+            .ovos-insights-title {
+                font-size: 18px;
+                font-weight: 800;
+                color: #064e3b;
+                line-height: 1.15;
+                letter-spacing: -0.02em;
+                overflow-wrap: anywhere;
+            }
+
+            .ovos-insights-subtitle {
+                margin-top: 4px;
+                font-size: 11px;
+                line-height: 1.5;
+                color: #4b5563;
+                overflow-wrap: anywhere;
+            }
+
+            .ovos-insights-close {
+                width: 28px;
+                height: 28px;
+                border: none;
+                border-radius: 999px;
+                background: rgba(16, 185, 129, 0.08);
+                color: #047857;
+                font-size: 18px;
+                line-height: 1;
+                cursor: pointer;
+                transition: transform 0.2s ease, background 0.2s ease;
+                flex-shrink: 0;
+            }
+
+            .ovos-insights-close:hover {
+                background: rgba(16, 185, 129, 0.16);
+                transform: scale(1.05);
+            }
+
+            .ovos-insights-body {
+                flex: 1;
+                overflow-y: auto;
+                padding: 16px 18px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(16, 185, 129, 0.36) transparent;
+            }
+
+            .ovos-insights-body::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .ovos-insights-body::-webkit-scrollbar-thumb {
+                background: rgba(16, 185, 129, 0.26);
+                border-radius: 999px;
+            }
+
+            .ovos-insights-body::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .ovos-insights-empty {
+                padding: 14px 15px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.8);
+                color: #4b5563;
+                font-size: 12px;
+                line-height: 1.55;
+                box-shadow: 0 8px 18px rgba(16, 185, 129, 0.08);
+            }
+
+            .ovos-insight-spotlight {
+                padding: 16px 16px 15px;
+                border-radius: 20px;
+                border: 1px solid rgba(16, 185, 129, 0.14);
+                background: linear-gradient(135deg, rgba(220, 252, 231, 0.92) 0%, rgba(255, 255, 255, 0.96) 100%);
+                box-shadow: 0 14px 28px rgba(5, 150, 105, 0.1);
+            }
+
+            .ovos-insight-spotlight.tone-info {
+                background: linear-gradient(135deg, rgba(219, 234, 254, 0.92) 0%, rgba(255, 255, 255, 0.96) 100%);
+            }
+
+            .ovos-insight-spotlight.tone-warning {
+                background: linear-gradient(135deg, rgba(254, 243, 199, 0.94) 0%, rgba(255, 255, 255, 0.96) 100%);
+            }
+
+            .ovos-insight-spotlight.tone-danger {
+                background: linear-gradient(135deg, rgba(254, 226, 226, 0.94) 0%, rgba(255, 255, 255, 0.96) 100%);
+            }
+
+            .ovos-insight-spotlight-kicker {
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: rgba(6, 78, 59, 0.72);
+                margin-bottom: 8px;
+            }
+
+            .ovos-insight-spotlight-title {
+                font-size: 27px;
+                font-weight: 800;
+                line-height: 1.02;
+                letter-spacing: -0.04em;
+                color: #0f172a;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .ovos-insight-spotlight-detail {
+                margin-top: 10px;
+                font-size: 12px;
+                line-height: 1.55;
+                color: #334155;
+                overflow-wrap: anywhere;
+            }
+
+            .ovos-insight-metrics {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .ovos-insight-metric {
+                padding: 14px 14px 12px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 8px 18px rgba(5, 150, 105, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.6);
+                min-height: 114px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: 10px;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .ovos-insight-metric-label {
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #6b7280;
+                line-height: 1.4;
+            }
+
+            .ovos-insight-metric-value {
+                min-width: 0;
+                color: #111827;
+            }
+
+            .ovos-insight-metric-primary {
+                display: block;
+                font-size: 26px;
+                font-weight: 800;
+                line-height: 1.02;
+                letter-spacing: -0.04em;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .ovos-insight-metric-value.is-compact .ovos-insight-metric-primary {
+                font-size: 22px;
+            }
+
+            .ovos-insight-metric-value.is-text .ovos-insight-metric-primary {
+                font-size: 17px;
+                line-height: 1.18;
+                letter-spacing: -0.02em;
+            }
+
+            .ovos-insight-metric-unit {
+                display: block;
+                margin-top: 6px;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+
+            .ovos-insight-metric.tone-good {
+                background: linear-gradient(180deg, rgba(209, 250, 229, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+            }
+
+            .ovos-insight-metric.tone-warning {
+                background: linear-gradient(180deg, rgba(254, 243, 199, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+            }
+
+            .ovos-insight-metric.tone-danger {
+                background: linear-gradient(180deg, rgba(254, 226, 226, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+            }
+
+            .ovos-insight-metric.tone-info {
+                background: linear-gradient(180deg, rgba(219, 234, 254, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+            }
+
+            .ovos-insight-badges {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .ovos-insight-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 7px 11px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 700;
+                line-height: 1;
+            }
+
+            .ovos-insight-badge.tone-good {
+                background: rgba(16, 185, 129, 0.14);
+                color: #047857;
+            }
+
+            .ovos-insight-badge.tone-warning {
+                background: rgba(245, 158, 11, 0.16);
+                color: #92400e;
+            }
+
+            .ovos-insight-badge.tone-danger {
+                background: rgba(239, 68, 68, 0.14);
+                color: #b91c1c;
+            }
+
+            .ovos-insight-badge.tone-info {
+                background: rgba(59, 130, 246, 0.16);
+                color: #1d4ed8;
+            }
+
+            .ovos-insight-badge.tone-neutral {
+                background: rgba(17, 24, 39, 0.08);
+                color: #374151;
+            }
+
+            .ovos-insight-lines {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .ovos-insight-line {
+                padding: 12px 13px;
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.92);
+                color: #1f2937;
+                font-size: 12px;
+                line-height: 1.55;
+                box-shadow: 0 8px 18px rgba(5, 150, 105, 0.08);
+            }
+
+            .ovos-insight-links {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: auto;
+            }
+
+            .ovos-insight-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 9px 11px;
+                border-radius: 14px;
+                background: rgba(16, 185, 129, 0.12);
+                color: #065f46;
+                font-size: 11px;
+                font-weight: 800;
+                text-decoration: none;
+                transition: transform 0.2s ease, background 0.2s ease;
+            }
+
+            .ovos-insight-link:hover {
+                background: rgba(16, 185, 129, 0.18);
+                transform: translateY(-1px);
             }
 
             .ovos-message {
@@ -1266,12 +1632,50 @@
                 text-align: right;
             }
 
-            @media (max-width: 480px) {
+            @media (max-width: 700px) {
                 .ovos-window {
-                    width: calc(100vw - 40px);
+                    width: calc(100vw - 32px);
                     height: calc(100vh - 160px);
                     bottom: 70px;
-                    right: -10px;
+                    right: -12px;
+                }
+
+                .ovos-window.ovos-expanded {
+                    width: calc(100vw - 32px);
+                    height: calc(100vh - 120px);
+                }
+
+                .ovos-content {
+                    flex-direction: column;
+                }
+
+                .ovos-insights-panel {
+                    width: 100%;
+                    max-height: 0;
+                    opacity: 0;
+                    transform: translateY(14px);
+                    border-left: none;
+                    border-top: 1px solid rgba(16, 185, 129, 0.18);
+                    transition: max-height 0.32s ease, opacity 0.25s ease, transform 0.32s ease;
+                }
+
+                .ovos-window.ovos-expanded .ovos-insights-panel {
+                    width: 100%;
+                    max-height: 280px;
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                .ovos-insight-metrics {
+                    grid-template-columns: 1fr 1fr;
+                }
+
+                .ovos-insight-spotlight-title {
+                    font-size: 23px;
+                }
+
+                .ovos-insight-metric-primary {
+                    font-size: 23px;
                 }
             }
         `;
@@ -1346,6 +1750,406 @@
         }
 
         activeMessageAnimation = null;
+    }
+
+    function stopActiveInsightsAnimation() {
+        if (!activeInsightsAnimation) {
+            return;
+        }
+
+        activeInsightsAnimation.cancelled = true;
+        activeInsightsAnimation.timeouts.forEach(timeoutId => window.clearTimeout(timeoutId));
+        activeInsightsAnimation.resolvers.forEach(resolve => resolve());
+        activeInsightsAnimation = null;
+    }
+
+    function collapseInsightsPanel() {
+        const windowEl = document.getElementById('ovos-window');
+        const panel = document.getElementById('ovos-insights-panel');
+        const title = document.getElementById('ovos-insights-title');
+        const subtitle = document.getElementById('ovos-insights-subtitle');
+        const body = document.getElementById('ovos-insights-body');
+
+        stopActiveInsightsAnimation();
+
+        if (!windowEl || !panel || !title || !subtitle || !body) {
+            return;
+        }
+
+        windowEl.classList.remove('ovos-expanded');
+        panel.setAttribute('aria-hidden', 'true');
+        title.textContent = 'Operational insights';
+        subtitle.textContent = '';
+        body.innerHTML = '<div class="ovos-insights-empty">Ask about a machine, anomalies, or factory performance to expand this view.</div>';
+    }
+
+    function hasInsightsContent(insights) {
+        if (!insights || typeof insights !== 'object') {
+            return false;
+        }
+
+        const spotlight = insights.spotlight && typeof insights.spotlight === 'object' ? insights.spotlight : null;
+        const metrics = Array.isArray(insights.summary_metrics) ? insights.summary_metrics.filter(Boolean) : [];
+        const badges = Array.isArray(insights.status_badges) ? insights.status_badges.filter(Boolean) : [];
+        const lines = Array.isArray(insights.secondary_lines) ? insights.secondary_lines.filter(Boolean) : [];
+        const links = Array.isArray(insights.links) ? insights.links.filter(Boolean) : [];
+
+        return Boolean(insights.title || spotlight || metrics.length || badges.length || lines.length || links.length);
+    }
+
+    function formatInsightValue(value) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            const valueText = String(value);
+            const fractional = valueText.includes('.') ? valueText.split('.')[1].length : 0;
+            const maxFractionDigits = Math.min(fractional, 2);
+            return new Intl.NumberFormat(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: maxFractionDigits
+            }).format(value);
+        }
+
+        return String(value ?? '');
+    }
+
+    function getInsightMetricValueClass(metricText, unit) {
+        const classNames = ['ovos-insight-metric-value'];
+        if (metricText.length > 10) {
+            classNames.push('is-compact');
+        }
+        if (/[A-Za-z]/.test(metricText) || metricText.length > 14) {
+            classNames.push('is-text');
+        }
+        if (unit) {
+            classNames.push('has-unit');
+        }
+        return classNames.join(' ');
+    }
+
+    function cloneInsightItems(items) {
+        return Array.isArray(items)
+            ? items.filter(Boolean).map(item => (item && typeof item === 'object' ? { ...item } : item))
+            : [];
+    }
+
+    function extractLeadingPercentage(line) {
+        if (typeof line !== 'string') {
+            return null;
+        }
+
+        const match = line.match(/\(([\d.]+)%\)/);
+        return match ? Number.parseFloat(match[1]) : null;
+    }
+
+    function normalizeInsightsPayload(insights, rawData) {
+        if ((!insights || typeof insights !== 'object') && (!rawData || typeof rawData !== 'object')) {
+            return null;
+        }
+
+        const normalized = {
+            ...(insights && typeof insights === 'object' ? insights : {}),
+            summary_metrics: cloneInsightItems(insights?.summary_metrics),
+            status_badges: cloneInsightItems(insights?.status_badges),
+            secondary_lines: Array.isArray(insights?.secondary_lines) ? insights.secondary_lines.filter(Boolean) : [],
+            links: cloneInsightItems(insights?.links)
+        };
+
+        if (insights?.spotlight && typeof insights.spotlight === 'object') {
+            normalized.spotlight = { ...insights.spotlight };
+        }
+
+        if (normalized.panel_type === 'ranking') {
+            const metrics = normalized.summary_metrics;
+            const topMachineIndex = metrics.findIndex(metric => String(metric?.label || '').toLowerCase() === 'top machine');
+            const topMachineMetric = topMachineIndex >= 0 ? metrics[topMachineIndex] : null;
+            const topValueMetric = metrics.find(metric => String(metric?.label || '').toLowerCase() === 'top value');
+            const leaderShareMetric = metrics.find(metric => String(metric?.label || '').toLowerCase() === 'leader share');
+
+            if (!normalized.spotlight && topMachineMetric?.value) {
+                let leaderShare = leaderShareMetric?.value;
+                if (leaderShare == null) {
+                    leaderShare = extractLeadingPercentage(normalized.secondary_lines[0]);
+                }
+
+                const detailParts = [];
+                if (topValueMetric?.value != null) {
+                    detailParts.push(`${formatInsightValue(topValueMetric.value)} ${topValueMetric.unit || ''}`.trim());
+                }
+                if (leaderShare != null) {
+                    detailParts.push(`${formatInsightValue(leaderShare)}% of tracked load`);
+                }
+
+                normalized.spotlight = {
+                    kicker: 'Top consumer',
+                    title: String(topMachineMetric.value),
+                    detail: detailParts.join(' · '),
+                    tone: 'info'
+                };
+            }
+
+            if (topMachineIndex >= 0) {
+                normalized.summary_metrics = metrics.filter((_, index) => index !== topMachineIndex);
+            }
+        }
+
+        if (normalized.panel_type === 'factory_overview' && rawData && typeof rawData === 'object') {
+            const fallbackMetrics = [
+                { label: 'Total Energy', value: rawData.total_energy, unit: 'kWh', tone: 'neutral' },
+                { label: 'Live Rate', value: rawData.energy_per_hour, unit: 'kWh/h', tone: 'info' },
+                { label: 'Active Today', value: rawData.active_machines_today, unit: null, tone: 'good' },
+                { label: 'Estimated Cost', value: rawData.estimated_cost, unit: 'USD', tone: 'warning' }
+            ].filter(metric => metric.value !== undefined && metric.value !== null);
+
+            if (normalized.summary_metrics.length < 3 && fallbackMetrics.length) {
+                normalized.summary_metrics = fallbackMetrics;
+            }
+
+            if (!normalized.spotlight && rawData.energy_per_hour != null) {
+                const detailParts = [];
+                if (rawData.active_machines_today != null) {
+                    detailParts.push(`${formatInsightValue(rawData.active_machines_today)} active machines`);
+                }
+                if (rawData.total_anomalies != null) {
+                    detailParts.push(`${formatInsightValue(rawData.total_anomalies)} alerts tracked`);
+                }
+                if (rawData.cost_per_day != null) {
+                    detailParts.push(`$${formatInsightValue(rawData.cost_per_day)}/day est.`);
+                }
+
+                normalized.spotlight = {
+                    kicker: 'Factory pulse',
+                    title: `${formatInsightValue(rawData.energy_per_hour)} kWh/h`,
+                    detail: detailParts.join(' · '),
+                    tone: rawData.total_anomalies > 0 ? 'warning' : 'info'
+                };
+            }
+
+            const looksGeneric = normalized.secondary_lines.length <= 1
+                && normalized.secondary_lines[0]
+                && normalized.secondary_lines[0].includes('Factory-wide summary');
+
+            if (!normalized.secondary_lines.length || looksGeneric) {
+                const lines = [];
+                if (rawData.peak_power != null || rawData.avg_power != null) {
+                    const parts = [];
+                    if (rawData.peak_power != null) {
+                        parts.push(`Peak power reached ${formatInsightValue(rawData.peak_power)} kW`);
+                    }
+                    if (rawData.avg_power != null) {
+                        parts.push(`average power held at ${formatInsightValue(rawData.avg_power)} kW`);
+                    }
+                    if (parts.length) {
+                        lines.push(`${parts.join('. ')}.`);
+                    }
+                }
+                if (rawData.estimated_cost != null || rawData.cost_per_day != null) {
+                    const parts = [];
+                    if (rawData.estimated_cost != null) {
+                        parts.push(`Estimated spend is $${formatInsightValue(rawData.estimated_cost)}`);
+                    }
+                    if (rawData.cost_per_day != null) {
+                        parts.push(`roughly $${formatInsightValue(rawData.cost_per_day)} per day`);
+                    }
+                    if (parts.length) {
+                        lines.push(`${parts.join(' with ')}.`);
+                    }
+                }
+                if (rawData.carbon_footprint != null) {
+                    lines.push(`Carbon footprint estimate is ${formatInsightValue(rawData.carbon_footprint)} kilograms.`);
+                }
+                if (rawData.total_readings != null || rawData.readings_per_minute != null) {
+                    const parts = [];
+                    if (rawData.total_readings != null) {
+                        parts.push(`${formatInsightValue(rawData.total_readings)} readings captured`);
+                    }
+                    if (rawData.readings_per_minute != null) {
+                        parts.push(`${formatInsightValue(rawData.readings_per_minute)} readings per minute`);
+                    }
+                    if (parts.length) {
+                        lines.push(`Telemetry stream processed ${parts.join(' at ')}.`);
+                    }
+                }
+
+                normalized.secondary_lines = lines.slice(0, 4);
+            }
+
+            if (rawData.active_machines_today != null && !normalized.status_badges.some(badge => String(badge?.label || '').toLowerCase().includes('active'))) {
+                normalized.status_badges.push({ label: `${formatInsightValue(rawData.active_machines_today)} active machines`, tone: 'info' });
+            }
+            if (rawData.total_anomalies === 0 && !normalized.status_badges.some(badge => String(badge?.label || '').toLowerCase().includes('alert'))) {
+                normalized.status_badges.push({ label: 'No active alerts', tone: 'good' });
+            } else if (rawData.total_anomalies > 0 && !normalized.status_badges.some(badge => String(badge?.label || '').toLowerCase().includes('alert'))) {
+                normalized.status_badges.push({ label: `${formatInsightValue(rawData.total_anomalies)} alerts logged`, tone: 'warning' });
+            }
+        }
+
+        return normalized;
+    }
+
+    function renderInsightSpotlight(spotlight) {
+        if (!spotlight || typeof spotlight !== 'object' || !spotlight.title) {
+            return '';
+        }
+
+        return `
+            <div class="ovos-insight-spotlight tone-${escapeHtml(spotlight.tone || 'info')}">
+                ${spotlight.kicker ? `<div class="ovos-insight-spotlight-kicker">${escapeHtml(spotlight.kicker)}</div>` : ''}
+                <div class="ovos-insight-spotlight-title">${escapeHtml(String(spotlight.title))}</div>
+                ${spotlight.detail ? `<div class="ovos-insight-spotlight-detail">${escapeHtml(String(spotlight.detail))}</div>` : ''}
+            </div>
+        `;
+    }
+
+    function renderInsightMetrics(metrics) {
+        if (!metrics.length) {
+            return '';
+        }
+
+        return `
+            <div class="ovos-insight-metrics">
+                ${metrics.map(metric => {
+                    const metricValue = formatInsightValue(metric.value);
+                    const valueClassName = getInsightMetricValueClass(metricValue, metric.unit);
+
+                    return `
+                    <div class="ovos-insight-metric tone-${escapeHtml(metric.tone || 'neutral')}">
+                        <div class="ovos-insight-metric-label">${escapeHtml(metric.label || 'Metric')}</div>
+                        <div class="${valueClassName}">
+                            <span class="ovos-insight-metric-primary">${escapeHtml(metricValue)}</span>
+                            ${metric.unit ? `<span class="ovos-insight-metric-unit">${escapeHtml(metric.unit)}</span>` : ''}
+                        </div>
+                    </div>
+                `;}).join('')}
+            </div>
+        `;
+    }
+
+    function renderInsightBadges(badges) {
+        if (!badges.length) {
+            return '';
+        }
+
+        return `
+            <div class="ovos-insight-badges">
+                ${badges.map(badge => `
+                    <div class="ovos-insight-badge tone-${escapeHtml(badge.tone || 'neutral')}">${escapeHtml(badge.label || '')}</div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function renderInsightLinks(links) {
+        if (!links.length) {
+            return '';
+        }
+
+        return `
+            <div class="ovos-insight-links">
+                ${links.map(link => `
+                    <a class="ovos-insight-link" href="${escapeHtml(link.href || '#')}">${escapeHtml(link.label || 'Open')}</a>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    async function streamInsightLine(element, text, animation) {
+        const tokens = text.match(/\S+\s*/g) || [text];
+        if (tokens.length <= 1) {
+            element.textContent = text;
+            return;
+        }
+
+        const delayMs = Math.min(55, Math.max(18, Math.round(900 / tokens.length)));
+        element.textContent = '';
+
+        for (const token of tokens) {
+            if (!activeInsightsAnimation || animation.cancelled) {
+                return;
+            }
+
+            element.textContent += token;
+
+            await new Promise(resolve => {
+                animation.resolvers.push(resolve);
+                const timeoutId = window.setTimeout(() => {
+                    animation.resolvers = animation.resolvers.filter(item => item !== resolve);
+                    animation.timeouts = animation.timeouts.filter(id => id !== timeoutId);
+                    resolve();
+                }, delayMs);
+                animation.timeouts.push(timeoutId);
+            });
+        }
+    }
+
+    async function renderInsightsPanel(insights, rawData) {
+        const windowEl = document.getElementById('ovos-window');
+        const panel = document.getElementById('ovos-insights-panel');
+        const title = document.getElementById('ovos-insights-title');
+        const subtitle = document.getElementById('ovos-insights-subtitle');
+        const body = document.getElementById('ovos-insights-body');
+
+        if (!windowEl || !panel || !title || !subtitle || !body) {
+            return;
+        }
+
+        const normalizedInsights = normalizeInsightsPayload(insights, rawData);
+
+        if (!hasInsightsContent(normalizedInsights)) {
+            collapseInsightsPanel();
+            return;
+        }
+
+        stopActiveInsightsAnimation();
+
+        const spotlight = normalizedInsights.spotlight && typeof normalizedInsights.spotlight === 'object' ? normalizedInsights.spotlight : null;
+        const metrics = Array.isArray(normalizedInsights.summary_metrics) ? normalizedInsights.summary_metrics.filter(Boolean) : [];
+        const badges = Array.isArray(normalizedInsights.status_badges) ? normalizedInsights.status_badges.filter(Boolean) : [];
+        const lines = Array.isArray(normalizedInsights.secondary_lines) ? normalizedInsights.secondary_lines.filter(Boolean).slice(0, 4) : [];
+        const links = Array.isArray(normalizedInsights.links) ? normalizedInsights.links.filter(Boolean).slice(0, 2) : [];
+
+        title.textContent = normalizedInsights.title || 'Operational insights';
+        subtitle.textContent = normalizedInsights.subtitle || '';
+        body.innerHTML = `
+            ${renderInsightSpotlight(spotlight)}
+            ${renderInsightMetrics(metrics)}
+            ${renderInsightBadges(badges)}
+            <div id="ovos-insight-lines" class="ovos-insight-lines"></div>
+            ${renderInsightLinks(links)}
+        `;
+
+        windowEl.classList.add('ovos-expanded');
+        panel.setAttribute('aria-hidden', 'false');
+
+        const lineContainer = document.getElementById('ovos-insight-lines');
+        if (!lineContainer) {
+            return;
+        }
+
+        if (!lines.length) {
+            lineContainer.innerHTML = '<div class="ovos-insight-line">Live operational context is available for this response.</div>';
+            return;
+        }
+
+        const animation = {
+            cancelled: false,
+            timeouts: [],
+            resolvers: []
+        };
+        activeInsightsAnimation = animation;
+
+        for (const line of lines) {
+            if (!activeInsightsAnimation || animation.cancelled) {
+                return;
+            }
+
+            const lineElement = document.createElement('div');
+            lineElement.className = 'ovos-insight-line';
+            lineContainer.appendChild(lineElement);
+            await streamInsightLine(lineElement, line, animation);
+        }
+
+        if (activeInsightsAnimation === animation) {
+            activeInsightsAnimation = null;
+        }
     }
 
     function getStreamingDelay(wordCount) {
@@ -1453,6 +2257,7 @@
         if (!text.trim()) return;
 
         finishActiveMessageAnimation();
+        collapseInsightsPanel();
         
         // Cancel previous request if running
         if (isLoading && abortController) {
@@ -1531,6 +2336,7 @@
                 }
 
                 await responseRender;
+                renderInsightsPanel(data.insights, data.data);
                 
                 // Trigger PDF download if present (for report generation queries)
                 // V2: REST bridge returns pdf_download object with URL instead of base64
@@ -1551,8 +2357,10 @@
                     downloadPDF(data.pdf_base64, data.pdf_filename);
                 }
             } else if (data.error) {
+                collapseInsightsPanel();
                 addMessage(data.error, false, true);
             } else {
+                collapseInsightsPanel();
                 addMessage('No response received.', false, true);
             }
         } catch (err) {
@@ -1562,6 +2370,7 @@
                 // Don't show error - already showed "(cancelled)" message
             } else {
                 console.error('OVOS error:', err);
+                collapseInsightsPanel();
                 addMessage('Connection error. Is OVOS REST Bridge running?', false, true);
             }
         } finally {
@@ -2209,6 +3018,7 @@
         });
 
         document.getElementById('ovos-audio-toggle').addEventListener('click', toggleAudio);
+        document.getElementById('ovos-insights-close').addEventListener('click', collapseInsightsPanel);
         
         // Mic button for voice input
         document.getElementById('ovos-mic').addEventListener('click', toggleListening);

@@ -61,6 +61,10 @@ class VoiceQueryResponse(BaseModel):
     """Response model for voice query with optional audio"""
     success: bool
     response: Optional[str] = None
+    intent: Optional[str] = None
+    confidence: Optional[float] = None
+    data: Optional[dict] = None
+    insights: Optional[dict] = None
     audio_base64: Optional[str] = None  # Base64 encoded WAV audio from OVOS TTS
     audio_format: Optional[str] = None  # Audio format (wav, mp3, etc.) - None if no audio
     pdf_base64: Optional[str] = None  # LEGACY: Base64 encoded PDF for report downloads (V1)
@@ -133,6 +137,10 @@ async def voice_query(request: VoiceQueryRequest):
                 return VoiceQueryResponse(
                     success=False,
                     response=None,
+                    intent=None,
+                    confidence=None,
+                    data=None,
+                    insights=None,
                     audio_base64=None,
                     error=f"OVOS Bridge error: {response.status_code}",
                     session_id=request.session_id or "none",
@@ -147,6 +155,10 @@ async def voice_query(request: VoiceQueryRequest):
             return VoiceQueryResponse(
                 success=data.get("success", False),
                 response=data.get("response"),
+                intent=data.get("intent"),
+                confidence=data.get("confidence"),
+                data=data.get("data"),
+                insights=data.get("insights"),
                 audio_base64=data.get("audio_base64"),
                 audio_format=data.get("audio_format", "wav"),
                 pdf_base64=data.get("pdf_base64"),  # V1 legacy
@@ -166,6 +178,10 @@ async def voice_query(request: VoiceQueryRequest):
         return VoiceQueryResponse(
             success=False,
             response=None,
+            intent=None,
+            confidence=None,
+            data=None,
+            insights=None,
             audio_base64=None,
             error=f"Cannot connect to OVOS Bridge at {OVOS_BRIDGE_URL}. Is it running?",
             session_id=request.session_id or "none",
@@ -181,6 +197,10 @@ async def voice_query(request: VoiceQueryRequest):
         return VoiceQueryResponse(
             success=False,
             response=None,
+            intent=None,
+            confidence=None,
+            data=None,
+            insights=None,
             audio_base64=None,
             error=f"Timeout after {OVOS_BRIDGE_TIMEOUT}s waiting for OVOS response",
             session_id=request.session_id or "none",
@@ -196,6 +216,10 @@ async def voice_query(request: VoiceQueryRequest):
         return VoiceQueryResponse(
             success=False,
             response=None,
+            intent=None,
+            confidence=None,
+            data=None,
+            insights=None,
             audio_base64=None,
             error=str(e),
             session_id=request.session_id or "none",
