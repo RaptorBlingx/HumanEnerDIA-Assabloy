@@ -24,7 +24,7 @@ EnMS is a comprehensive energy monitoring and analytics platform designed for **
 - **🏭 Real-time Monitoring**: Track energy consumption across all Significant Energy Users (SEUs)
 - **📊 Advanced Analytics**: ML-powered baselines, forecasting, and anomaly detection
 - **📈 Smart Dashboards**: Pre-built Grafana dashboards with customizable variables
-- **🎤 Voice Integration**: Ready for OVOS (Open Voice OS) integration
+- **🎤 Voice Integration**: OVOS-ready with hybrid parsing and local Qwen3.5-2B fallback
 - **🔌 Modular Architecture**: Microservices-based, API-first design
 - **🐳 Zero-Touch Deployment**: Single command installation with Docker
 - **🔒 Production-Ready**: Security, monitoring, and backup built-in
@@ -231,6 +231,8 @@ EnMS is designed to work with Open Voice OS. Example voice commands:
 - *"What's the energy consumption of compressor 1 in the last hour?"*
 - *"Show me machines using more than 50 kilowatts"*
 - *"How is temperature affecting HVAC efficiency today?"*
+
+The current OVOS stack uses a hybrid routing path: heuristic and Adapt matching handle the normal fast path, and harder queries can escalate to a local Qwen3.5-2B GGUF fallback model. That fallback is validated before calling backend APIs, so the upgrade increases local model capacity without changing the main fast-path behavior.
 
 ### Integration Endpoint
 

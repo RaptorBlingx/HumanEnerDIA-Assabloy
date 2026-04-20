@@ -2291,11 +2291,7 @@
         input.value = '';
         showTyping();
 
-        // Stop any currently playing audio
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio = null;
-        }
+        stopActivePlayback();
 
         // Generate unique session ID for this query
         const querySessionId = sessionId + '_' + Date.now();
@@ -2404,6 +2400,24 @@
             });
         } catch (err) {
             console.error('Failed to create audio:', err);
+        }
+    }
+
+    function stopActivePlayback() {
+        if (currentAudio) {
+            try {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio.removeAttribute('src');
+                currentAudio.load();
+            } catch (err) {
+                console.warn('Failed to stop current audio cleanly:', err);
+            }
+            currentAudio = null;
+        }
+
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
         }
     }
 
@@ -2562,9 +2576,8 @@
         btn.classList.toggle('muted', !audioEnabled);
         btn.title = audioEnabled ? 'Audio enabled (click to mute)' : 'Audio muted (click to enable)';
         
-        if (!audioEnabled && currentAudio) {
-            currentAudio.pause();
-            currentAudio = null;
+        if (!audioEnabled) {
+            stopActivePlayback();
         }
     }
 
@@ -2676,11 +2689,7 @@
         if (isListening) {
             recognition.stop();
         } else {
-            // Stop any playing audio first
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-            }
+            stopActivePlayback();
             try {
                 recognition.start();
             } catch (e) {
@@ -2785,6 +2794,8 @@
     
     function onWakeWordDetected() {
         console.log('🎯 Wake word activated!');
+
+        stopActivePlayback();
         
         // Abort any in-flight request
         if (isLoading && abortController) {
