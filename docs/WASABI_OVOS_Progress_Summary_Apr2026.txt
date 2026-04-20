@@ -1,0 +1,136 @@
+HumanEnerDIA - OVOS Progress Summary for WASABI
+Prepared: 2026-04-20
+Purpose: short factual note focused on current OVOS performance, fallback behavior, UI delivery, and notification flow
+
+1. Main OVOS Position
+
+The OVOS work should be presented as an improvement in response speed, fallback handling, and user-facing delivery quality.
+
+The clearest current performance split is:
+- fast-path operational queries are now typically around 500-700 ms in the latest live checks,
+- requests that still need the LLM tier remain in the multi-second range, currently around 3-5 seconds.
+
+The local Tier-3 model also changed in this period: Qwen3.5-2B replaced the earlier Qwen3-1.7B.
+In model-size terms, that is an increase from 1.7B to 2.0B parameters, or about 17.6%.
+The safe message is that this gives the fallback tier more model capacity, but the visible improvement comes from the combination of the model change with routing, validation, and typo-recovery work, not from the model swap alone.
+
+Measured examples from the latest live validation are:
+- a typo-heavy machine power query returned successfully in about 0.51 seconds,
+- a ranking query returned successfully in about 0.71 seconds,
+- a forecast query returned successfully in about 6.76 seconds.
+
+These are useful spot checks, not full benchmark averages.
+
+
+2. What Was Improved
+
+The recent OVOS work was not mainly about adding a large new set of intents. It was mainly about improving the quality of the existing assistant.
+
+Verified areas of work include:
+- a multi-tier parsing flow that escalates from heuristic parsing to Adapt and then to LLM fallback,
+- the Tier-3 local model now runs on Qwen3.5-2B,
+- validator-based checks on fallback output instead of trusting raw LLM output directly,
+- fuzzy machine-name handling and normalization for spoken or typo-affected machine references,
+- a stronger recovery path for typo-affected machine power queries so some requests that previously stalled can now return on the fast path,
+- clarification handling that keeps pending context and resolves follow-up user replies back into the original request,
+- a better delivery layer from OVOS to the portal so the answer can be shown together with structured context.
+
+The practical effect is that OVOS is stronger on standard monitoring queries, some typo-heavy machine queries are now recovered earlier instead of waiting on the expensive path, and the weakest area is still low-confidence open fallback.
+
+
+3. Current Fallback Assessment
+
+LLM fallback is now an intentional part of the routing path, not an accidental last resort.
+
+What improved:
+- harder queries can now be routed into a local LLM tier instead of failing immediately,
+- the fallback tier now uses the 2B local model instead of the earlier 1.7B version,
+- fallback output passes through schema, confidence, intent, machine, metric, and time-range validation,
+- machine references are normalized more carefully before response generation,
+- some typo-heavy machine power requests that previously timed out at about 90 seconds during live debugging can now be recovered and returned in about 0.5 seconds because they no longer stay in the expensive path,
+- ambiguous or incomplete queries can move into clarification instead of producing a dead end.
+
+What still needs work:
+- fallback is still much slower than the fast path,
+- low-confidence or loosely phrased queries are still the weakest area,
+- clarification behavior still needs further cleanup so edge cases stay fully user-facing and do not leak technical failure details,
+- broader fallback robustness under imperfect real-user phrasing should still not be presented as solved.
+
+
+4. What The User Sees In The Portal
+
+The OVOS portal experience is stronger now than before because it no longer shows only a plain text answer.
+
+Verified user-facing changes:
+- responses can render progressively in the chat area instead of only appearing as a single final block,
+- the widget can expand into a second context panel,
+- the OVOS skill emits structured response data for that panel,
+- the panel content is tied to the user query rather than being generic filler.
+
+For machine-focused queries, the current panel can show:
+- Power,
+- Energy Today,
+- Uptime,
+- Cost Today,
+- status badges,
+- recent anomaly context.
+
+For factory overview queries, the current panel can show:
+- total energy,
+- live rate or current power,
+- active machines,
+- estimated cost,
+- alert badges,
+- short operational summary lines.
+
+For ranking and related operational views, the panel can also present structured spotlight and metric blocks instead of only returning a sentence.
+
+
+5. Notifications And Demo Flow
+
+The anomaly-notification path is now easier to demonstrate and easier for non-technical viewers to follow.
+
+Verified behavior in the portal:
+- anomalies appear through the top navigation notification bell,
+- unread notifications are counted in the badge,
+- incoming anomaly events are added to the notification list,
+- a popup warning is shown when the widget is closed,
+- a short beep is played when audio is enabled.
+
+For demonstration purposes, a dedicated test-warning trigger was added.
+
+Important detail:
+- this trigger creates a real anomaly record through the analytics anomaly creation API,
+- the current trigger sends a critical power spike using about 175% of the selected machine's rated power,
+- the resulting warning then travels through the normal backend and WebSocket notification flow.
+
+This is useful because it demonstrates the real notification path on demand.
+It should still be described as a controlled validation tool, not as a performance KPI.
+
+
+6. Summary
+
+OVOS has become faster and better presented for standard operational queries, but fallback remains the main technical gap.
+
+More specifically:
+- the non-LLM path is already in a usable response-time range,
+- the LLM fallback path works, but is still noticeably slower,
+- the Tier-3 local model is now Qwen3.5-2B rather than Qwen3-1.7B, which is a measurable size increase but not by itself a complete explanation for the observed gains,
+- the portal now presents the answer with relevant operational context instead of only returning plain text,
+- anomaly warnings are now easier to show live because the bell, popup, and beep make the event visible immediately,
+- fallback quality is improving, but should still be described as ongoing work rather than finished work.
+
+
+7. Additional Points We Can Mention Without Overclaim
+
+These are reasonable points to mention in discussion:
+- OVOS now separates fast-path handling from heavier fallback work instead of treating all queries the same way.
+- The local Tier-3 model is now Qwen3.5-2B; that is a measurable model-size increase, not by itself a guaranteed latency reduction.
+- The latest live spot checks showed about 0.51 seconds for a recovered typo-heavy machine power query and about 0.71 seconds for a ranking query.
+- The UI now receives structured OVOS response data, not only plain text.
+- The new side panel improves interpretability because users can see the KPI context behind the answer.
+- The warning demo path uses the real backend notification flow rather than a frontend-only mock.
+- The biggest remaining work item is still fallback robustness under imperfect real-user phrasing.
+
+
+The OVOS work recently was mainly about making the assistant faster on the normal path, improving the fallback path, and making the result easier to understand in the portal. We are now seeing about 500 to 700 milliseconds in the latest live checks when the query stays on the fast path, and about 3 to 5 seconds when it still needs the LLM tier. The local Tier-3 model was also moved from Qwen3-1.7B to Qwen3.5-2B, which increases the model size by about 17.6%, but the measured improvement should be attributed to the wider parser, validator, and recovery cleanup around that tier rather than to the model change alone. In the latest work, some typo-heavy machine power queries that previously stalled are now recovered on the fast path instead. We also added an extended OVOS window that shows live context such as power, energy today, uptime, cost, and anomaly or status information. On the portal side, anomaly notifications are now more visible through the top bell, popup warning, and beep, and we added a controlled trigger to demonstrate the real warning flow on demand. The honest remaining gap is still fallback robustness for difficult or loosely phrased queries.

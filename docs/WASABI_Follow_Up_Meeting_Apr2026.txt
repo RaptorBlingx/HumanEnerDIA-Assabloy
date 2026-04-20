@@ -1,5 +1,5 @@
 HumanEnerDIA - WASABI Follow-Up Meeting Brief
-Prepared: 2026-04-19
+Prepared: 2026-04-20
 Meeting horizon: next 2 days
 Focus: OVOS performance, accuracy, response time, and fallback quality
 
@@ -23,9 +23,29 @@ Main areas of improvement:
 - The vocabulary set and intent parsing logic were expanded to improve coverage of energy, monitoring, ranking, and analysis questions.
 - Fuzzy machine-name matching was enabled to better handle spoken variations such as "compressor one" versus "Compressor-1".
 - The fallback path was improved so that more difficult queries can be routed to the LLM layer instead of failing immediately.
+- The OVOS portal experience was improved so that answers can now appear progressively and also expand into a richer side panel showing extra live context such as machine metrics, top consumers, factory summary data, and anomaly context.
+- The delivery path from OVOS skill -> REST bridge -> analytics proxy -> portal widget was upgraded so that the normal answer and the extra contextual data can be delivered together more reliably.
+- OVOS runtime stability was improved through bridge synchronization fixes, thread-safe response handling, health-check cleanup, and dependency cleanup for the earlier pkg_resources issue.
 
 Short version:
-- The recent OVOS work focused on making the assistant more usable, more tolerant, and more robust under real spoken or imperfect input.
+- The recent OVOS work focused on making the assistant more usable, more tolerant, more demo-ready, and more robust under real spoken or imperfect input.
+
+
+2A. Latest OVOS Delivery Update (Completed This Week)
+
+This latest update should be presented as a usability and stability improvement, not as a new core-NLU benchmark.
+
+What was added or improved very recently:
+- The portal can now show the OVOS answer in the usual chat area and also extend into a second panel with live contextual information.
+- This extended panel now works for important user-facing cases such as factory overview, machine energy/status, and top-consumer ranking.
+- The bridge between OVOS and the portal was stabilized so the UI receives both the main answer and the contextual data together, instead of sometimes losing the extra payload.
+- The OVOS container/runtime was cleaned up and rebuilt so the health path is stable again and the earlier pkg_resources-related environment problem was removed.
+
+Why this matters for the meeting:
+- It improves perceived quality for the end user.
+- It makes the demo easier to understand visually.
+- It shows that OVOS is not only answering faster; it is also presenting results in a more useful way.
+- It improves demo reliability because the runtime path is now more stable than before.
 
 
 3. Documented OVOS Performance Improvements
@@ -105,6 +125,15 @@ Sample queries tested on 2026-04-19:
 - Result: failed in current spot check
 - Response time: 12.00s timeout
 
+Additional live verification after the latest stabilization work (2026-04-20):
+- "factory overview": correct; the portal received both the normal answer and the extra live summary context correctly; typical observed response time was about 0.7s.
+- "what is the energy of Compressor-1": correct; the portal received the answer together with live machine metrics and status context; typical observed response time was about 0.7s.
+- "top energy consumers": correct; the portal correctly rendered the ranking view with live top-consumer context.
+- OVOS runtime health after rebuild: healthy; recent checks no longer showed the earlier pkg_resources issue or the earlier unhealthy runtime state.
+
+Interpretation:
+- The successful-query path is now stronger not only in response speed, but also in how clearly the answer is delivered to the user interface.
+
 
 5. Current Numbers From Live Spot Check
 
@@ -130,6 +159,7 @@ Direct-query performance summary:
 Meaning:
 - The common monitoring and reporting path is already usable.
 - The fallback path still needs more work before it can be presented as consistently robust under noisy or imperfect user input.
+- The latest portal and runtime work improves end-user clarity and demo stability, but it does not change the honest conclusion that fallback quality is still the main remaining weakness.
 
 
 6. Accuracy And Fallback Assessment
@@ -158,6 +188,7 @@ Suggested message:
 - The most important gains were better response speed, better parsing coverage, and better fallback architecture through LLM routing and fuzzy matching.
 - Internal documentation shows strong improvement in success rate and latency.
 - Current live testing confirms that standard operational queries are already fast and reliable.
+- More recently, the delivery layer was also improved so that OVOS responses can be shown with richer live context in the portal, which makes the system easier to demonstrate and easier for users to interpret.
 - The main area still needing improvement is the fallback path for typo-heavy and loosely phrased user queries.
 
 Good points to highlight:
@@ -165,6 +196,8 @@ Good points to highlight:
 - Voice recognition documented as improved from 60% to 95%.
 - LLM response time reduced from about 33 seconds to about 5-6 seconds.
 - In live spot checks, standard operational queries were answered correctly in about 0.67 seconds on average.
+- The latest OVOS portal update now shows the answer plus extra live context for overview, ranking, machine status, and anomaly-related views.
+- The OVOS runtime was rebuilt and stabilized, and recent health checks showed a healthy service state.
 
 Honest point to state clearly:
 - The main remaining gap is not basic functionality.
@@ -176,6 +209,7 @@ Honest point to state clearly:
 Short version:
 - OVOS performance improved meaningfully in the last 2-3 months.
 - The strongest improvement areas were speed, parser coverage, and LLM fallback architecture.
+- The latest update also improved delivery quality through a richer portal presentation layer and a more stable runtime path.
 - The current assistant already performs well on standard monitoring and operational queries.
 - The main next improvement area is fallback quality for typo-heavy, ambiguous, and open-ended spoken input.
 
@@ -185,5 +219,7 @@ Short version:
 For testing and live meeting demonstrations, the portal now supports a dev-phase trigger that creates a real anomaly record and lets the normal proactive-warning pipeline raise the notification through the live backend and WebSocket flow.
 
 This is useful for showing the end-to-end user experience on demand.
+
+Also, the OVOS portal view can now present the normal answer together with an expanded extra-context panel showing live metrics and ranking or status context. This makes the demo easier to follow for non-technical audiences.
 
 It should be presented as a demo and validation aid, not as an OVOS performance metric.
