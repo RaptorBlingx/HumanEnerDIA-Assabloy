@@ -1,0 +1,86 @@
+# Demo Environment Preparation
+
+This is the internal setup guide for rehearsal and recording.
+
+## 1. Identity Alignment
+- Use the simulated pilot profile in [factory-profile.md](/home/ubuntu/enms/docs/simulated-pilot/factory-profile.md) for all spoken and written references.
+- Before recording, align visible labels where possible so the screen story fits the Romanian pilot narrative.
+- Avoid verbal references to legacy demo identities such as:
+  - `Demo Manufacturing Plant`
+  - `European Production Facility`
+  - Munich / Germany
+  - Silicon Valley / California
+
+## 2. Condition Toggle
+The repo now supports a simple pilot-mode toggle for recording:
+
+- `manual` mode hides assistant widgets for `Condition A`
+- default mode keeps assistants available for `Condition B`
+
+### Manual Mode
+Run this once in the browser console before recording `Video A`:
+
+```js
+localStorage.setItem('humanenerdia_pilot_mode', 'manual');
+location.reload();
+```
+
+### Restore Assistant Mode
+Run this before recording `Video B`:
+
+```js
+localStorage.removeItem('humanenerdia_pilot_mode');
+location.reload();
+```
+
+### Single-Page Alternative
+If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode check.
+
+## 3. Pages Used In The Benchmark
+- Main dashboard: `/index.html`
+- Analytics dashboard: `/api/analytics/ui/`
+- Baseline: `/api/analytics/ui/baseline`
+- Anomaly view: `/api/analytics/ui/anomaly`
+- KPI view: `/api/analytics/ui/kpi`
+- Model performance: `/api/analytics/ui/model-performance`
+- Reports: `/reports.html`
+- ISO 50001 info: `/iso50001.html`
+- Grafana: `/grafana/`
+
+## 4. Manual Reference For Documentation Tasks
+- Use [pilot-policy-and-procedure-reference.md](/home/ubuntu/enms/docs/simulated-pilot/pilot-policy-and-procedure-reference.md) as the source content.
+- For `Condition A`, expose that content as a browser-openable reference page, PDF, or second-window note before recording.
+- For `Condition B`, mirror the same content into the chatbot knowledge base so the comparison stays fair.
+
+## 5. Assistant Validation Before Rehearsal
+- OVOS health must be working.
+- Chatbot must answer:
+  - `What is ISO 50001?`
+  - `What is an energy baseline?`
+  - `How do I generate a report?`
+- OVOS must answer:
+  - `Give me a factory overview`
+  - `Show top 3 energy consumers`
+  - `What's the status of Compressor-1?`
+  - `Show me recent anomalies`
+  - `Analyze performance of Compressor-1`
+  - `What are the energy saving opportunities?`
+  - `Show energy performance indicators report`
+
+## 6. Recording Defaults
+- Use the same browser, zoom level, and screen resolution in both videos.
+- Use the same user account in both videos.
+- Keep the timer style identical across both videos.
+- Keep the page order identical across both videos.
+- Record `Condition A` first, then `Condition B`.
+
+## 7. Report And Period Defaults
+- EnPI task: `2025-Q4`
+- Monthly report task: `December 2025`
+- Machine-specific operational task: `Compressor-1`
+
+## 8. Final Gate Before Recording
+- Manual mode hides assistants cleanly.
+- Assistant mode restores both widgets cleanly.
+- All pages open without dead ends.
+- The same task wording is visible in both conditions.
