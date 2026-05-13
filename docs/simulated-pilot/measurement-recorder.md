@@ -40,9 +40,16 @@ location.reload();
 - Select the matching task.
 - For OVOS, the recorder starts automatically when `Jarvis` is detected or when the OVOS prompt is submitted.
 - For the chatbot, the recorder starts automatically when the prompt is submitted.
-- Keep `Auto-stop` checked for single-prompt tasks. The recorder stops automatically when the assistant answer appears.
-- Uncheck `Auto-stop` for multi-prompt tasks. The recorder starts on the first assistant prompt and keeps running until you click `Answer Found`.
-- Uncheck `Auto-stop` for the report download task so the measured task includes the download starting, not only the assistant text response.
+- Keep `Auto-stop` checked for single-prompt OVOS tasks. The recorder stops automatically when voice playback finishes.
+- Keep `Auto-stop` checked for single-prompt chatbot tasks. The recorder stops automatically when the answer appears.
+- Uncheck `Auto-stop` for multi-prompt tasks. The recorder starts on the first assistant prompt and keeps running until you click `Answer Found` after the final spoken or visible answer is complete.
+- Uncheck `Auto-stop` for the report download task so the measured task includes both the voice response and the download starting.
+
+## Pilot Voice Playback
+- Assistant pilot mode uses browser speech synthesis for OVOS playback timing.
+- Default pilot speech rate is `1.15`.
+- Spoken equipment labels are normalized, so `Compressor-1` is spoken as `Compressor one`.
+- You can override the speech rate before recording with `localStorage.setItem('humanenerdia_pilot_tts_rate', '1.10')` if rehearsal proves `1.15` too fast.
 
 ## Checkbox Rules
 - `Expert`: check only if a human/domain expert would be needed to complete the task.

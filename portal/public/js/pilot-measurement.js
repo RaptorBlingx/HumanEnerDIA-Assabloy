@@ -666,11 +666,11 @@
             state.success = event.detail?.success !== false;
             saveState();
             if (state.autoStopAssistant === false) {
-                setLast('Assistant answer visible. Auto-stop is off; continue the task or click Answer Found after the final answer.');
+                setLast('Assistant response complete. Auto-stop is off; continue the task or click Answer Found after the final answer.');
                 render();
                 return;
             }
-            stopTask(event.detail?.source ? `${event.detail.source}_answer_visible` : 'assistant_answer_visible');
+            stopTask(event.detail?.stopReason || (event.detail?.source ? `${event.detail.source}_answer_visible` : 'assistant_answer_visible'));
         });
     }
 

@@ -84,6 +84,7 @@
     let isLoading = false;
     let audioEnabled = true;  // TTS audio playback enabled by default
     let currentAudio = null;  // Track currently playing audio
+    let currentSpeechUtterance = null;
     let abortController = null;  // Track current request for cancellation
     let activeMessageAnimation = null;
     let activeInsightsAnimation = null;
@@ -92,6 +93,11 @@
     const STREAMING_MIN_DELAY_MS = 22;
     const STREAMING_MAX_DELAY_MS = 70;
     const STREAMING_TARGET_TOTAL_MS = 2200;
+    const PILOT_VOICE_TIMING_ENABLED = ['assistant', 'pilot'].includes(pilotMode);
+    const PILOT_TTS_RATE = Math.min(
+        1.3,
+        Math.max(0.85, Number(localStorage.getItem('humanenerdia_pilot_tts_rate')) || 1.15)
+    );
     
     // Wake word state
     let wakeWordEnabled = false;
@@ -2345,7 +2351,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     text: text, 
-                    session_id: querySessionId
+                    session_id: querySessionId,
+                    include_audio: audioEnabled && !shouldUsePilotBrowserTts()
                 }),
                 signal: abortController.signal
             });
@@ -2362,42 +2369,22 @@
                     data.tts_latency_ms,
                     { stream: ENABLE_RESPONSE_STREAMING }
                 );
-                
-                // Play audio if available and enabled
-                if (audioEnabled) {
-                    if (data.audio_base64) {
-                        // Option 1: Server-side TTS (OVOS generated audio)
-                        playAudio(data.audio_base64, data.audio_format || 'wav');
-                    } else if (window.speechSynthesis) {
-                        // Option 2: Fallback to browser TTS (Web Speech API)
-                        speakText(data.response);
-                    }
-                }
 
                 await responseRender;
                 renderInsightsPanel(data.insights, data.data);
+                handleReportDownload(data);
+
+                const playbackResult = await playAssistantResponse(data);
                 window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
-                    detail: { source: 'ovos', success: true, text: data.response, intent: data.intent }
+                    detail: {
+                        source: 'ovos',
+                        success: true,
+                        text: data.response,
+                        intent: data.intent,
+                        playback: playbackResult,
+                        stopReason: playbackResult.completed ? 'ovos_voice_complete' : 'ovos_answer_visible'
+                    }
                 }));
-                
-                // Trigger PDF download if present (for report generation queries)
-                // V2: REST bridge returns pdf_download object with URL instead of base64
-                console.log('🔍 Checking for PDF download:', {
-                    has_pdf_download: !!data.pdf_download,
-                    is_ready: data.pdf_download?.ready,
-                    full_data: data.pdf_download
-                });
-                
-                if (data.pdf_download && data.pdf_download.ready) {
-                    console.log('📄 PDF download available:', data.pdf_download.filename);
-                    console.log('📄 Calling downloadPDFFromURL...');
-                    downloadPDFFromURL(data.pdf_download.download_url, data.pdf_download.filename);
-                    addMessage(`📄 Downloading: ${data.pdf_download.filename} (${data.pdf_download.file_size_kb.toFixed(1)} KB)`, false, false);
-                } else if (data.pdf_base64 && data.pdf_filename) {
-                    // Legacy: Fallback to base64 download (backward compatibility)
-                    console.log('📄 Triggering PDF download (base64):', data.pdf_filename);
-                    downloadPDF(data.pdf_base64, data.pdf_filename);
-                }
             } else if (data.error) {
                 collapseInsightsPanel();
                 addMessage(data.error, false, true);
@@ -2430,29 +2417,78 @@
         }
     }
 
-    function playAudio(base64Data, format) {
-        try {
-            // Map format to proper MIME type
-            const mimeType = format === 'mp3' ? 'audio/mpeg' : `audio/${format}`;
-            const audio = new Audio(`data:${mimeType};base64,${base64Data}`);
-            currentAudio = audio;
-            
-            audio.onended = () => {
-                currentAudio = null;
-            };
-            
-            audio.onerror = (e) => {
-                console.error('Audio playback error:', e);
-                currentAudio = null;
-            };
-            
-            audio.play().catch(err => {
-                console.warn('Audio autoplay blocked:', err);
-                // Browser may block autoplay - user interaction required
-            });
-        } catch (err) {
-            console.error('Failed to create audio:', err);
+    function shouldUsePilotBrowserTts() {
+        return PILOT_VOICE_TIMING_ENABLED
+            && !!window.speechSynthesis
+            && typeof window.SpeechSynthesisUtterance === 'function';
+    }
+
+    function playAssistantResponse(data) {
+        if (!audioEnabled || !data?.response) {
+            return Promise.resolve({ requested: false, completed: false, mode: 'muted' });
         }
+
+        if (shouldUsePilotBrowserTts()) {
+            return speakText(data.response, { pilot: true });
+        }
+
+        if (data.audio_base64) {
+            return playAudio(data.audio_base64, data.audio_format || 'wav');
+        }
+
+        if (window.speechSynthesis) {
+            return speakText(data.response, { pilot: false });
+        }
+
+        return Promise.resolve({ requested: false, completed: false, mode: 'unavailable' });
+    }
+
+    function handleReportDownload(data) {
+        console.log('🔍 Checking for PDF download:', {
+            has_pdf_download: !!data.pdf_download,
+            is_ready: data.pdf_download?.ready,
+            full_data: data.pdf_download
+        });
+
+        if (data.pdf_download && data.pdf_download.ready) {
+            console.log('📄 PDF download available:', data.pdf_download.filename);
+            console.log('📄 Calling downloadPDFFromURL...');
+            downloadPDFFromURL(data.pdf_download.download_url, data.pdf_download.filename);
+            addMessage(`📄 Downloading: ${data.pdf_download.filename} (${data.pdf_download.file_size_kb.toFixed(1)} KB)`, false, false);
+        } else if (data.pdf_base64 && data.pdf_filename) {
+            console.log('📄 Triggering PDF download (base64):', data.pdf_filename);
+            downloadPDF(data.pdf_base64, data.pdf_filename);
+        }
+    }
+
+    function playAudio(base64Data, format) {
+        return new Promise(resolve => {
+            try {
+                const mimeType = format === 'mp3' ? 'audio/mpeg' : `audio/${format}`;
+                const audio = new Audio(`data:${mimeType};base64,${base64Data}`);
+                currentAudio = audio;
+
+                audio.onended = () => {
+                    currentAudio = null;
+                    resolve({ requested: true, completed: true, mode: 'server_audio' });
+                };
+
+                audio.onerror = (e) => {
+                    console.error('Audio playback error:', e);
+                    currentAudio = null;
+                    resolve({ requested: true, completed: false, mode: 'server_audio_error' });
+                };
+
+                audio.play().catch(err => {
+                    console.warn('Audio autoplay blocked:', err);
+                    currentAudio = null;
+                    resolve({ requested: true, completed: false, mode: 'server_audio_blocked' });
+                });
+            } catch (err) {
+                console.error('Failed to create audio:', err);
+                resolve({ requested: true, completed: false, mode: 'server_audio_failed' });
+            }
+        });
     }
 
     function stopActivePlayback() {
@@ -2471,58 +2507,123 @@
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
+        currentSpeechUtterance = null;
+    }
+
+    function numberWord(value) {
+        const words = {
+            0: 'zero',
+            1: 'one',
+            2: 'two',
+            3: 'three',
+            4: 'four',
+            5: 'five',
+            6: 'six',
+            7: 'seven',
+            8: 'eight',
+            9: 'nine',
+            10: 'ten',
+            11: 'eleven',
+            12: 'twelve',
+            13: 'thirteen',
+            14: 'fourteen',
+            15: 'fifteen',
+            16: 'sixteen',
+            17: 'seventeen',
+            18: 'eighteen',
+            19: 'nineteen',
+            20: 'twenty'
+        };
+        return words[value] || String(value);
+    }
+
+    function normalizeSpeechText(text) {
+        return String(text || '')
+            .replace(/\b([A-Za-z]+(?:-[A-Za-z]+)*)-(\d+)\b/g, (_, label, number) => {
+                const spokenLabel = label
+                    .replace(/\bHVAC\b/gi, 'H V A C')
+                    .replaceAll('-', ' ');
+                return `${spokenLabel} ${numberWord(Number(number))}`;
+            })
+            .replace(/\b(\d{1,2}):00:00\b/g, (_, hourText) => {
+                const hour = Number(hourText);
+                if (hour === 0) return 'midnight';
+                if (hour === 12) return '12 PM';
+                if (hour > 12 && hour < 24) return `${hour - 12} PM`;
+                return `${hour} AM`;
+            })
+            .replace(/\bkWh\b/g, 'kilowatt hours')
+            .replace(/\bkW\b/g, 'kilowatts')
+            .replace(/\bEnPI\b/g, 'energy performance indicator');
+    }
+
+    function selectPreferredVoice(voices) {
+        const preferredName = localStorage.getItem('humanenerdia_pilot_tts_voice');
+        if (preferredName) {
+            const exact = voices.find(voice => voice.name === preferredName);
+            if (exact) return exact;
+        }
+
+        const voicePriority = [
+            v => /Microsoft.*(Aria|Andrew|Guy|Jenny).*Natural/i.test(v.name),
+            v => /Google US English/i.test(v.name),
+            v => /Google UK English/i.test(v.name),
+            v => /Microsoft.*(David|Zira|Mark)/i.test(v.name),
+            v => /Samantha|Alex/i.test(v.name),
+            v => v.lang === 'en-US',
+            v => v.lang && v.lang.startsWith('en-')
+        ];
+
+        for (const matcher of voicePriority) {
+            const selected = voices.find(matcher);
+            if (selected) return selected;
+        }
+
+        return null;
     }
 
     /**
      * Speak text using browser's Web Speech API (fallback TTS)
      * Used when OVOS doesn't provide audio
      */
-    function speakText(text) {
-        try {
-            // Cancel any ongoing speech
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.95;     // Slightly slower for clarity
-            utterance.pitch = 1.0;     // Normal pitch
-            utterance.volume = 1.0;    // Full volume
-            utterance.lang = 'en-US';  // English US
-            
-            // Try to use the best quality voice available
-            const voices = window.speechSynthesis.getVoices();
-            
-            // Priority order: Google UK Male > Microsoft Natural > Other good voices
-            const voicePriority = [
-                v => v.name.includes('Google UK English Male'),
-                v => v.name.includes('Google') && v.name.includes('Male'),
-                v => v.name.includes('Microsoft') && v.name.includes('Natural'),
-                v => v.name.includes('Microsoft') && (v.name.includes('Guy') || v.name.includes('David')),
-                v => v.name.includes('Google') && v.lang === 'en-GB',
-                v => v.name.includes('Google') && v.lang === 'en-US',
-                v => !v.name.includes('Female') && v.lang.startsWith('en-')
-            ];
-            
-            let selectedVoice = null;
-            for (const matcher of voicePriority) {
-                selectedVoice = voices.find(matcher);
-                if (selectedVoice) break;
+    function speakText(text, options = {}) {
+        return new Promise(resolve => {
+            try {
+                window.speechSynthesis.cancel();
+
+                const speechText = normalizeSpeechText(text);
+                const utterance = new SpeechSynthesisUtterance(speechText);
+                utterance.rate = options.pilot ? PILOT_TTS_RATE : 1.0;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                utterance.lang = 'en-US';
+
+                const selectedVoice = selectPreferredVoice(window.speechSynthesis.getVoices());
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    console.log('🎤 Using voice:', selectedVoice.name);
+                }
+
+                currentSpeechUtterance = utterance;
+
+                utterance.onend = () => {
+                    currentSpeechUtterance = null;
+                    resolve({ requested: true, completed: true, mode: options.pilot ? 'pilot_browser_tts' : 'browser_tts' });
+                };
+
+                utterance.onerror = (e) => {
+                    console.error('Speech synthesis error:', e);
+                    currentSpeechUtterance = null;
+                    resolve({ requested: true, completed: false, mode: 'browser_tts_error' });
+                };
+
+                window.speechSynthesis.speak(utterance);
+                console.log('🔊 Speaking with browser TTS:', speechText.substring(0, 80));
+            } catch (err) {
+                console.error('Failed to speak text:', err);
+                resolve({ requested: true, completed: false, mode: 'browser_tts_failed' });
             }
-            
-            if (selectedVoice) {
-                utterance.voice = selectedVoice;
-                console.log('🎤 Using voice:', selectedVoice.name);
-            }
-            
-            utterance.onerror = (e) => {
-                console.error('Speech synthesis error:', e);
-            };
-            
-            window.speechSynthesis.speak(utterance);
-            console.log('🔊 Speaking with browser TTS:', text.substring(0, 50));
-            
-        } catch (err) {
-            console.error('Failed to speak text:', err);
-        }
+        });
     }
 
     /**

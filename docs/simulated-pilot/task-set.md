@@ -27,7 +27,9 @@ This file defines the exact task list for both recordings. Do not improvise task
 ## Timing And Capture Rules
 - Use the same task order in both videos.
 - Start the in-app recorder when the first task action begins. In Condition B, OVOS/chatbot prompts start the recorder automatically.
-- Stop the in-app recorder when the required answer is visible. For multi-prompt assistant tasks, disable `Auto-stop` and click `Answer Found` after the final answer.
+- Stop the in-app recorder when the required answer is visible in Condition A and chatbot tasks.
+- For single-prompt OVOS tasks, `Auto-stop` stops after voice playback finishes.
+- For multi-prompt assistant tasks, disable `Auto-stop` and click `Answer Found` after the final spoken or visible answer is complete.
 - Record click / screen count, need for expert help, need for manual dashboard hunting / manual API-style reasoning, and task success / failure for every task.
 
 ## Frozen Factory / Period Inputs
