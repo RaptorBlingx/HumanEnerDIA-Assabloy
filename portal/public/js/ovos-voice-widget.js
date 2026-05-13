@@ -96,7 +96,7 @@
     const PILOT_VOICE_TIMING_ENABLED = ['assistant', 'pilot'].includes(pilotMode);
     const PILOT_TTS_RATE = Math.min(
         1.3,
-        Math.max(0.85, Number(localStorage.getItem('humanenerdia_pilot_tts_rate')) || 1.15)
+        Math.max(0.85, Number(localStorage.getItem('humanenerdia_pilot_tts_rate')) || 1.0)
     );
     
     // Wake word state

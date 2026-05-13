@@ -47,9 +47,9 @@ location.reload();
 
 ## Pilot Voice Playback
 - Assistant pilot mode uses browser speech synthesis for OVOS playback timing.
-- Default pilot speech rate is `1.15`.
+- Default pilot speech rate is `1.00`.
 - Spoken equipment labels are normalized, so `Compressor-1` is spoken as `Compressor one`.
-- You can override the speech rate before recording with `localStorage.setItem('humanenerdia_pilot_tts_rate', '1.10')` if rehearsal proves `1.15` too fast.
+- You can override the speech rate before recording with `localStorage.setItem('humanenerdia_pilot_tts_rate', '1.10')` only if rehearsal proves normal speed unsuitable.
 
 ## Checkbox Rules
 - `Expert`: check only if a human/domain expert would be needed to complete the task.

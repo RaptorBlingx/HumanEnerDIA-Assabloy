@@ -87,7 +87,7 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Use the same user account in both videos.
 - Keep the timer style identical across both videos.
 - For OVOS tasks in `Condition B`, include voice playback in the task time.
-- During rehearsal, confirm `Compressor-1` is spoken as `Compressor one` and the default `1.15` pilot speech rate is understandable.
+- During rehearsal, confirm `Compressor-1` is spoken as `Compressor one` and the default `1.00` pilot speech rate is understandable.
 - Keep the page order identical across both videos.
 - Record `Condition A` first, then `Condition B`.
 

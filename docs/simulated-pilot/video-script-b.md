@@ -40,7 +40,7 @@ location.href = '/index.html';
 
 Pilot voice behavior:
 - In assistant pilot mode, OVOS uses browser speech synthesis for playback timing.
-- The default pilot speech rate is `1.15`, which is faster than normal but still understandable.
+- The default pilot speech rate is `1.00`, which keeps the official timing objective at normal playback speed.
 - The spoken text is normalized so equipment names such as `Compressor-1` are read as `Compressor one`, not `Compressor minus one`.
 
 ## Recorder Checkbox Rules
