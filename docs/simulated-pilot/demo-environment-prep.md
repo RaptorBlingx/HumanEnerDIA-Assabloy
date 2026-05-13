@@ -19,7 +19,8 @@ Run this once in the browser console before recording `Video A`:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
-location.reload();
+localStorage.removeItem('humanenerdia_pilot_measurement_state');
+location.href = '/index.html';
 ```
 
 ### Assistant Mode
@@ -27,7 +28,8 @@ Run this before recording `Video B`:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
-location.reload();
+localStorage.removeItem('humanenerdia_pilot_measurement_state');
+location.href = '/index.html';
 ```
 
 ### Restore Normal Mode
@@ -47,7 +49,7 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Baseline: `/api/analytics/ui/baseline`
 - Anomaly view: `/api/analytics/ui/anomaly`
 - KPI view: `/api/analytics/ui/kpi`
-- Model performance: `/api/analytics/ui/model-performance`
+- Forecast view: `/api/analytics/ui/forecast`
 - Opportunities view: `/api/analytics/ui/opportunities`
 - EnPI report view: `/api/analytics/ui/enpi-report`
 - Reports: `/reports.html`
@@ -74,6 +76,8 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
   - `What's the status of Compressor-1?`
   - `Show me recent anomalies`
   - `Analyze performance of Compressor-1`
+  - `Expected energy for Compressor-1 baseline`
+  - `Energy forecast for Compressor-1`
   - `What are the energy saving opportunities?`
   - `Show energy performance indicators report`
   - `download report of Apr 2026`

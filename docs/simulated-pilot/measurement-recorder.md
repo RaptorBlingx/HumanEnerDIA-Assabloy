@@ -7,14 +7,16 @@ For Condition A:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
-location.reload();
+localStorage.removeItem('humanenerdia_pilot_measurement_state');
+location.href = '/index.html';
 ```
 
 For Condition B:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
-location.reload();
+localStorage.removeItem('humanenerdia_pilot_measurement_state');
+location.href = '/index.html';
 ```
 
 To disable it:
@@ -38,7 +40,15 @@ location.reload();
 - Select the matching task.
 - For OVOS, the recorder starts automatically when `Jarvis` is detected or when the OVOS prompt is submitted.
 - For the chatbot, the recorder starts automatically when the prompt is submitted.
-- The recorder stops automatically when the assistant answer appears.
+- Keep `Auto-stop` checked for single-prompt tasks. The recorder stops automatically when the assistant answer appears.
+- Uncheck `Auto-stop` for multi-prompt tasks. The recorder starts on the first assistant prompt and keeps running until you click `Answer Found`.
+- Uncheck `Auto-stop` for the report download task so the measured task includes the download starting, not only the assistant text response.
+
+## Checkbox Rules
+- `Expert`: check only if a human/domain expert would be needed to complete the task.
+- `Manual reasoning`: check when the user must manually hunt through dashboards/pages or inspect raw data after starting the task.
+- `Success`: check only if the task result is correct and visible.
+- `Auto-stop`: assistant-only timing control; leave checked unless the task needs multiple assistant answers or the report download must be observed.
 
 ## Evidence Export
 - Click `Copy CSV` after the run.

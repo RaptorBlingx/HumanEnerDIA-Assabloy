@@ -20,14 +20,14 @@ This file defines the exact task list for both recordings. Do not improvise task
 | ID | Module | Task | Condition A - Manual Path | Condition B - Assistant Support |
 | --- | --- | --- | --- | --- |
 | T1 | Monitoring | Review anomalies and identify the issue requiring attention. | Open `/api/analytics/ui/anomaly` and identify the recent unresolved critical anomaly on `Compressor-2`. | OVOS prompt: `Show me recent anomalies` |
-| T2 | Analyses | Analyze `Compressor-1` against baseline and retrieve recommendations. | Cross-check `/api/analytics/ui/baseline`, `/api/analytics/ui/model-performance`, and `/api/analytics/ui/opportunities` to summarize the deviation and likely actions. | OVOS prompts: `Analyze performance of Compressor-1` and `What are the energy saving opportunities?` |
+| T2 | Analyses | Analyze `Compressor-1` against baseline, forecast/prediction context, and recommendations. | Cross-check `/api/analytics/ui/baseline`, `/api/analytics/ui/forecast`, and `/api/analytics/ui/opportunities` to summarize baseline, forecast, prediction, and likely actions. | OVOS prompts: `Analyze performance of Compressor-1`, `Expected energy for Compressor-1 baseline`, `Energy forecast for Compressor-1`, and `What are the energy saving opportunities?` |
 | T3 | Analyses | Retrieve factory KPI and EnPI status for `2026-Q1`. | Open `/api/analytics/ui/kpi`, then open `/api/analytics/ui/enpi-report` to read the current EnPI status. | OVOS prompt: `Show energy performance indicators report` |
 | T4 | Analyses / Documentation | Generate the `April 2026` monthly report and summarize the result. | Open `/reports.html`, choose the frozen factory and `April 2026`, generate the report, then summarize the visible outcome. | OVOS prompt: `download report of Apr 2026`, then summarize the generated PDF download confirmation. |
 
 ## Timing And Capture Rules
 - Use the same task order in both videos.
-- Start the timer when the task prompt appears on screen.
-- Stop the timer when the user has spoken or displayed the final answer.
+- Start the in-app recorder when the first task action begins. In Condition B, OVOS/chatbot prompts start the recorder automatically.
+- Stop the in-app recorder when the required answer is visible. For multi-prompt assistant tasks, disable `Auto-stop` and click `Answer Found` after the final answer.
 - Record click / screen count, need for expert help, need for manual dashboard hunting / manual API-style reasoning, and task success / failure for every task.
 
 ## Frozen Factory / Period Inputs
@@ -43,6 +43,8 @@ Only use the prompts below in the official recording unless rehearsal proves an 
 - `What's the status of Compressor-1?`
 - `Show me recent anomalies`
 - `Analyze performance of Compressor-1`
+- `Expected energy for Compressor-1 baseline`
+- `Energy forecast for Compressor-1`
 - `What are the energy saving opportunities?`
 - `Show energy performance indicators report`
 - `download report of Apr 2026`

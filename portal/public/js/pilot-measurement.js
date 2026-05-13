@@ -44,7 +44,9 @@
             expertHelp: false,
             manualReasoning: DEFAULT_CONDITION === 'A',
             success: true,
-            records: []
+            autoStopAssistant: true,
+            records: [],
+            panelPosition: null
         };
     }
 
@@ -142,6 +144,9 @@
                 justify-content: space-between;
                 padding: 12px 14px;
                 background: linear-gradient(135deg, #0f3b5f 0%, #0ea5e9 100%);
+                cursor: move;
+                user-select: none;
+                touch-action: none;
             }
             .pilot-title {
                 font-size: 13px;
@@ -157,6 +162,9 @@
                 padding: 4px 9px;
                 cursor: pointer;
                 font-weight: 800;
+            }
+            #pilot-measurement-panel.pilot-dragging {
+                box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
             }
             .pilot-body {
                 padding: 12px;
@@ -251,7 +259,7 @@
             }
             .pilot-checks {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 gap: 6px;
                 font-size: 11px;
                 color: #e2e8f0;
@@ -320,15 +328,17 @@
                     <button class="pilot-muted" id="pilot-copy">Copy CSV</button>
                     <button class="pilot-danger" id="pilot-reset">Reset</button>
                 </div>
-                <div class="pilot-small-actions" style="grid-template-columns: 1fr;">
+                <div class="pilot-small-actions" style="grid-template-columns: 1fr 1fr;">
                     <button class="pilot-muted" id="pilot-popout">Open Control Window</button>
+                    <button class="pilot-danger" id="pilot-reset-all">Reset All</button>
                 </div>
                 <div class="pilot-checks">
                     <label><input type="checkbox" id="pilot-expert">Expert</label>
                     <label><input type="checkbox" id="pilot-reasoning">Manual reasoning</label>
                     <label><input type="checkbox" id="pilot-success-check" checked>Success</label>
+                    <label><input type="checkbox" id="pilot-auto-stop" checked>Auto-stop</label>
                 </div>
-                <div class="pilot-last" id="pilot-last">Use Start Task for Condition A. Assistant prompts auto-start/stop in Condition B.</div>
+                <div class="pilot-last" id="pilot-last">Use Start Task for Condition A. Assistant prompts auto-start in Condition B; disable Auto-stop for multi-prompt tasks.</div>
             </div>
         `;
         document.body.appendChild(panel);
@@ -340,12 +350,14 @@
         const expert = document.getElementById('pilot-expert');
         const reasoning = document.getElementById('pilot-reasoning');
         const success = document.getElementById('pilot-success-check');
+        const autoStop = document.getElementById('pilot-auto-stop');
 
         if (condition) condition.value = state.condition;
         if (task) task.value = state.taskId;
         if (expert) expert.checked = !!state.expertHelp;
         if (reasoning) reasoning.checked = !!state.manualReasoning;
         if (success) success.checked = !!state.success;
+        if (autoStop) autoStop.checked = state.autoStopAssistant !== false;
     }
 
     function render() {
@@ -367,6 +379,34 @@
         if (last) {
             last.textContent = message;
         }
+    }
+
+    function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    function applyPanelPosition() {
+        const panel = document.getElementById('pilot-measurement-panel');
+        if (!panel) {
+            return;
+        }
+
+        if (!state.panelPosition || !Number.isFinite(state.panelPosition.left) || !Number.isFinite(state.panelPosition.top)) {
+            panel.style.left = '18px';
+            panel.style.bottom = '18px';
+            panel.style.top = 'auto';
+            return;
+        }
+
+        const maxLeft = Math.max(window.innerWidth - panel.offsetWidth - 12, 12);
+        const maxTop = Math.max(window.innerHeight - panel.offsetHeight - 12, 12);
+        const left = clamp(state.panelPosition.left, 12, maxLeft);
+        const top = clamp(state.panelPosition.top, 12, maxTop);
+
+        state.panelPosition = { left, top };
+        panel.style.left = `${left}px`;
+        panel.style.top = `${top}px`;
+        panel.style.bottom = 'auto';
     }
 
     function startTask(source) {
@@ -410,6 +450,92 @@
         render();
     }
 
+    function resetAll() {
+        if (!window.confirm('Clear all saved pilot measurement records and counters?')) {
+            return;
+        }
+
+        const preservedCondition = state.condition;
+        const preservedTaskId = state.taskId;
+        const preservedAutoStop = state.autoStopAssistant;
+        const preservedPanelPosition = state.panelPosition;
+
+        state = {
+            ...blankState(),
+            condition: preservedCondition,
+            taskId: preservedTaskId,
+            manualReasoning: preservedCondition === 'A',
+            success: false,
+            autoStopAssistant: preservedAutoStop !== false,
+            panelPosition: preservedPanelPosition
+        };
+        saveState();
+        setLast('All pilot measurement records and counters cleared.');
+        render();
+    }
+
+    function bindDragging() {
+        const panel = document.getElementById('pilot-measurement-panel');
+        const header = panel?.querySelector('.pilot-header');
+        if (!panel || !header) {
+            return;
+        }
+
+        let dragState = null;
+
+        header.addEventListener('pointerdown', event => {
+            if (event.target.closest('button')) {
+                return;
+            }
+
+            const rect = panel.getBoundingClientRect();
+            dragState = {
+                pointerId: event.pointerId,
+                offsetX: event.clientX - rect.left,
+                offsetY: event.clientY - rect.top
+            };
+            panel.classList.add('pilot-dragging');
+            header.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+
+        header.addEventListener('pointermove', event => {
+            if (!dragState || event.pointerId !== dragState.pointerId) {
+                return;
+            }
+
+            const maxLeft = Math.max(window.innerWidth - panel.offsetWidth - 12, 12);
+            const maxTop = Math.max(window.innerHeight - panel.offsetHeight - 12, 12);
+            const left = clamp(event.clientX - dragState.offsetX, 12, maxLeft);
+            const top = clamp(event.clientY - dragState.offsetY, 12, maxTop);
+
+            state.panelPosition = { left, top };
+            panel.style.left = `${left}px`;
+            panel.style.top = `${top}px`;
+            panel.style.bottom = 'auto';
+        });
+
+        const stopDragging = event => {
+            if (!dragState || event.pointerId !== dragState.pointerId) {
+                return;
+            }
+
+            dragState = null;
+            panel.classList.remove('pilot-dragging');
+            saveState();
+        };
+
+        header.addEventListener('pointerup', stopDragging);
+        header.addEventListener('pointercancel', stopDragging);
+        window.addEventListener('resize', () => {
+            if (!state.panelPosition) {
+                return;
+            }
+            applyPanelPosition();
+            saveState();
+        });
+    }
+
     function bindPanelEvents() {
         document.getElementById('pilot-toggle-panel').addEventListener('click', () => {
             document.getElementById('pilot-measurement-panel').classList.toggle('pilot-collapsed');
@@ -445,6 +571,16 @@
             render();
         });
 
+        document.getElementById('pilot-auto-stop').addEventListener('change', event => {
+            state.autoStopAssistant = event.target.checked;
+            saveState();
+            setLast(state.autoStopAssistant
+                ? 'Assistant answers will stop the active task automatically.'
+                : 'Auto-stop disabled. Click Answer Found after the final assistant answer for this task.'
+            );
+            render();
+        });
+
         document.getElementById('pilot-start').addEventListener('click', () => startTask('manual button'));
         document.getElementById('pilot-answer-found').addEventListener('click', () => stopTask('answer_found'));
         document.getElementById('pilot-add-click').addEventListener('click', () => {
@@ -458,6 +594,7 @@
             render();
         });
         document.getElementById('pilot-reset').addEventListener('click', resetCurrent);
+        document.getElementById('pilot-reset-all').addEventListener('click', resetAll);
         document.getElementById('pilot-copy').addEventListener('click', async () => {
             const csv = recordsCsv();
             try {
@@ -528,6 +665,11 @@
             }
             state.success = event.detail?.success !== false;
             saveState();
+            if (state.autoStopAssistant === false) {
+                setLast('Assistant answer visible. Auto-stop is off; continue the task or click Answer Found after the final answer.');
+                render();
+                return;
+            }
             stopTask(event.detail?.source ? `${event.detail.source}_answer_visible` : 'assistant_answer_visible');
         });
     }
@@ -537,6 +679,12 @@
             start: startTask,
             stop: stopTask,
             reset: resetCurrent,
+            resetAll,
+            setAutoStop: value => {
+                state.autoStopAssistant = !!value;
+                saveState();
+                render();
+            },
             exportCsv: recordsCsv,
             state: () => ({ ...state, elapsedMs: elapsedMs() })
         };
@@ -545,7 +693,9 @@
     function init() {
         createStyles();
         createPanel();
+        applyPanelPosition();
         bindPanelEvents();
+        bindDragging();
         bindCounters();
         bindAssistantEvents();
         exposeApi();
