@@ -88,6 +88,7 @@
     let activeMessageAnimation = null;
     let activeInsightsAnimation = null;
 
+    const ENABLE_RESPONSE_STREAMING = false;
     const STREAMING_MIN_DELAY_MS = 22;
     const STREAMING_MAX_DELAY_MS = 70;
     const STREAMING_TARGET_TOTAL_MS = 2200;
@@ -2085,6 +2086,11 @@
     }
 
     async function streamInsightLine(element, text, animation) {
+        if (!ENABLE_RESPONSE_STREAMING) {
+            element.textContent = text;
+            return;
+        }
+
         const tokens = text.match(/\S+\s*/g) || [text];
         if (tokens.length <= 1) {
             element.textContent = text;
@@ -2350,7 +2356,7 @@
                     false,
                     data.latency_ms,
                     data.tts_latency_ms,
-                    { stream: true }
+                    { stream: ENABLE_RESPONSE_STREAMING }
                 );
                 
                 // Play audio if available and enabled
