@@ -85,7 +85,7 @@ class BaseReport:
         
         Args:
             report_period: e.g., "November 2025"
-            factory_name: e.g., "Demo Manufacturing Plant"
+            factory_name: e.g., "Simulated Romanian Pilot Factory"
         """
         # Logo
         if os.path.exists(self.logo_path):

@@ -1,5 +1,5 @@
 """
-EnMS Reports v2 - SOTA World-Class PDF Report System
+EnMS Reports v2 - World-Class PDF Report System
 Target: 9.5+/10 Rating
 
 Built with:

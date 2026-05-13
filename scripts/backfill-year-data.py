@@ -39,8 +39,8 @@ MACHINES = {
         'production_base': 1000,
         'temp_base': 65
     },
-    'c0000000-0000-0000-0000-000000000006': {  # Compressor-EU-1
-        'name': 'Compressor-EU-1',
+    'c0000000-0000-0000-0000-000000000006': {  # Compressor-2
+        'name': 'Compressor-2',
         'power_base': 48,
         'power_variance': 12,
         'production_base': 1200,

@@ -83,7 +83,7 @@
 - "Factory energy overview"
 
 **6. COMPARISON** - Compare machines/periods
-- "Compare Compressor-1 and Compressor-EU-1"
+- "Compare Compressor-1 and Compressor-2"
 - "Compare energy usage between Boiler-1 and HVAC Main"
 - "Compare today's energy to yesterday"
 
@@ -222,7 +222,7 @@ The baseline training page includes an intelligent "Smart Select" button that au
 **26. TRAIN_BASELINE** - Train ML models
 - "Train a baseline model for Compressor-1"
 - "Retrain the baseline model of HVAC Main"
-- "Train a new baseline for Compressor-EU-1"
+- "Train a new baseline for Compressor-2"
 
 **27. MODEL_QUERY** - Query model details
 - "Show me baseline_v1 model details for Compressor-1"

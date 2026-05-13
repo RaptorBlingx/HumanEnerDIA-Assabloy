@@ -21,7 +21,15 @@ from typing import Optional
 import httpx
 import os
 import logging
+import uuid
 from datetime import datetime
+from pathlib import Path
+
+from database import db
+from services.energy_performance_engine import get_performance_engine
+from services.enpi_tracker import EnPITracker
+from api.routes.ovos import get_top_consumers
+from reports_v2.services.report_service import ReportGenerationService
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +43,16 @@ OVOS_BRIDGE_HOST = os.getenv("OVOS_BRIDGE_HOST", "192.168.1.103")
 OVOS_BRIDGE_PORT = os.getenv("OVOS_BRIDGE_PORT", "5000")
 OVOS_BRIDGE_TIMEOUT = float(os.getenv("OVOS_BRIDGE_TIMEOUT", "20"))
 OVOS_BRIDGE_URL = f"http://{OVOS_BRIDGE_HOST}:{OVOS_BRIDGE_PORT}"
+SIMULATED_PILOT_FACTORY_ID = os.getenv(
+    "SIMULATED_PILOT_FACTORY_ID",
+    "11111111-1111-1111-1111-111111111111",
+)
+SIMULATED_PILOT_ENPI_PERIOD = os.getenv("SIMULATED_PILOT_ENPI_PERIOD", "2026-Q1")
+SIMULATED_PILOT_BASELINE_YEAR = int(os.getenv("SIMULATED_PILOT_BASELINE_YEAR", "2026"))
+SIMULATED_PILOT_OPPORTUNITY_PERIOD = os.getenv("SIMULATED_PILOT_OPPORTUNITY_PERIOD", "month")
+SIMULATED_PILOT_REPORT_YEAR = int(os.getenv("SIMULATED_PILOT_REPORT_YEAR", "2026"))
+SIMULATED_PILOT_REPORT_MONTH = int(os.getenv("SIMULATED_PILOT_REPORT_MONTH", "4"))
+enpi_tracker = EnPITracker()
 
 
 # ============================================================================
@@ -89,6 +107,453 @@ class VoiceBridgeHealth(BaseModel):
     error: Optional[str] = None
 
 
+def _normalize_query(text: str) -> str:
+    return " ".join((text or "").lower().strip().split())
+
+
+def _is_enpi_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    phrases = [
+        "energy performance indicators report",
+        "enpi report",
+        "enpi status",
+        "iso 50001 report",
+        "iso 50001 enpi",
+    ]
+    return any(phrase in normalized for phrase in phrases)
+
+
+def _is_opportunity_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    phrases = [
+        "energy saving opportunities",
+        "energy improvement opportunities",
+        "optimization opportunities",
+        "where can we save energy",
+        "save energy",
+    ]
+    return any(phrase in normalized for phrase in phrases)
+
+
+def _is_top_consumers_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    return (
+        "top" in normalized
+        and any(term in normalized for term in ["consumer", "consumers", "energy users", "machines"])
+        and any(term in normalized for term in ["energy", "consumption", "power"])
+    )
+
+
+MONTH_ALIASES = {
+    "jan": 1,
+    "january": 1,
+    "feb": 2,
+    "february": 2,
+    "mar": 3,
+    "march": 3,
+    "apr": 4,
+    "april": 4,
+    "may": 5,
+    "jun": 6,
+    "june": 6,
+    "jul": 7,
+    "july": 7,
+    "aug": 8,
+    "august": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "oct": 10,
+    "october": 10,
+    "nov": 11,
+    "november": 11,
+    "dec": 12,
+    "december": 12,
+}
+
+
+def _is_report_download_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    return (
+        "report" in normalized
+        and any(term in normalized for term in ["download", "generate", "create", "export", "pdf"])
+    )
+
+
+def _parse_report_period(text: str) -> tuple[int, int]:
+    normalized = _normalize_query(text).replace(",", " ")
+    tokens = normalized.split()
+
+    month = None
+    for token in tokens:
+        cleaned = token.strip(".")
+        if cleaned in MONTH_ALIASES:
+            month = MONTH_ALIASES[cleaned]
+            break
+
+    year = None
+    for token in tokens:
+        cleaned = token.strip(".")
+        if cleaned.isdigit() and len(cleaned) == 4:
+            parsed_year = int(cleaned)
+            if 2000 <= parsed_year <= 2100:
+                year = parsed_year
+                break
+
+    return (
+        year or SIMULATED_PILOT_REPORT_YEAR,
+        month or SIMULATED_PILOT_REPORT_MONTH,
+    )
+
+
+def _top_consumer_limit(text: str) -> int:
+    if "top 3" in text or "top three" in text:
+        return 3
+    return 5
+
+
+async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -> VoiceQueryResponse:
+    report = await enpi_tracker.generate_enpi_report(
+        factory_id=SIMULATED_PILOT_FACTORY_ID,
+        period=SIMULATED_PILOT_ENPI_PERIOD,
+        baseline_year=SIMULATED_PILOT_BASELINE_YEAR,
+    )
+
+    performance = report["overall_performance"]
+    response = (
+        f"For {SIMULATED_PILOT_ENPI_PERIOD}, the ISO 50001 EnPI status is {performance['iso_status']}. "
+        f"{report['seus_analyzed']} SEUs were analyzed. Actual energy was {performance['total_energy_actual_kwh']:.1f} kilowatt hours "
+        f"against a baseline of {performance['total_energy_baseline_kwh']:.1f}, for a deviation of {performance['deviation_percent']:.2f} percent "
+        f"and cumulative savings of {performance['cumulative_savings_kwh']:.1f} kilowatt hours."
+    )
+
+    latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+    return VoiceQueryResponse(
+        success=True,
+        response=response,
+        intent="enpi_report",
+        confidence=1.0,
+        data=report,
+        insights={
+            "source": "analytics_fallback",
+            "period": SIMULATED_PILOT_ENPI_PERIOD,
+            "baseline_year": SIMULATED_PILOT_BASELINE_YEAR,
+        },
+        audio_base64=None,
+        audio_format=None,
+        pdf_base64=None,
+        pdf_filename=None,
+        pdf_download=None,
+        error=None,
+        session_id=session_id,
+        latency_ms=latency_ms,
+        tts_latency_ms=0,
+        timestamp=datetime.now().isoformat(),
+        bridge_url=OVOS_BRIDGE_URL,
+    )
+
+
+async def _build_top_consumers_fallback_response(session_id: str, start_time: datetime, normalized_text: str) -> VoiceQueryResponse:
+    limit = _top_consumer_limit(normalized_text)
+    ranking_data = await get_top_consumers(metric="energy", limit=limit)
+    ranking = ranking_data.get("ranking", [])
+
+    latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+
+    if not ranking:
+        response_text = "No energy-consumption ranking data is available for the current period."
+        return VoiceQueryResponse(
+            success=True,
+            response=response_text,
+            intent="ranking",
+            confidence=1.0,
+            data=ranking_data,
+            insights={"source": "analytics_fallback", "metric": "energy"},
+            audio_base64=None,
+            audio_format=None,
+            pdf_base64=None,
+            pdf_filename=None,
+            pdf_download=None,
+            error=None,
+            session_id=session_id,
+            latency_ms=latency_ms,
+            tts_latency_ms=0,
+            timestamp=datetime.now().isoformat(),
+            bridge_url=OVOS_BRIDGE_URL,
+        )
+
+    total_value = ranking_data.get("total_value", 0)
+    response_text = f"Top {len(ranking)} energy consumers:\n" + "\n".join(
+        f"{item['rank']}. {item['machine_name']}: {item['value']} kWh ({item['percentage']}% of total)"
+        for item in ranking
+    )
+
+    top_item = ranking[0]
+    return VoiceQueryResponse(
+        success=True,
+        response=response_text,
+        intent="ranking",
+        confidence=1.0,
+        data=ranking_data,
+        insights={
+            "panel_type": "ranking",
+            "title": "Energy Consumption",
+            "subtitle": "Current ranking snapshot",
+            "spotlight": {
+                "kicker": "Top consumer",
+                "title": top_item["machine_name"],
+                "detail": f"{top_item['value']} kWh · {top_item['percentage']}% of tracked load",
+                "tone": "info",
+            },
+            "summary_metrics": [
+                {"label": "Top Value", "value": top_item["value"], "unit": "kWh", "tone": "info"},
+                {"label": "Leader Share", "value": top_item["percentage"], "unit": "%", "tone": "good"},
+                {"label": "Machines", "value": ranking_data.get("machines_analyzed", len(ranking)), "unit": None, "tone": "neutral"},
+                {"label": "Total", "value": total_value, "unit": "kWh", "tone": "warning"},
+            ],
+            "status_badges": [{"label": "Energy", "tone": "neutral"}],
+            "secondary_lines": [
+                f"{item['rank']}. {item['machine_name']} - {item['value']} kWh ({item['percentage']}%)"
+                for item in ranking[:3]
+            ],
+            "links": [{"label": "Open reports", "href": "/reports.html"}],
+            "source": "analytics_fallback",
+        },
+        audio_base64=None,
+        audio_format=None,
+        pdf_base64=None,
+        pdf_filename=None,
+        pdf_download=None,
+        error=None,
+        session_id=session_id,
+        latency_ms=latency_ms,
+        tts_latency_ms=0,
+        timestamp=datetime.now().isoformat(),
+        bridge_url=OVOS_BRIDGE_URL,
+    )
+
+
+async def _build_report_download_response(
+    session_id: str,
+    start_time: datetime,
+    normalized_text: str,
+) -> VoiceQueryResponse:
+    year, month = _parse_report_period(normalized_text)
+    month_name = datetime(year, month, 1).strftime("%B")
+    report_id = str(uuid.uuid4())
+    output_path = Path(f"/tmp/enms_report_v2_{report_id}.pdf")
+
+    service = ReportGenerationService(db)
+    result_path = await service.generate_monthly_report(
+        factory_id=SIMULATED_PILOT_FACTORY_ID,
+        year=year,
+        month=month,
+        output_path=output_path,
+    )
+    file_size_kb = result_path.stat().st_size / 1024
+    filename = f"HumanEnerDIA_Monthly_Energy_Report_{year}_{month:02d}.pdf"
+    download_url = f"/api/v1/reports/v2/download/{report_id}"
+
+    latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+    return VoiceQueryResponse(
+        success=True,
+        response=(
+            f"Your monthly energy report for {month_name} {year} is ready. "
+            "The download should start automatically in your browser."
+        ),
+        intent="report_download",
+        confidence=1.0,
+        data={
+            "success": True,
+            "factory_id": SIMULATED_PILOT_FACTORY_ID,
+            "report_id": report_id,
+            "report_type": "monthly_energy",
+            "year": year,
+            "month": month,
+            "filename": filename,
+            "download_url": download_url,
+            "file_size_kb": round(file_size_kb, 2),
+        },
+        insights={
+            "panel_type": "report_download",
+            "title": "Monthly Energy Report",
+            "subtitle": f"{month_name} {year}",
+            "spotlight": {
+                "kicker": "Report ready",
+                "title": filename,
+                "detail": f"{round(file_size_kb, 1)} KB PDF generated from analytics data",
+                "tone": "good",
+            },
+            "status_badges": [
+                {"label": "PDF", "tone": "neutral"},
+                {"label": month_name, "tone": "info"},
+                {"label": str(year), "tone": "neutral"},
+            ],
+            "links": [{"label": "Open reports", "href": "/reports.html"}],
+            "source": "analytics_fallback",
+        },
+        audio_base64=None,
+        audio_format=None,
+        pdf_base64=None,
+        pdf_filename=None,
+        pdf_download={
+            "report_id": report_id,
+            "download_url": download_url,
+            "filename": filename,
+            "file_size_kb": round(file_size_kb, 2),
+            "ready": True,
+        },
+        error=None,
+        session_id=session_id,
+        latency_ms=latency_ms,
+        tts_latency_ms=0,
+        timestamp=datetime.now().isoformat(),
+        bridge_url=OVOS_BRIDGE_URL,
+    )
+
+
+async def _build_opportunities_fallback_response(session_id: str, start_time: datetime) -> VoiceQueryResponse:
+    engine = get_performance_engine()
+    opportunities = await engine.get_improvement_opportunities(
+        SIMULATED_PILOT_FACTORY_ID,
+        SIMULATED_PILOT_OPPORTUNITY_PERIOD,
+    )
+
+    latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+
+    if not opportunities:
+        response_text = (
+            "No major factory-wide improvement opportunities were detected for the configured pilot period. "
+            "Focus on current deviations, anomalies, and scheduling review."
+        )
+        return VoiceQueryResponse(
+            success=True,
+            response=response_text,
+            intent="performance_opportunities",
+            confidence=1.0,
+            data={"opportunities": []},
+            insights={"source": "analytics_fallback", "period": SIMULATED_PILOT_OPPORTUNITY_PERIOD},
+            audio_base64=None,
+            audio_format=None,
+            pdf_base64=None,
+            pdf_filename=None,
+            pdf_download=None,
+            error=None,
+            session_id=session_id,
+            latency_ms=latency_ms,
+            tts_latency_ms=0,
+            timestamp=datetime.now().isoformat(),
+            bridge_url=OVOS_BRIDGE_URL,
+        )
+
+    top_items = opportunities[:3]
+    response_text = "Top energy saving opportunities: " + " ".join(
+        f"{index}. {opp.seu_name}: {opp.recommended_action} with about {opp.potential_savings_kwh:.1f} kilowatt hours potential savings."
+        for index, opp in enumerate(top_items, start=1)
+    )
+
+    return VoiceQueryResponse(
+        success=True,
+        response=response_text,
+        intent="performance_opportunities",
+        confidence=1.0,
+        data={
+            "total_opportunities": len(opportunities),
+            "total_potential_savings_kwh": round(sum(opp.potential_savings_kwh for opp in opportunities), 2),
+            "top_opportunities": [
+                {
+                    "seu_name": opp.seu_name,
+                    "issue_type": opp.issue_type.value if hasattr(opp.issue_type, "value") else str(opp.issue_type),
+                    "potential_savings_kwh": opp.potential_savings_kwh,
+                    "recommended_action": opp.recommended_action,
+                }
+                for opp in top_items
+            ],
+        },
+        insights={"source": "analytics_fallback", "period": SIMULATED_PILOT_OPPORTUNITY_PERIOD},
+        audio_base64=None,
+        audio_format=None,
+        pdf_base64=None,
+        pdf_filename=None,
+        pdf_download=None,
+        error=None,
+        session_id=session_id,
+        latency_ms=latency_ms,
+        tts_latency_ms=0,
+        timestamp=datetime.now().isoformat(),
+        bridge_url=OVOS_BRIDGE_URL,
+    )
+
+
+def _repair_bridge_payload(payload: dict, normalized_text: str) -> dict:
+    if not isinstance(payload, dict):
+        return payload
+
+    response_text = payload.get("response")
+    if isinstance(response_text, str):
+        payload["response"] = response_text.replace("Top  energy consumers:", "Top energy consumers:")
+        if "top 3 energy consumers" in normalized_text:
+            payload["response"] = payload["response"].replace("Top energy consumers:", "Top 3 energy consumers:")
+
+    return _repair_anomaly_insights(payload)
+
+
+def _repair_anomaly_insights(payload: dict) -> dict:
+    """
+    Normalize anomaly insight counts from bridge responses using the raw anomaly list.
+
+    Some bridge responses summarize the anomaly text correctly but return stale
+    severity counts in the insight card. For the simulated pilot we want the
+    card totals to match the actual anomaly payload used in the demo.
+    """
+    if not isinstance(payload, dict):
+        return payload
+
+    data = payload.get("data")
+    insights = payload.get("insights")
+    if not isinstance(data, dict) or not isinstance(insights, dict):
+        return payload
+
+    if insights.get("panel_type") != "anomaly_summary":
+        return payload
+
+    anomalies = data.get("anomalies")
+    if not isinstance(anomalies, list):
+        return payload
+
+    severity_counts = {"critical": 0, "warning": 0, "normal": 0}
+    affected_machines = []
+    for anomaly in anomalies:
+        if not isinstance(anomaly, dict):
+            continue
+        severity = str(anomaly.get("severity") or "").lower()
+        if severity in severity_counts:
+            severity_counts[severity] += 1
+
+        machine_name = anomaly.get("machine_name")
+        if machine_name and machine_name not in affected_machines:
+            affected_machines.append(machine_name)
+
+    summary_metrics = insights.get("summary_metrics")
+    if isinstance(summary_metrics, list):
+        for metric in summary_metrics:
+            if not isinstance(metric, dict):
+                continue
+            label = str(metric.get("label") or "").lower()
+            if label == "total alerts":
+                metric["value"] = len(anomalies)
+                metric["tone"] = "danger" if anomalies else "good"
+            elif label == "critical":
+                metric["value"] = severity_counts["critical"]
+            elif label == "warnings":
+                metric["value"] = severity_counts["warning"]
+            elif label == "machines":
+                metric["value"] = len(affected_machines)
+
+    payload["insights"] = insights
+    return payload
+
+
 # ============================================================================
 # Endpoints
 # ============================================================================
@@ -116,6 +581,32 @@ async def voice_query(request: VoiceQueryRequest):
     Set OVOS_BRIDGE_HOST environment variable to the Windows/WSL2 machine IP.
     """
     start_time = datetime.now()
+    normalized_text = _normalize_query(request.text)
+    fallback_session_id = request.session_id or "auto"
+
+    if _is_top_consumers_query(normalized_text):
+        try:
+            return await _build_top_consumers_fallback_response(fallback_session_id, start_time, normalized_text)
+        except Exception as e:
+            logger.error(f"Analytics top-consumers fallback failed: {e}")
+
+    if _is_report_download_query(normalized_text):
+        try:
+            return await _build_report_download_response(fallback_session_id, start_time, normalized_text)
+        except Exception as e:
+            logger.error(f"Analytics report-download fallback failed: {e}", exc_info=True)
+
+    if _is_enpi_query(normalized_text):
+        try:
+            return await _build_enpi_fallback_response(fallback_session_id, start_time)
+        except Exception as e:
+            logger.error(f"Analytics EnPI fallback failed: {e}")
+
+    if _is_opportunity_query(normalized_text):
+        try:
+            return await _build_opportunities_fallback_response(fallback_session_id, start_time)
+        except Exception as e:
+            logger.error(f"Analytics opportunities fallback failed: {e}")
     
     # Use /query/voice endpoint for audio, /query for text-only
     endpoint = "/query/voice" if request.include_audio else "/query"
@@ -150,7 +641,7 @@ async def voice_query(request: VoiceQueryRequest):
                     bridge_url=OVOS_BRIDGE_URL
                 )
             
-            data = response.json()
+            data = _repair_bridge_payload(response.json(), normalized_text)
             
             return VoiceQueryResponse(
                 success=data.get("success", False),

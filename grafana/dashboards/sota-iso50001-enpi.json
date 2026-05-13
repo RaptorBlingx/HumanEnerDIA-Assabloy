@@ -874,7 +874,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "sota",
+    "enms",
     "iso50001",
     "enpi",
     "compliance",
@@ -896,7 +896,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA ISO 50001 EnPI",
+  "title": "ISO 50001 EnPI",
   "uid": "sota-iso50001-enpi",
   "version": 15,
   "weekStart": ""

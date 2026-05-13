@@ -58,8 +58,9 @@ This file freezes the identity of the simulated pilot factory so the same story 
 
 ## Frozen Reporting Periods
 - Daily operational tasks: use current simulated day during rehearsal and recording.
-- EnPI / compliance summary task: use `2025-Q4`.
-- Monthly report generation task: use `December 2025`.
+- EnPI / compliance summary task: use `2026-Q1`.
+- Monthly report generation task: use `April 2026`.
+- Anomaly review task: keep one unresolved `critical` `Compressor-2` spike available for the technical-user flow.
 
 ## Disclosure Line For Video And Methodology
 Use this exact language at the start of the benchmark and demo:
@@ -68,5 +69,6 @@ Use this exact language at the start of the benchmark and demo:
 
 ## Consistency Rules
 - Use the same factory profile wording in both videos.
-- Do not mix other plant identities such as Munich, Germany, or generic US demo labels in the spoken explanation.
+- Do not mix in older sample-factory identities from previous demo environments.
 - Use `Compressor-1` as the default machine for machine-specific benchmark tasks unless rehearsal proves another machine is more stable.
+- Keep the controlled anomaly scenario stable so `T1` always resolves to the recent `Compressor-2` alert.

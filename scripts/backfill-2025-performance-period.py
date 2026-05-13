@@ -27,9 +27,9 @@ EFFICIENCY_FACTOR = lambda: random.uniform(0.96, 0.98)  # 2-4% reduction in powe
 # Machines configuration (from database)
 MACHINES = {
     'c0000000-0000-0000-0000-000000000001': {'name': 'Compressor-1', 'type': 'compressor'},
-    'c0000000-0000-0000-0000-000000000006': {'name': 'Compressor-EU-1', 'type': 'compressor'},
+    'c0000000-0000-0000-0000-000000000006': {'name': 'Compressor-2', 'type': 'compressor'},
     'c0000000-0000-0000-0000-000000000002': {'name': 'HVAC-Main', 'type': 'hvac'},
-    'c0000000-0000-0000-0000-000000000007': {'name': 'HVAC-EU-North', 'type': 'hvac'},
+    'c0000000-0000-0000-0000-000000000007': {'name': 'HVAC-North-1', 'type': 'hvac'},
     'c0000000-0000-0000-0000-000000000003': {'name': 'Conveyor-A', 'type': 'motor'},
     'c0000000-0000-0000-0000-000000000004': {'name': 'Hydraulic-Pump-1', 'type': 'pump'},
     'c0000000-0000-0000-0000-000000000005': {'name': 'Injection-Molding-1', 'type': 'injection_molding'},

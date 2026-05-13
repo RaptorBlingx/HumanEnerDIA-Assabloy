@@ -629,7 +629,7 @@
   "refresh": "5m",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "environmental", "carbon", "sustainability", "esg"],
+  "tags": ["enms", "environmental", "carbon", "sustainability", "esg"],
   "templating": {
     "list": []
   },
@@ -646,7 +646,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA Environmental Impact",
+  "title": "Environmental Impact",
   "uid": "sota-environmental-impact",
   "version": 1,
   "weekStart": ""

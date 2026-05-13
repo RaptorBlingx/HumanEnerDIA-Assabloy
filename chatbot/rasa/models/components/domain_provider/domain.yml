@@ -12,7 +12,7 @@ intents:
 responses:
   utter_ask_humenerdia_platform:
   - text: HumanEnerDIA is an intelligent energy management platform combining real-time monitoring, ML analytics, and ISO 50001 compliance. It features dashboards for baseline prediction, anomaly detection, forecasting, KPIs, plus Grafana visualizations and OVOS voice assistant.
-  - text: HumanEnerDIA is a comprehensive Energy Management System (EnMS) with Analytics dashboards, 11 Grafana SOTA dashboards, voice assistant integration, and automated reporting. Navigate using the sidebar menu to access all features.
+  - text: HumanEnerDIA is a comprehensive Energy Management System (EnMS) with Analytics dashboards, 11 Grafana dashboards, voice assistant integration, and automated reporting. Navigate using the sidebar menu to access all features.
   utter_ask_portal_dashboard:
   - text: The main dashboard is your command center showing real-time energy metrics, alerts, machine status, and quick navigation to all HumanEnerDIA features via the sidebar menu.
   - text: Dashboard shows total consumption, active machines, recent anomalies, and KPI summaries. Use the left sidebar to navigate to Analytics, Visualizations, and Grafana.
@@ -41,40 +41,40 @@ responses:
   - text: The Comparison page displays side-by-side metrics for multiple machines including consumption, peak demand, load factor, and efficiency ratings.
   - text: Compare machines to identify best/worst performers, efficiency gaps, and candidates for maintenance or upgrades.
   utter_ask_grafana_general:
-  - text: HumanEnerDIA includes 11 SOTA (State Of The Art) Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu.
-  - text: SOTA dashboards provide premium visualizations with ML insights. Use the machine selector to filter views. Dashboards refresh every 30-60 seconds (Real-Time is faster).
+  - text: HumanEnerDIA includes 11 Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu.
+  - text: These dashboards provide premium visualizations with ML insights. Use the machine selector to filter views. Dashboards refresh every 30-60 seconds (Real-Time is faster).
   utter_ask_grafana_factory:
-  - text: SOTA Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health.
+  - text: Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health.
   - text: Factory Overview provides operational awareness with live power consumption (6h), energy by machine breakdown, and machine health indicators in one view.
   utter_ask_grafana_iso50001:
-  - text: SOTA ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels.
+  - text: ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels.
   - text: The ISO 50001 dashboard helps monitor energy performance indicators and compliance status with visualization of baseline deviations and degree-day normalization.
   utter_ask_grafana_anomaly:
-  - text: SOTA Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list.
+  - text: Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list.
   - text: Use the Anomaly dashboard to monitor alert severity, mean time to resolution, and identify which machines and hours have the most issues.
   utter_ask_grafana_cost:
-  - text: SOTA Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities.
+  - text: Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities.
   - text: Cost dashboard helps identify expensive energy periods, top cost contributors, and optimization opportunities for reducing electricity bills.
   utter_ask_grafana_executive:
-  - text: SOTA Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced).
+  - text: Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced).
   - text: Executive Summary is designed for managers with high-level metrics and long-term trends without technical complexity.
   utter_ask_grafana_machine_health:
-  - text: SOTA Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts.
+  - text: Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts.
   - text: Machine Health dashboard enables detailed analysis of individual machines including their ML model accuracy and deviation from expected baseline consumption.
   utter_ask_grafana_ml:
-  - text: SOTA ML Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d).
+  - text: ML Model Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d).
   - text: Use ML Performance dashboard to monitor model accuracy, identify models needing retraining, and track overall prediction quality across the facility.
   utter_ask_grafana_operational:
-  - text: SOTA Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status.
+  - text: Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status.
   - text: Operational Efficiency tracks production metrics and correlates them with energy usage to identify optimal operating points and efficiency opportunities.
   utter_ask_grafana_predictive:
-  - text: SOTA Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time.
+  - text: Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time.
   - text: Predictive Analytics dashboard validates forecast accuracy by comparing predictions against actual consumption and tracking error metrics.
   utter_ask_grafana_realtime:
-  - text: SOTA Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate.
+  - text: Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate.
   - text: Real-Time Production provides instant operational awareness with sub-minute updates for monitoring current factory state and power consumption.
   utter_ask_grafana_environmental:
-  - text: SOTA Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress.
+  - text: Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress.
   - text: Environmental dashboard helps monitor and reduce carbon footprint by tracking emissions, intensity metrics, and progress toward sustainability goals.
   utter_ask_ovos_capabilities:
   - text: OVOS voice assistant can query energy data, check machine status, show KPIs, generate forecasts, detect anomalies, analyze costs, and generate PDF reports using natural voice commands.

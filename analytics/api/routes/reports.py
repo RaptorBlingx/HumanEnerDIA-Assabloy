@@ -163,7 +163,7 @@ async def preview_report_data(
 
 
 # ============================================================================
-# V2 REPORT API (New SOTA Report System)
+# V2 REPORT API (New Report System)
 # ============================================================================
 
 class ReportGenerationRequest(BaseModel):
@@ -194,7 +194,7 @@ class ReportGenerationResponse(BaseModel):
 @router.post(
     "/v2/generate",
     response_model=ReportGenerationResponse,
-    summary="Generate Monthly Energy Report (V2 - SOTA)",
+    summary="Generate Monthly Energy Report (V2)",
     description="Generate a complete PDF energy report using new world-class report system",
     tags=["Reports V2"]
 )
@@ -203,7 +203,7 @@ async def generate_v2_report(
     background_tasks: BackgroundTasks
 ):
     """
-    Generate a comprehensive monthly energy report with the new SOTA system.
+    Generate a comprehensive monthly energy report with the new report system.
     
     This endpoint generates a complete PDF report including:
     - Professional cover page with hero chart
@@ -299,7 +299,7 @@ async def get_v2_status():
     """Get the status of the V2 report generation API."""
     return {
         "success": True,
-        "service": "EnMS Report Generation API V2 (SOTA)",
+        "service": "EnMS Report Generation API V2 (current)",
         "version": "2.0.0",
         "status": "operational",
         "features": [

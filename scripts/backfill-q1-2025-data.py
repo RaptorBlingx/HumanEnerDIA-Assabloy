@@ -32,7 +32,7 @@ MACHINES = [
     },
     {
         'id': 'c0000000-0000-0000-0000-000000000002',
-        'name': 'Compressor-EU-1',
+        'name': 'Compressor-2',
         'type': 'compressor',
         'base_power': 18.0,
         'base_production': 1400,
@@ -48,7 +48,7 @@ MACHINES = [
     },
     {
         'id': 'c0000000-0000-0000-0000-000000000004',
-        'name': 'HVAC-EU-North',
+        'name': 'HVAC-North-1',
         'type': 'hvac',
         'base_power': 20.0,
         'base_production': 0,

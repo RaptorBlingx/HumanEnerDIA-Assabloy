@@ -1174,7 +1174,7 @@
   "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
-    "sota",
+    "enms",
     "anomaly",
     "monitoring",
     "ml"
@@ -1197,7 +1197,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "SOTA Anomaly Detection",
+  "title": "Anomaly Detection",
   "uid": "sota_anomaly_detection",
   "version": 1,
   "weekStart": ""

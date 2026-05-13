@@ -10420,7 +10420,7 @@
     ],
     [
       "What features does HumanEnerDIA have?",
-      "HumanEnerDIA includes: Analytics dashboards (Baseline, Anomaly, KPI, Forecast), Grafana visualizations (11 SOTA dashboards), OVOS voice assistant for hands-free queries, text-based digital assistant for learning ISO 50001 standards, PDF report generation, Node-RED data pipelines, Docker-based deployment, and AI-assisted decision support system for energy efficiency measures."
+      "HumanEnerDIA includes: Analytics dashboards (Baseline, Anomaly, KPI, Forecast), Grafana visualizations (11 pre-built dashboards), OVOS voice assistant for hands-free queries, text-based digital assistant for learning ISO 50001 standards, PDF report generation, Node-RED data pipelines, Docker-based deployment, and AI-assisted decision support system for energy efficiency measures."
     ],
     [
       "What can I do with HumanEnerDIA?",
@@ -10498,7 +10498,7 @@
     ],
     [
       "What is the difference between Analytics and Grafana?",
-      "Analytics pages are HumanEnerDIA's custom interfaces for training ML models and detailed analysis. Grafana dashboards provide real-time visualization with 11 pre-built SOTA dashboards for monitoring."
+      "Analytics pages are HumanEnerDIA's custom interfaces for training ML models and detailed analysis. Grafana dashboards provide real-time visualization with 11 pre-built Grafana dashboards for monitoring."
     ],
     [
       "Where can I find energy consumption data?",
@@ -10518,7 +10518,7 @@
     ],
     [
       "Where can I see real-time data?",
-      "Real-time data is shown on the Dashboard, Grafana dashboards (especially SOTA Factory Overview and Real-Time Production), and the KPI page with live-updating charts."
+      "Real-time data is shown on the Dashboard, Grafana dashboards (especially Factory Overview and Real-Time Production), and the KPI page with live-updating charts."
     ],
     [
       "How to use dashboard?",
@@ -11004,7 +11004,7 @@
   "ask_grafana_factory": [
     [
       "What is Factory Overview dashboard?",
-      "SOTA Factory Overview is the Command Center dashboard showing real-time operational overview with ML insights. It displays active machines, energy today, cost today, active anomalies, and current power."
+      "Factory Overview is the Command Center dashboard showing real-time operational overview with ML insights. It displays active machines, energy today, cost today, active anomalies, and current power."
     ],
     [
       "What can I see in factory overview?",
@@ -11016,11 +11016,11 @@
     ],
     [
       "What is factory status dashboard?",
-      "Factory Status is part of the SOTA Factory Overview dashboard showing which machines are active, their health scores, current power draw, and any active anomalies."
+      "Factory Status is part of the Factory Overview dashboard showing which machines are active, their health scores, current power draw, and any active anomalies."
     ],
     [
       "Where can I see all machines at once?",
-      "The SOTA Factory Overview dashboard shows all machines in the 'Energy by Machine' and 'Machine Status & Health' panels with current status indicators."
+      "The Factory Overview dashboard shows all machines in the 'Energy by Machine' and 'Machine Status & Health' panels with current status indicators."
     ],
     [
       "What is live power consumption?",
@@ -11032,25 +11032,25 @@
     ],
     [
       "What is the command center dashboard?",
-      "The Command Center is the SOTA Factory Overview dashboard - your main operational view with real-time metrics, anomalies, power charts, and machine status."
+      "The Command Center is the Factory Overview dashboard - your main operational view with real-time metrics, anomalies, power charts, and machine status."
     ],
     [
       "How to use factory dashboard?",
-      "SOTA Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
+      "Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
     ],
     [
       "Factory overview?",
-      "SOTA Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
+      "Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
     ],
     [
       "Real-time monitoring?",
-      "SOTA Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
+      "Factory Overview is the Command Center showing real-time status - Active Machines, Energy Today, Cost, Anomalies, Live Power chart, and Machine Status & Health."
     ]
   ],
   "ask_grafana_iso50001": [
     [
-      "What is SOTA ISO 50001 EnPI dashboard?",
-      "The SOTA ISO 50001 EnPI dashboard tracks Energy Performance Indicators for ISO 50001 compliance. It shows EnPI scores, energy savings, compliance rates, and CUSUM control charts."
+      "What is ISO 50001 EnPI dashboard?",
+      "The ISO 50001 EnPI dashboard tracks Energy Performance Indicators for ISO 50001 compliance. It shows EnPI scores, energy savings, compliance rates, and CUSUM control charts."
     ],
     [
       "What is EnPI in Grafana?",
@@ -11074,7 +11074,7 @@
     ],
     [
       "How do I check ISO 50001 compliance?",
-      "The SOTA ISO 50001 EnPI dashboard has a 'Compliance Rate' stat panel and EnPI trend charts showing your organization's adherence to ISO 50001 energy standards."
+      "The ISO 50001 EnPI dashboard has a 'Compliance Rate' stat panel and EnPI trend charts showing your organization's adherence to ISO 50001 energy standards."
     ],
     [
       "What is baseline vs actual chart?",
@@ -11082,21 +11082,21 @@
     ],
     [
       "ISO 50001 dashboard?",
-      "SOTA ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
+      "ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
     ],
     [
       "Compliance tracking?",
-      "SOTA ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
+      "ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
     ],
     [
       "EnPI visualization?",
-      "SOTA ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
+      "ISO 50001 EnPI tracks compliance with EnPI Score, Energy Savings, CUSUM Control Chart, Baseline vs Actual, Weather Normalization, and SEU Performance panels."
     ]
   ],
   "ask_grafana_anomaly": [
     [
       "What is Grafana anomaly dashboard?",
-      "SOTA Anomaly Detection dashboard visualizes all detected anomalies with: Active Anomalies count, Critical alerts, Mean Time to Resolution, Severity Distribution, Timeline, and Heatmap."
+      "Anomaly Detection dashboard visualizes all detected anomalies with: Active Anomalies count, Critical alerts, Mean Time to Resolution, Severity Distribution, Timeline, and Heatmap."
     ],
     [
       "What is anomaly detection grafana?",
@@ -11112,7 +11112,7 @@
     ],
     [
       "How do I see critical anomalies?",
-      "The SOTA Anomaly Detection dashboard has a 'Critical Anomalies' stat panel showing count of critical-severity issues requiring immediate attention."
+      "The Anomaly Detection dashboard has a 'Critical Anomalies' stat panel showing count of critical-severity issues requiring immediate attention."
     ],
     [
       "What is anomaly timeline?",
@@ -11128,25 +11128,25 @@
     ],
     [
       "Anomaly dashboard?",
-      "SOTA Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
+      "Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
     ],
     [
       "View detected anomalies?",
-      "SOTA Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
+      "Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
     ],
     [
       "Anomaly history?",
-      "SOTA Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
+      "Anomaly Detection shows Active/Critical Anomalies, MTTR, Severity Distribution, Timeline, Machine ranking by anomaly count, Heatmap, and Unresolved list."
     ]
   ],
   "ask_grafana_cost": [
     [
       "What is Cost Analytics dashboard?",
-      "SOTA Energy Cost Analytics dashboard tracks energy costs with: Current Month Cost, Monthly Variance, Average Rate, Potential Savings, Cost Trends, Time-of-Use breakdown, and Savings Opportunities."
+      "Energy Cost Analytics dashboard tracks energy costs with: Current Month Cost, Monthly Variance, Average Rate, Potential Savings, Cost Trends, Time-of-Use breakdown, and Savings Opportunities."
     ],
     [
       "How do I see energy costs in Grafana?",
-      "The SOTA Cost Analytics dashboard shows Current Month Cost, Monthly Cost Variance, 12-month Cost Trend, and Cost by Time-of-Use Period panels."
+      "The Energy Cost Analytics dashboard shows Current Month Cost, Monthly Cost Variance, 12-month Cost Trend, and Cost by Time-of-Use Period panels."
     ],
     [
       "What is cost by time of use?",
@@ -11174,25 +11174,25 @@
     ],
     [
       "Cost analysis dashboard?",
-      "SOTA Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
+      "Energy Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
     ],
     [
       "Energy costs?",
-      "SOTA Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
+      "Energy Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
     ],
     [
       "Cost breakdown?",
-      "SOTA Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
+      "Energy Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
     ],
     [
       "What is the cost breakdown dashboard?",
-      "SOTA Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
+      "Energy Cost Analytics tracks Current Month Cost, Variance, Average Rate, Potential Savings, 12-month Trend, Time-of-Use breakdown, and Savings Opportunities."
     ]
   ],
   "ask_grafana_executive": [
     [
       "What is Executive Summary dashboard?",
-      "SOTA Executive Summary provides high-level KPIs for management: key operational concerns, 12-month energy trend, and energy intensity trend (kWh per unit produced)."
+      "Executive Summary provides high-level KPIs for management: key operational concerns, 12-month energy trend, and energy intensity trend (kWh per unit produced)."
     ],
     [
       "What is management dashboard?",
@@ -11212,25 +11212,25 @@
     ],
     [
       "Which dashboard is best for managers?",
-      "SOTA Executive Summary is designed for managers and executives, showing high-level KPIs, trends, and concerns without technical complexity."
+      "Executive Summary is designed for managers and executives, showing high-level KPIs, trends, and concerns without technical complexity."
     ],
     [
       "Executive summary dashboard?",
-      "SOTA Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
+      "Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
     ],
     [
       "High-level metrics?",
-      "SOTA Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
+      "Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
     ],
     [
       "Management view?",
-      "SOTA Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
+      "Executive Summary provides management-level KPIs including Top Operational Concerns, 12-Month Energy Trend, and Energy Intensity (kWh per unit produced)."
     ]
   ],
   "ask_grafana_machine_health": [
     [
       "What is Machine Health dashboard?",
-      "SOTA Machine Health provides deep-dive analysis with ML insights and anomaly detection. Shows health score, energy, power, anomalies, ML model performance, and baseline variance."
+      "Machine Health provides deep-dive analysis with ML insights and anomaly detection. Shows health score, energy, power, anomalies, ML model performance, and baseline variance."
     ],
     [
       "What is machine health score?",
@@ -11250,7 +11250,7 @@
     ],
     [
       "How do I analyze a specific machine?",
-      "Use SOTA Machine Health dashboard with the machine variable selector at the top to drill down into any specific machine's health, performance, and anomalies."
+      "Use Machine Health dashboard with the machine variable selector at the top to drill down into any specific machine's health, performance, and anomalies."
     ],
     [
       "What is adaptive time range?",
@@ -11258,21 +11258,21 @@
     ],
     [
       "Machine health dashboard?",
-      "SOTA Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
+      "Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
     ],
     [
       "Equipment status?",
-      "SOTA Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
+      "Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
     ],
     [
       "Health indicators?",
-      "SOTA Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
+      "Machine Health provides deep-dive analysis with Health Score, Energy, Power, Anomalies, ML Model Performance, Baseline Variance, and Power Consumption charts."
     ]
   ],
   "ask_grafana_ml": [
     [
       "What is ML Performance dashboard?",
-      "SOTA ML Model Performance tracks machine learning model metrics: Active Models count, Average R² Score, Average RMSE, R²/RMSE trends over time, and training history."
+      "ML Model Performance tracks machine learning model metrics: Active Models count, Average R² Score, Average RMSE, R²/RMSE trends over time, and training history."
     ],
     [
       "How do I check model accuracy?",
@@ -11300,21 +11300,21 @@
     ],
     [
       "Machine learning dashboard?",
-      "SOTA ML Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
+      "ML Model Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
     ],
     [
       "Model performance?",
-      "SOTA ML Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
+      "ML Model Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
     ],
     [
       "ML predictions?",
-      "SOTA ML Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
+      "ML Model Performance tracks Active Models, Average R²/RMSE, score trends over time, model performance by machine, and recent training history (30d)."
     ]
   ],
   "ask_grafana_operational": [
     [
       "What is Operational Efficiency dashboard?",
-      "SOTA Operational Efficiency tracks OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, production metrics, and machine status overview."
+      "Operational Efficiency tracks OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, production metrics, and machine status overview."
     ],
     [
       "What is OEE in Grafana?",
@@ -11342,21 +11342,21 @@
     ],
     [
       "Operational dashboard?",
-      "SOTA Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
+      "Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
     ],
     [
       "Production metrics?",
-      "SOTA Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
+      "Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
     ],
     [
       "Efficiency tracking?",
-      "SOTA Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
+      "Operational Efficiency shows OEE (Overall Equipment Effectiveness), Availability Rate, Performance Rate, Production vs Energy correlation, and Machine Status."
     ]
   ],
   "ask_grafana_predictive": [
     [
       "What is Predictive Analytics dashboard?",
-      "SOTA Predictive Analytics shows forecasting metrics: Average RMSE, MAPE, R² scores, forecast counts, Power Forecast vs Actual comparisons, and accuracy trends."
+      "Predictive Analytics shows forecasting metrics: Average RMSE, MAPE, R² scores, forecast counts, Power Forecast vs Actual comparisons, and accuracy trends."
     ],
     [
       "What is power forecast vs actual?",
@@ -11384,25 +11384,25 @@
     ],
     [
       "Predictive analytics dashboard?",
-      "SOTA Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
+      "Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
     ],
     [
       "Forecast visualization?",
-      "SOTA Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
+      "Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
     ],
     [
       "Trends?",
-      "SOTA Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
+      "Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
     ],
     [
       "Forecast accuracy trends?",
-      "SOTA Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
+      "Predictive Analytics shows RMSE/MAPE/R² metrics, Forecast vs Actual comparisons, Model Performance comparisons, and accuracy trends over time."
     ]
   ],
   "ask_grafana_realtime": [
     [
       "What is Real-Time Production dashboard?",
-      "SOTA Real-Time Production shows live factory status: Factory Status indicator, Active Machines count, Current Power draw, and Live Power chart (last 15 minutes)."
+      "Real-Time Production shows live factory status: Factory Status indicator, Active Machines count, Current Power draw, and Live Power chart (last 15 minutes)."
     ],
     [
       "What is factory status indicator?",
@@ -11414,7 +11414,7 @@
     ],
     [
       "Which dashboard updates fastest?",
-      "SOTA Real-Time Production dashboard has the fastest refresh rate, showing live power data updated every few seconds for immediate operational awareness."
+      "Real-Time Production dashboard has the fastest refresh rate, showing live power data updated every few seconds for immediate operational awareness."
     ],
     [
       "How do I see current production?",
@@ -11422,25 +11422,25 @@
     ],
     [
       "What is realtime monitoring?",
-      "Real-time monitoring in Grafana uses the SOTA Real-Time Production dashboard with sub-minute refresh rates for live operational awareness."
+      "Real-time monitoring in Grafana uses the Real-Time Production dashboard with sub-minute refresh rates for live operational awareness."
     ],
     [
       "Real-time dashboard?",
-      "SOTA Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
+      "Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
     ],
     [
       "Live data?",
-      "SOTA Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
+      "Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
     ],
     [
       "Current consumption?",
-      "SOTA Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
+      "Real-Time Production shows Factory Status, Active Machines, Current Power, and Live Power chart (last 15 minutes) with fastest refresh rate."
     ]
   ],
   "ask_grafana_environmental": [
     [
       "What is Environmental Impact dashboard?",
-      "SOTA Environmental Impact tracks carbon footprint: Monthly CO2, Emissions Change, Total CO2 (MTD), Emissions Trend, Emission Intensity, CO2 by Machine, and Reduction Progress."
+      "Environmental Impact tracks carbon footprint: Monthly CO2, Emissions Change, Total CO2 (MTD), Emissions Trend, Emission Intensity, CO2 by Machine, and Reduction Progress."
     ],
     [
       "How do I see carbon emissions?",
@@ -11460,7 +11460,7 @@
     ],
     [
       "How do I track carbon footprint?",
-      "Use SOTA Environmental Impact dashboard to track carbon footprint with monthly CO2 totals, trends, machine breakdowns, and reduction progress."
+      "Use Environmental Impact dashboard to track carbon footprint with monthly CO2 totals, trends, machine breakdowns, and reduction progress."
     ],
     [
       "What is emissions change metric?",
@@ -11528,29 +11528,29 @@
     ],
     [
       "Environmental dashboard?",
-      "SOTA Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
+      "Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
     ],
     [
       "Temperature effects?",
-      "SOTA Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
+      "Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
     ],
     [
       "Weather data?",
-      "SOTA Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
+      "Environmental Impact tracks Monthly Carbon Footprint, CO2 Emissions Trend, Emission Intensity (kg CO2/unit), CO2 by Machine, and Reduction Progress."
     ]
   ],
   "ask_grafana_general": [
     [
       "What is Grafana?",
-      "Grafana is an open-source data visualization and monitoring platform. In HumanEnerDIA's EnMS, Grafana provides 12 interactive dashboards (SOTA collection) for visualizing energy data, machine performance, anomalies, costs, and ISO 50001 compliance metrics in real-time."
+      "Grafana is an open-source data visualization and monitoring platform. In HumanEnerDIA's EnMS, Grafana provides 12 interactive dashboards for visualizing energy data, machine performance, anomalies, costs, and ISO 50001 compliance metrics in real-time."
     ],
     [
-      "What does SOTA stand for?",
-      "SOTA stands for 'State Of The Art' - HumanEnerDIA's premium dashboard collection with best-practice visualizations and ML-powered insights."
+      "What dashboards are available?",
+      "HumanEnerDIA provides a pre-built Grafana dashboard collection for monitoring, analysis, anomalies, costs, and ISO 50001 support."
     ],
     [
       "How many Grafana dashboards are there?",
-      "HumanEnerDIA includes 11 SOTA Grafana dashboards: Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, Executive Summary, Machine Health, ML Performance, Operational Efficiency, Predictive Analytics, Real-Time Production, and Environmental Impact."
+      "HumanEnerDIA includes 11 pre-built Grafana dashboards: Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, Executive Summary, Machine Health, ML Performance, Operational Efficiency, Predictive Analytics, Real-Time Production, and Environmental Impact."
     ],
     [
       "How do I access Grafana dashboards?",
@@ -11558,11 +11558,11 @@
     ],
     [
       "What is the best dashboard to start with?",
-      "Start with SOTA Factory Overview for real-time operational status, or Executive Summary for high-level KPIs. Use specialized dashboards for deep-dives."
+      "Start with Factory Overview for real-time operational status, or Executive Summary for high-level KPIs. Use specialized dashboards for deep-dives."
     ],
     [
       "Can I filter dashboards by machine?",
-      "Yes, most SOTA dashboards have a machine variable selector at the top. Select a specific machine or 'All' to filter the entire dashboard."
+      "Yes, most Grafana dashboards have a machine variable selector at the top. Select a specific machine or 'All' to filter the entire dashboard."
     ],
     [
       "What time ranges are available?",
@@ -11574,23 +11574,23 @@
     ],
     [
       "Can I create custom dashboards?",
-      "Yes, Grafana supports custom dashboards. However, SOTA dashboards cover most use cases. Contact admin for custom dashboard requests."
+      "Yes, Grafana supports custom dashboards. However, Grafana dashboards cover most use cases. Contact admin for custom dashboard requests."
     ],
     [
       "How to use Grafana?",
-      "HumanEnerDIA includes 11 SOTA (State Of The Art) Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
+      "HumanEnerDIA includes 11 pre-built Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
     ],
     [
       "Create custom dashboard?",
-      "HumanEnerDIA includes 11 SOTA (State Of The Art) Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
+      "HumanEnerDIA includes 11 pre-built Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
     ],
     [
       "Grafana tips?",
-      "HumanEnerDIA includes 11 SOTA (State Of The Art) Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
+      "HumanEnerDIA includes 11 pre-built Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
     ],
     [
       "Grafana dashboard tips?",
-      "HumanEnerDIA includes 11 SOTA (State Of The Art) Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
+      "HumanEnerDIA includes 11 pre-built Grafana dashboards covering Factory Overview, ISO 50001 EnPI, Anomaly Detection, Cost Analytics, and more. Access via sidebar menu."
     ]
   ],
   "ask_ovos_capabilities": [
@@ -11612,7 +11612,7 @@
     ],
     [
       "What machines can I ask about?",
-      "You can ask about any machine in the factory: Boiler-1, Compressor-1, Compressor-EU-1, HVAC-Main, HVAC-EU-North, Conveyor-A, Injection-Molding-1, Chiller-2, Assembly-Line-1. Say the machine name naturally in your query."
+      "You can ask about any machine in the factory: Boiler-1, Compressor-1, Compressor-2, HVAC-Main, HVAC-North-1, Conveyor-A, Injection-Molding-1, Chiller-2, Assembly-Line-1. Say the machine name naturally in your query."
     ],
     [
       "How do I ask about time periods?",
@@ -11654,7 +11654,7 @@
     ],
     [
       "How do I compare energy consumption?",
-      "Say 'Compare energy usage between Compressor-1 and Boiler-1', 'Which machine uses more energy?', 'Compare consumption of all machines', 'What's the difference between HVAC-Main and HVAC-EU-North?'."
+      "Say 'Compare energy usage between Compressor-1 and Boiler-1', 'Which machine uses more energy?', 'Compare consumption of all machines', 'What's the difference between HVAC-Main and HVAC-North-1?'."
     ],
     [
       "Can I ask about power consumption?",
@@ -12686,7 +12686,7 @@
     ],
     [
       "What is Grafana and how do I access it?",
-      "Grafana is a data visualization platform with 11 pre-built dashboards for HumanEnerDIA:\n\nAccess: Click 'Grafana' in the top menu or visit `http://your-server:8080/grafana`\n\nKey Dashboards:\n- SOTA Factory Overview (start here)\n- SOTA ISO 50001 EnPI (compliance)\n- SOTA Anomaly Detection (alerts)\n- SOTA Machine Health (individual machines)\n- SOTA Executive Summary (management view)\n\nUse the dropdown at the top to switch between dashboards."
+      "Grafana is a data visualization platform with 11 pre-built dashboards for HumanEnerDIA:\n\nAccess: Click 'Grafana' in the top menu or visit `http://your-server:8080/grafana`\n\nKey Dashboards:\n- Factory Overview (start here)\n- ISO 50001 EnPI (compliance)\n- Anomaly Detection (alerts)\n- Machine Health (individual machines)\n- Executive Summary (management view)\n\nUse the dropdown at the top to switch between dashboards."
     ],
     [
       "How do I select a machine to view?",
@@ -12726,7 +12726,7 @@
     ],
     [
       "What is ISO 50001 compliance?",
-      "ISO 50001 is the international Energy Management System standard:\n\nHumanEnerDIA helps with:\n- EnPI tracking: Energy Performance Indicators\n- Baseline establishment: Reference for comparison\n- Monitoring & measurement: Continuous data collection\n- Action plans: Track efficiency improvements\n- Documentation: Audit-ready reports\n- Management review: Executive dashboards\n\nGrafana's 'SOTA ISO 50001 EnPI' dashboard is specifically designed for compliance. Ask me about specific ISO 50001 requirements!"
+      "ISO 50001 is the international Energy Management System standard:\n\nHumanEnerDIA helps with:\n- EnPI tracking: Energy Performance Indicators\n- Baseline establishment: Reference for comparison\n- Monitoring & measurement: Continuous data collection\n- Action plans: Track efficiency improvements\n- Documentation: Audit-ready reports\n- Management review: Executive dashboards\n\nGrafana's 'ISO 50001 EnPI' dashboard is specifically designed for compliance. Ask me about specific ISO 50001 requirements!"
     ],
     [
       "How do I export data?",
@@ -12888,7 +12888,7 @@
     ],
     [
       "Mobile view is hard to use / buttons too small",
-      "Mobile usability issues:\n\nOptimize mobile experience:\n1. Portrait → Landscape: More screen space\n2. Zoom: Pinch to zoom specific widgets\n3. Use tablet: Better than phone for complex dashboards\n4. Focus on key dashboards: Factory Overview, Anomaly alerts\n\nBest mobile dashboards:\n- SOTA Executive Summary (designed for mobile)\n- Single KPI widgets\n- Anomaly list\n\nNot mobile-friendly:\n- Complex heatmaps\n- Multi-panel comparisons\n- Report generation\n\nRecommendation: Use desktop for detailed analysis, mobile for monitoring."
+      "Mobile usability issues:\n\nOptimize mobile experience:\n1. Portrait → Landscape: More screen space\n2. Zoom: Pinch to zoom specific widgets\n3. Use tablet: Better than phone for complex dashboards\n4. Focus on key dashboards: Factory Overview, Anomaly alerts\n\nBest mobile dashboards:\n- Executive Summary (designed for mobile)\n- Single KPI widgets\n- Anomaly list\n\nNot mobile-friendly:\n- Complex heatmaps\n- Multi-panel comparisons\n- Report generation\n\nRecommendation: Use desktop for detailed analysis, mobile for monitoring."
     ],
     [
       "Forecasts show 'NaN' or 'Infinity' values",
@@ -12900,7 +12900,7 @@
     ],
     [
       "Cannot compare two machines side-by-side",
-      "Machine comparison:\n\nMethod 1: Comparison Dashboard\n- Use 'SOTA Machine Comparison' dashboard (if exists)\n- Or web portal 'Comparison' page\n- Select Machine A and Machine B\n\nMethod 2: Grafana Multi-Query\n- Click panel edit\n- Add second query for second machine\n- Both appear on same chart\n\nMethod 3: Multiple Browser Windows\n- Open two Grafana windows\n- Select different machine in each\n- Tile windows side-by-side\n\nExport: Compare via CSV exports in Excel"
+      "Machine comparison:\n\nMethod 1: Comparison Dashboard\n- Use 'Machine Comparison' dashboard (if exists)\n- Or web portal 'Comparison' page\n- Select Machine A and Machine B\n\nMethod 2: Grafana Multi-Query\n- Click panel edit\n- Add second query for second machine\n- Both appear on same chart\n\nMethod 3: Multiple Browser Windows\n- Open two Grafana windows\n- Select different machine in each\n- Tile windows side-by-side\n\nExport: Compare via CSV exports in Excel"
     ],
     [
       "Legends showing strange symbols or garbled text",
@@ -12966,7 +12966,7 @@
     ],
     [
       "How do I view energy breakdown by source?",
-      "View multi-energy breakdown:\n\nMethod 1: Grafana Dashboard\n- 'SOTA Multi-Energy' dashboard (if exists)\n- Stacked area chart shows each energy type\n- Pie chart shows percentage split\n\nMethod 2: KPI Page\n- 'Energy Mix' widget\n- Bar chart by fuel type\n- Cost breakdown by source\n\nMethod 3: Reports\n- Generate 'Multi-Energy Report'\n- Shows consumption and cost per energy type\n- Trends over time\n\nFilters: Select machine and time period"
+      "View multi-energy breakdown:\n\nMethod 1: Grafana Dashboard\n- 'Multi-Energy' dashboard (if exists)\n- Stacked area chart shows each energy type\n- Pie chart shows percentage split\n\nMethod 2: KPI Page\n- 'Energy Mix' widget\n- Bar chart by fuel type\n- Cost breakdown by source\n\nMethod 3: Reports\n- Generate 'Multi-Energy Report'\n- Shows consumption and cost per energy type\n- Trends over time\n\nFilters: Select machine and time period"
     ],
     [
       "How is total energy calculated for multi-energy machines?",

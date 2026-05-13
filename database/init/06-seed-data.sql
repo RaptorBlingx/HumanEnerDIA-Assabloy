@@ -19,21 +19,21 @@
 INSERT INTO factories (id, name, location, address, timezone, contact_email, metadata) VALUES
 (
     '11111111-1111-1111-1111-111111111111',
-    'Demo Manufacturing Plant',
-    'Silicon Valley, CA, USA',
-    '1234 Industrial Parkway, San Jose, CA 95131',
-    'America/Los_Angeles',
-    'operations@demoplant.com',
-    '{"industry": "manufacturing", "size": "medium", "employees": 250}'::jsonb
+    'Simulated Romanian Pilot Factory',
+    'Pitesti, Arges County, Romania',
+    'Calea Bucuresti 120, Pitesti 110134, Romania',
+    'Europe/Bucharest',
+    'operations@simulatedpilot.ro',
+    '{"industry": "automotive_plastics", "size": "medium", "employees": 420}'::jsonb
 ),
 (
     '22222222-2222-2222-2222-222222222222',
-    'European Production Facility',
-    'Munich, Germany',
-    'Industriestraße 45, 80331 München, Germany',
-    'Europe/Berlin',
-    'facility@europlant.eu',
-    '{"industry": "automotive", "size": "large", "employees": 500}'::jsonb
+    'Romanian Auxiliary Production Facility',
+    'Timisoara, Timis County, Romania',
+    'Bulevardul Industriilor 45, Timisoara 300714, Romania',
+    'Europe/Bucharest',
+    'operations@auxiliarypilot.ro',
+    '{"industry": "automotive_components", "size": "large", "employees": 500}'::jsonb
 );
 
 \echo '✓ Sample factories created'
@@ -44,7 +44,7 @@ INSERT INTO factories (id, name, location, address, timezone, contact_email, met
 
 \echo 'Creating sample machines (SEUs)...'
 
--- Factory 1: Demo Manufacturing Plant
+-- Factory 1: Simulated Romanian Pilot Factory
 -- Machine 1: Compressor (1-second intervals)
 INSERT INTO machines (
     id, factory_id, name, description, type, 
@@ -65,7 +65,7 @@ INSERT INTO machines (
     55.0, 400.0, 79.3, 50.0,
     'Compressor Room - West Wing',
     1,  -- 1-second intervals
-    'factory/demo/compressor-1',
+    'factory/romania-pilot/compressor-1',
     TRUE, TRUE
 );
 
@@ -89,7 +89,7 @@ INSERT INTO machines (
     150.0, 400.0, 216.5, 50.0,
     'Rooftop - Central',
     10,  -- 10-second intervals
-    'factory/demo/hvac-main',
+    'factory/romania-pilot/hvac-main',
     TRUE, TRUE
 );
 
@@ -113,7 +113,7 @@ INSERT INTO machines (
     22.0, 400.0, 31.7, 50.0,
     'Production Floor - Line A',
     10,  -- 10-second intervals
-    'factory/demo/conveyor-a',
+    'factory/romania-pilot/conveyor-a',
     TRUE, FALSE
 );
 
@@ -137,7 +137,7 @@ INSERT INTO machines (
     45.0, 400.0, 64.9, 50.0,
     'Press Section - Bay 3',
     30,  -- 30-second intervals
-    'factory/demo/hydraulic-pump-1',
+    'factory/romania-pilot/hydraulic-pump-1',
     TRUE, TRUE
 );
 
@@ -161,7 +161,7 @@ INSERT INTO machines (
     120.0, 400.0, 173.2, 50.0,
     'Molding Department - Cell 1',
     30,  -- 30-second intervals
-    'factory/demo/injection-molding-1',
+    'factory/romania-pilot/injection-molding-1',
     TRUE, TRUE
 );
 
@@ -185,13 +185,13 @@ INSERT INTO machines (
     45.0, 400.0, 64.9, 50.0,
     'Boiler Room - East Wing',
     30,  -- 30-second intervals
-    'factory/DemoPlant/Boiler-1',
+    'factory/romania-pilot/boiler-1',
     TRUE, FALSE
 );
 
-\echo '✓ 6 machines created for Demo Manufacturing Plant'
+\echo '✓ 6 machines created for Simulated Romanian Pilot Factory'
 
--- Factory 2: European Production Facility
+-- Factory 2: Romanian Auxiliary Production Facility
 -- Additional machines for multi-factory demonstration
 
 INSERT INTO machines (
@@ -204,7 +204,7 @@ INSERT INTO machines (
 (
     'c0000000-0000-0000-0000-000000000006',
     '22222222-2222-2222-2222-222222222222',
-    'Compressor-EU-1',
+    'Compressor-2',
     'Primary screw compressor',
     'compressor',
     'Kaeser',
@@ -214,13 +214,13 @@ INSERT INTO machines (
     90.0, 400.0, 129.9, 50.0,
     'Compressor Station - Building B',
     1,
-    'factory/europe/compressor-1',
+    'factory/romania-aux/compressor-2',
     TRUE, TRUE
 ),
 (
     'c0000000-0000-0000-0000-000000000007',
     '22222222-2222-2222-2222-222222222222',
-    'HVAC-EU-North',
+    'HVAC-North-1',
     'North wing climate control',
     'hvac',
     'Daikin',
@@ -230,11 +230,11 @@ INSERT INTO machines (
     200.0, 400.0, 288.7, 50.0,
     'North Wing - Rooftop',
     10,
-    'factory/europe/hvac-north',
+    'factory/romania-aux/hvac-north-1',
     TRUE, TRUE
 );
 
-\echo '✓ 2 additional machines created for European facility'
+\echo '✓ 2 additional machines created for Romanian auxiliary facility'
 
 -- ============================================================================
 -- MACHINE STATUS (Initial state)
@@ -268,7 +268,7 @@ FROM machines;
 
 \echo 'Creating sample energy tariffs...'
 
--- US tariff (time-of-use)
+-- Romanian pilot tariff (time-of-use)
 INSERT INTO energy_tariffs (
     factory_id, name, description,
     rate_per_kwh, currency, is_time_of_use,
@@ -280,7 +280,7 @@ INSERT INTO energy_tariffs (
     'Peak Hours Rate',
     'Weekday peak hours (9 AM - 9 PM)',
     0.25,
-    'USD',
+    'EUR',
     TRUE,
     9, 21,
     ARRAY[1, 2, 3, 4, 5],  -- Monday to Friday
@@ -292,7 +292,7 @@ INSERT INTO energy_tariffs (
     'Off-Peak Rate',
     'Nights and weekends',
     0.10,
-    'USD',
+    'EUR',
     TRUE,
     21, 9,
     ARRAY[0, 1, 2, 3, 4, 5, 6],  -- All days
@@ -300,7 +300,7 @@ INSERT INTO energy_tariffs (
     TRUE
 );
 
--- EU tariff
+-- Romanian auxiliary tariff
 INSERT INTO energy_tariffs (
     factory_id, name, description,
     rate_per_kwh, currency, is_time_of_use,
@@ -330,18 +330,18 @@ INSERT INTO carbon_factors (
     source, valid_from, is_active
 ) VALUES
 (
-    'US-California',
-    'CAISO',
-    0.22,
-    'EPA eGRID 2023',
+    'Romania',
+    'Romania National Grid',
+    0.24,
+    'European Environment Agency 2024',
     '2024-01-01',
     TRUE
 ),
 (
-    'Germany',
-    'Germany National Grid',
-    0.35,
-    'European Environment Agency 2023',
+    'Romania-West',
+    'Romania Western Industrial Grid',
+    0.23,
+    'European Environment Agency 2024',
     '2024-01-01',
     TRUE
 ),
@@ -397,7 +397,7 @@ INSERT INTO audit_log (
 \echo '  - Energy tariffs configured'
 \echo '  - Carbon factors added'
 \echo ''
-\echo 'Demo Factory: Demo Manufacturing Plant'
+\echo 'Primary Factory: Simulated Romanian Pilot Factory'
 \echo '  Machine IDs:'
 \echo '    - Compressor-1:        c0000000-0000-0000-0000-000000000001'
 \echo '    - HVAC-Main:           c0000000-0000-0000-0000-000000000002'
@@ -406,10 +406,10 @@ INSERT INTO audit_log (
 \echo '    - Injection-Molding-1: c0000000-0000-0000-0000-000000000005'
 \echo '    - Boiler-1:            c0000000-0000-0000-0000-000000000008'
 \echo ''
-\echo 'European Facility: European Production Facility'
+\echo 'Auxiliary Factory: Romanian Auxiliary Production Facility'
 \echo '  Machine IDs:'
-\echo '    - Compressor-EU-1:    c0000000-0000-0000-0000-000000000006'
-\echo '    - HVAC-EU-North:      c0000000-0000-0000-0000-000000000007'
+\echo '    - Compressor-2:       c0000000-0000-0000-0000-000000000006'
+\echo '    - HVAC-North-1:       c0000000-0000-0000-0000-000000000007'
 \echo ''
 \echo 'Ready for simulator to start generating data!'
 \echo ''

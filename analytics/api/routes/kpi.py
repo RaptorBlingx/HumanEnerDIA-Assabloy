@@ -286,7 +286,7 @@ async def get_all_factories_kpis(
     
     **Voice Response Template:**
     "Across all factories: Total energy consumption is 4,800 kilowatt hours 
-    costing $720. The Demo Manufacturing Plant leads with 2,500 kilowatt 
+    costing $720. The Simulated Romanian Pilot Factory leads with 2,500 kilowatt 
     hours. The European facility used 2,300 kilowatt hours."
     """
     try:

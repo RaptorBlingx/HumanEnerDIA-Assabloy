@@ -3,13 +3,9 @@
 This is the internal setup guide for rehearsal and recording.
 
 ## 1. Identity Alignment
-- Use the simulated pilot profile in [factory-profile.md](/home/ubuntu/enms/docs/simulated-pilot/factory-profile.md) for all spoken and written references.
+- Use the simulated pilot profile in [factory-profile.md](factory-profile.md) for all spoken and written references.
 - Before recording, align visible labels where possible so the screen story fits the Romanian pilot narrative.
-- Avoid verbal references to legacy demo identities such as:
-  - `Demo Manufacturing Plant`
-  - `European Production Facility`
-  - Munich / Germany
-  - Silicon Valley / California
+- Avoid verbal references to legacy demo identities from older US- and Germany-oriented sample environments.
 
 ## 2. Condition Toggle
 The repo now supports a simple pilot-mode toggle for recording:
@@ -43,13 +39,17 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Anomaly view: `/api/analytics/ui/anomaly`
 - KPI view: `/api/analytics/ui/kpi`
 - Model performance: `/api/analytics/ui/model-performance`
+- Performance opportunities API: `/api/analytics/api/v1/performance/opportunities?factory_id=11111111-1111-1111-1111-111111111111&period=month`
+- EnPI API: `/api/analytics/api/v1/iso50001/enpi-report?factory_id=11111111-1111-1111-1111-111111111111&period=2026-Q1&baseline_year=2026`
 - Reports: `/reports.html`
-- ISO 50001 info: `/iso50001.html`
-- Grafana: `/grafana/`
+- Learning: `/energy-management-learning.html`
+- ISO 50001 support: `/iso50001.html`
+- Pilot procedures: `/pilot-procedures.html`
+- Grafana folder: `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`
 
 ## 4. Manual Reference For Documentation Tasks
-- Use [pilot-policy-and-procedure-reference.md](/home/ubuntu/enms/docs/simulated-pilot/pilot-policy-and-procedure-reference.md) as the source content.
-- For `Condition A`, expose that content as a browser-openable reference page, PDF, or second-window note before recording.
+- Use [pilot-policy-and-procedure-reference.md](pilot-policy-and-procedure-reference.md) as the source content behind `/pilot-procedures.html`.
+- For `Condition A`, use `/pilot-procedures.html` as the browser-openable reference page before recording.
 - For `Condition B`, mirror the same content into the chatbot knowledge base so the comparison stays fair.
 
 ## 5. Assistant Validation Before Rehearsal
@@ -57,7 +57,8 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Chatbot must answer:
   - `What is ISO 50001?`
   - `What is an energy baseline?`
-  - `How do I generate a report?`
+  - `What should we do when an anomaly appears?`
+  - `What is the procedure for responding to an efficiency issue?`
 - OVOS must answer:
   - `Give me a factory overview`
   - `Show top 3 energy consumers`
@@ -66,6 +67,7 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
   - `Analyze performance of Compressor-1`
   - `What are the energy saving opportunities?`
   - `Show energy performance indicators report`
+  - `download report of Apr 2026`
 
 ## 6. Recording Defaults
 - Use the same browser, zoom level, and screen resolution in both videos.
@@ -75,12 +77,14 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Record `Condition A` first, then `Condition B`.
 
 ## 7. Report And Period Defaults
-- EnPI task: `2025-Q4`
-- Monthly report task: `December 2025`
+- EnPI task: `2026-Q1`
+- Monthly report task: `April 2026`
 - Machine-specific operational task: `Compressor-1`
+- Technical anomaly task: keep one unresolved `critical` anomaly on `Compressor-2`
 
 ## 8. Final Gate Before Recording
 - Manual mode hides assistants cleanly.
 - Assistant mode restores both widgets cleanly.
 - All pages open without dead ends.
+- The controlled `Compressor-2` anomaly is visible before rehearsal starts.
 - The same task wording is visible in both conditions.

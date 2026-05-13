@@ -1,7 +1,7 @@
 # 📊 PDF Report Redesign Documentation
 
 **Project**: EnMS PDF Report System Overhaul  
-**Goal**: Transform current 3/10 reports → 9.5/10 SOTA world-class reports  
+**Goal**: Transform current 3/10 reports → 9.5/10 report quality world-class reports  
 **Status**: ✅ Planning Complete | 🚀 Implementation IN PROGRESS  
 **Timeline**: 5-6 weeks implementation
 
@@ -13,7 +13,7 @@
 - **OLD System** (`analytics/reports/`): **KEEP AS CHECKPOINT** - DO NOT MODIFY
 - **NEW System** (`analytics/reports_v2/`): **UNDER CONSTRUCTION** - 9.5/10 target
 - **Strategy**: Parallel development, switchover only when new system is validated
-- **Removal**: Old system will be removed ONLY when new system achieves true 9.5/10 SOTA quality
+- **Removal**: Old system will be removed ONLY when new system achieves true 9.5/10 report quality
 
 ### Progress Tracking
 - All completed steps marked as ✅ DONE in documentation

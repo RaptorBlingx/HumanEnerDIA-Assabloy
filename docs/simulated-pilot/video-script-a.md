@@ -24,23 +24,23 @@ Voice-over:
 - Show prompt on screen: `Get a factory overview and identify the top 3 energy consumers.`
 - Start timer.
 - Navigate to `/index.html`.
-- Open `/grafana/`.
-- Use `SOTA Executive Summary` or `SOTA Operational Efficiency`.
+- Open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`.
+- Use `Executive Summary` or `Operational Efficiency`.
 - Read the overview and identify the top 3 consumers.
 - Stop timer when the answer is spoken or shown.
 
 ### O2 - Machine Status And Today's Energy
 - Show prompt on screen: `Check the status and today's energy of Compressor-1.`
 - Start timer.
-- Open `/grafana/`.
-- Use `SOTA Machine Health` or real-time dashboard views with `Compressor-1`.
+- Open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`.
+- Use `Machine Health` or real-time dashboard views with `Compressor-1`.
 - Read the current status and today's energy result.
 - Stop timer.
 
 ### O3 - ISO 50001 And Baseline Understanding
 - Show prompt on screen: `Understand what ISO 50001 is and what an energy baseline means.`
 - Start timer.
-- Open `/iso50001.html`.
+- Open `/energy-management-learning.html`.
 - Open `/api/analytics/ui/baseline`.
 - Summarize both concepts in user language.
 - Stop timer.
@@ -48,7 +48,7 @@ Voice-over:
 ### O4 - Policy / Procedure Guidance
 - Show prompt on screen: `Find the policy and procedure guidance for responding to an anomaly or efficiency issue.`
 - Start timer.
-- Open the staged manual reference based on [pilot-policy-and-procedure-reference.md](/home/ubuntu/enms/docs/simulated-pilot/pilot-policy-and-procedure-reference.md).
+- Open `/pilot-procedures.html`.
 - Open `/api/analytics/ui/anomaly` for operational context.
 - Summarize the expected response steps.
 - Stop timer.
@@ -58,7 +58,7 @@ Voice-over:
 - Start timer.
 - Open `/api/analytics/ui/anomaly`.
 - Filter or inspect current / recent anomalies.
-- Identify the issue that needs attention.
+- Identify the unresolved `critical` `Compressor-2` spike as the issue that needs attention.
 - Stop timer.
 
 ### T2 - Baseline Analysis And Recommendations
@@ -66,24 +66,23 @@ Voice-over:
 - Start timer.
 - Open `/api/analytics/ui/baseline`.
 - Cross-check `/api/analytics/ui/model-performance`.
-- Use relevant dashboard or report context if needed.
-- Summarize the baseline deviation and likely recommendations.
+- Open `/api/analytics/api/v1/performance/opportunities?factory_id=11111111-1111-1111-1111-111111111111&period=month`.
+- Summarize the baseline deviation for `Compressor-1` and the broader top savings recommendations.
 - Stop timer.
 
 ### T3 - KPI And EnPI Status
-- Show prompt on screen: `Retrieve factory KPI and EnPI status for 2025-Q4.`
+- Show prompt on screen: `Retrieve factory KPI and EnPI status for 2026-Q1.`
 - Start timer.
 - Open `/api/analytics/ui/kpi`.
-- Open `/grafana/`.
-- Use `SOTA ISO 50001 EnPI`.
-- Read the KPI / EnPI status for `2025-Q4`.
+- Open `/api/analytics/api/v1/iso50001/enpi-report?factory_id=11111111-1111-1111-1111-111111111111&period=2026-Q1&baseline_year=2026`.
+- Read the EnPI status for `2026-Q1` and summarize the deviation.
 - Stop timer.
 
 ### T4 - Generate Monthly Report
-- Show prompt on screen: `Generate the December 2025 monthly report and summarize the result.`
+- Show prompt on screen: `Generate the April 2026 monthly report and summarize the result.`
 - Start timer.
 - Open `/reports.html`.
-- Select the frozen factory and `December 2025`.
+- Select the frozen factory and `April 2026`.
 - Generate the report.
 - Summarize what was generated or shown on screen.
 - Stop timer.

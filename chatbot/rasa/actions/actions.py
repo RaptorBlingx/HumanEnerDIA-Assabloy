@@ -1215,6 +1215,10 @@ class ActionRetrieveAnswer(Action):
 
     def _resolve_special_case(self, user_message: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """Handle queries that need explicit scope or live-data routing."""
+        pilot_guidance_response = self._build_pilot_guidance_response(user_message)
+        if pilot_guidance_response:
+            return "pilot_guidance", pilot_guidance_response, "special_case"
+
         redirect_response = self._build_operational_redirect(user_message)
         if redirect_response:
             return "ovos_redirect", redirect_response, "redirect"
@@ -1224,6 +1228,58 @@ class ActionRetrieveAnswer(Action):
             return "ask_chatbot_scope", capability_response, "special_case"
 
         return None, None, None
+
+    def _build_pilot_guidance_response(self, user_message: str) -> Optional[str]:
+        """Return deterministic answers for the simulated pilot procedure tasks."""
+        normalized = re.sub(r"[^\w\s]", "", user_message.lower()).strip()
+
+        anomaly_phrases = [
+            "what should we do when an anomaly appears",
+            "what should we do when an anomaly happens",
+            "what is the anomaly response procedure",
+            "how should we respond to an anomaly",
+        ]
+        efficiency_phrases = [
+            "what is the procedure for responding to an efficiency issue",
+            "how do we respond to an efficiency issue",
+            "what should we do about an efficiency issue",
+        ]
+        report_phrases = [
+            "how do we prepare the monthly energy report",
+            "how do i prepare the monthly energy report",
+            "how do we generate the monthly energy report",
+        ]
+        policy_phrases = [
+            "what is our energy policy",
+            "what is the energy policy",
+        ]
+
+        if any(phrase in normalized for phrase in anomaly_phrases):
+            return (
+                "When an anomaly appears, first review the affected machine, time window, severity, and deviation from expected performance. "
+                "Then confirm whether it is operational, maintenance-related, or data-quality related, check the current machine status and recent production context, "
+                "and decide whether it can be monitored or needs escalation. If it shows excessive consumption, abnormal operation, or repeated recurrence, notify the energy or maintenance engineer and record the action in the reporting workflow."
+            )
+
+        if any(phrase in normalized for phrase in efficiency_phrases):
+            return (
+                "For an efficiency issue, compare actual performance against baseline, identify the machine or process with the largest deviation or cost impact, and review recent anomalies, uptime, and production context. "
+                "Then decide whether the cause is scheduling, operating practice, maintenance condition, or load pattern, capture at least one recommended action, and include the finding in the KPI or monthly report."
+            )
+
+        if any(phrase in normalized for phrase in report_phrases):
+            return (
+                "To prepare the monthly energy report, open the Reports page, select the target factory, set the year to 2026 and the month to April, and generate the report. "
+                "Then review the executive summary, energy overview, machine profiles, cost analysis, and carbon analysis, and summarize the major consumers, deviations or savings, KPI or EnPI status, and follow-up actions."
+            )
+
+        if any(phrase in normalized for phrase in policy_phrases):
+            return (
+                "The pilot energy policy is to improve energy performance continuously while keeping production, quality, safety, and equipment reliability aligned. "
+                "Energy data must be reviewed regularly, energy-efficient purchasing and operational planning are expected, and corrective action is required when performance deviates from baseline."
+            )
+
+        return None
 
     def _build_capability_response(self, user_message: str) -> Optional[str]:
         """Explain the chatbot's role when the user asks about its scope."""

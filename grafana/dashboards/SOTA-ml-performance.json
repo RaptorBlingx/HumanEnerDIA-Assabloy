@@ -827,7 +827,7 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "ml", "performance", "models", "analytics"],
+  "tags": ["enms", "ml", "performance", "models", "analytics"],
   "templating": {
     "list": []
   },
@@ -845,7 +845,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA ML Model Performance",
+  "title": "ML Model Performance",
   "uid": "sota-ml-performance",
   "version": 1,
   "weekStart": ""

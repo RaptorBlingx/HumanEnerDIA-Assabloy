@@ -665,7 +665,7 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "oee", "operations", "efficiency", "production"],
+  "tags": ["enms", "oee", "operations", "efficiency", "production"],
   "templating": {
     "list": []
   },
@@ -684,7 +684,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA Operational Efficiency",
+  "title": "Operational Efficiency",
   "uid": "sota-operational-efficiency",
   "version": 1,
   "weekStart": ""

@@ -487,7 +487,7 @@
   "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "realtime", "production", "factory-floor", "big-screen"],
+  "tags": ["enms", "realtime", "production", "factory-floor", "big-screen"],
   "templating": {
     "list": []
   },
@@ -502,7 +502,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA Real-Time Production",
+  "title": "Real-Time Production",
   "uid": "sota-realtime-production",
   "version": 1,
   "weekStart": ""

@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "SOTA Machine Health - Deep-dive analysis with ML insights and anomaly detection",
+  "description": "Machine Health - Deep-dive analysis with ML insights and anomaly detection",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -1145,7 +1145,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "SOTA",
+    "EnMS",
     "machine",
     "health",
     "ML",
@@ -1188,7 +1188,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "SOTA Machine Health",
+  "title": "Machine Health",
   "uid": "sota-machine-health",
   "version": 1,
   "weekStart": ""

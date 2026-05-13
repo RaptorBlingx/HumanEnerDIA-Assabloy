@@ -7,6 +7,13 @@
 (function() {
     'use strict';
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const pilotMode = (urlParams.get('pilot_mode') || localStorage.getItem('humanenerdia_pilot_mode') || '').toLowerCase();
+
+    if (pilotMode === 'manual') {
+        return;
+    }
+
     // Configuration
     const CONFIG = {
         backendUrl: '/api/chatbot',  // Proxied through nginx

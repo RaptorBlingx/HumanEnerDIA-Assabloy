@@ -31,9 +31,9 @@ DB_CONFIG = {
 # Machines with simple power profiles
 MACHINES = {
     'c0000000-0000-0000-0000-000000000001': {'name': 'Compressor-1', 'power_avg': 45, 'var': 10},
-    'c0000000-0000-0000-0000-000000000006': {'name': 'Compressor-EU-1', 'power_avg': 48, 'var': 12},
+    'c0000000-0000-0000-0000-000000000006': {'name': 'Compressor-2', 'power_avg': 48, 'var': 12},
     'c0000000-0000-0000-0000-000000000002': {'name': 'HVAC-Main', 'power_avg': 35, 'var': 15},
-    'c0000000-0000-0000-0000-000000000007': {'name': 'HVAC-EU-North', 'power_avg': 32, 'var': 12},
+    'c0000000-0000-0000-0000-000000000007': {'name': 'HVAC-North-1', 'power_avg': 32, 'var': 12},
     'c0000000-0000-0000-0000-000000000003': {'name': 'Conveyor-A', 'power_avg': 15, 'var': 5},
     'c0000000-0000-0000-0000-000000000004': {'name': 'Hydraulic-Pump-1', 'power_avg': 22, 'var': 8},
     'c0000000-0000-0000-0000-000000000005': {'name': 'Injection-Molding-1', 'power_avg': 85, 'var': 20}

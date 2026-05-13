@@ -11,6 +11,39 @@
 (function() {
     'use strict';
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const pilotMode = (urlParams.get('pilot_mode') || localStorage.getItem('humanenerdia_pilot_mode') || '').toLowerCase();
+
+    if (pilotMode === 'manual') {
+        const hideManualModeControls = () => {
+            const selectors = [
+                '.notification-bell-container',
+                '#notification-bell',
+                '#notification-panel',
+                '#ovos-enable-voice-nav'
+            ];
+
+            selectors.forEach((selector) => {
+                document.querySelectorAll(selector).forEach((element) => {
+                    element.style.display = 'none';
+                });
+            });
+        };
+
+        window.toggleNotificationPanel = window.toggleNotificationPanel || function() {};
+        window.clearAllNotifications = window.clearAllNotifications || function() {};
+        window.markAsRead = window.markAsRead || function() {};
+        window.removeNotification = window.removeNotification || function() {};
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hideManualModeControls);
+        } else {
+            hideManualModeControls();
+        }
+
+        return;
+    }
+
     // Keep the test-warning trigger visible during the current dev/demo phase.
     const devToolsEnabled = true;
 

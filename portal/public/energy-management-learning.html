@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Management Learning - HumanEnerDIA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sidebar.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: url('/images/background.png') center center / cover no-repeat fixed,
+                        linear-gradient(135deg, #0A2463 0%, #1E3A8A 50%, #00A8E8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 36, 99, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-bottom: 2px solid rgba(0, 168, 232, 0.3);
+        }
+
+        nav {
+            width: 100%;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 1040px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .content-box {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 3rem;
+        }
+
+        h1 {
+            color: #0A2463;
+            margin-bottom: 1rem;
+            font-size: 2.4rem;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #1E3A8A;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.65rem;
+            font-weight: 600;
+        }
+
+        h3 {
+            color: #0A2463;
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        p, li {
+            color: #333;
+            line-height: 1.75;
+            font-size: 1.05rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        ul {
+            margin: 0.75rem 0 0 1.25rem;
+        }
+
+        .intro {
+            color: #42526e;
+            max-width: 820px;
+        }
+
+        .learning-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .learning-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-top: 4px solid #667eea;
+        }
+
+        .highlight-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+
+        .link-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .link-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #0A2463;
+            background: #eaf2ff;
+            border: 1px solid #c7d9ff;
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        footer {
+            background: linear-gradient(135deg, #0A2463 0%, #1E3A8A 100%);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            border-top: 2px solid rgba(0, 168, 232, 0.3);
+        }
+
+        footer p {
+            color: white;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .content-box {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo-section" style="padding: 0; padding-left: 5px;">
+                <button onclick="toggleSidebar()" class="hamburger-btn" style="margin: 0; margin-right: 0.5rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <a href="/" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    HumanEnerDIA
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="content-box">
+            <h1>Energy Management Learning</h1>
+            <p class="intro">
+                This page explains the concepts used in the HumanEnerDIA pilot workflow in plain language.
+                Use it when an operational user needs to understand the terms behind monitoring, analysis,
+                reporting, and ISO 50001 documentation.
+            </p>
+
+            <h2>Core Concepts</h2>
+            <div class="learning-grid">
+                <article class="learning-card">
+                    <h3>What ISO 50001 Means</h3>
+                    <p>
+                        ISO 50001 is the international standard for an Energy Management System. It gives an
+                        organization a structured way to monitor energy use, set objectives, define responsibilities,
+                        review results, and improve energy performance over time.
+                    </p>
+                </article>
+
+                <article class="learning-card">
+                    <h3>What An Energy Baseline Means</h3>
+                    <p>
+                        An energy baseline is the reference point used to compare future performance. In practice,
+                        it is the expected level of energy use for a machine or process under normal operating
+                        conditions, so deviations, savings, and losses can be measured consistently.
+                    </p>
+                </article>
+
+                <article class="learning-card">
+                    <h3>What An EnPI Means</h3>
+                    <p>
+                        An Energy Performance Indicator, or EnPI, is a measurable value used to track energy
+                        performance. In HumanEnerDIA, EnPIs help compare actual energy use against the baseline
+                        and show whether performance is improving, stable, or drifting.
+                    </p>
+                </article>
+
+                <article class="learning-card">
+                    <h3>What A Significant Energy Use Means</h3>
+                    <p>
+                        A Significant Energy Use, or SEU, is a machine, process, or system that consumes a large
+                        amount of energy or has strong improvement potential. The pilot focuses analysis and
+                        recommendations on these high-impact areas.
+                    </p>
+                </article>
+            </div>
+
+            <div class="highlight-box">
+                <h3>How HumanEnerDIA Applies These Concepts</h3>
+                <p>
+                    HumanEnerDIA connects ISO 50001 concepts to factory work through monitoring, analysis, and
+                    documentation. The Baseline page supports expected-versus-actual analysis, the Reports page
+                    supports management review, and the Pilot Procedures page supports the operational response
+                    to anomalies and efficiency issues.
+                </p>
+                <div class="link-row">
+                    <a class="link-pill" href="/api/analytics/ui/baseline">Open Baseline Analysis</a>
+                    <a class="link-pill" href="/reports.html">Open Reports</a>
+                    <a class="link-pill" href="/pilot-procedures.html">Open Pilot Procedures</a>
+                    <a class="link-pill" href="/iso50001.html">Open ISO 50001 Support</a>
+                </div>
+            </div>
+
+            <h2>Pilot Use</h2>
+            <p>
+                In the simulated pilot, this learning page supports the documentation task for the operational
+                user. The chatbot provides the assisted version of the same guidance by answering ISO 50001,
+                baseline, EnPI, anomaly-response, and reporting questions directly.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p style="margin-bottom: 10px;">&copy; 2026 HumanEnerDIA - Powered by APlus Engineering. All rights reserved.</p>
+        <p style="font-size: 0.9em; opacity: 0.85;">This project has received funding from the Horizon Europe programme under the Grant Agreement No. 101092176</p>
+    </footer>
+
+    <script src="/js/sidebar.js?v=2026051301"></script>
+    <script src="/js/chatbot-widget.js"></script>
+    <script src="/js/ovos-voice-widget.js?v=20260420a"></script>
+</body>
+</html>

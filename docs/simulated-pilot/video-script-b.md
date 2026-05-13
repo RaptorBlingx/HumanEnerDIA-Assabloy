@@ -55,7 +55,7 @@ Voice-over:
 - Show prompt on screen: `Review anomalies and identify the issue requiring attention.`
 - Start timer.
 - OVOS prompt: `Show me recent anomalies`
-- Let the user identify the issue requiring attention from the assistant response and context panel.
+- Let the user identify the recent `Compressor-2` anomaly as the issue requiring attention from the assistant response and context panel.
 - Stop timer.
 
 ### T2 - Baseline Analysis And Recommendations
@@ -67,20 +67,17 @@ Voice-over:
 - Stop timer.
 
 ### T3 - KPI And EnPI Status
-- Show prompt on screen: `Retrieve factory KPI and EnPI status for 2025-Q4.`
+- Show prompt on screen: `Retrieve factory KPI and EnPI status for 2026-Q1.`
 - Start timer.
 - OVOS prompt: `Show energy performance indicators report`
 - Let the user summarize the KPI / EnPI status from the response.
 - Stop timer.
 
 ### T4 - Generate Monthly Report
-- Show prompt on screen: `Generate the December 2025 monthly report and summarize the result.`
+- Show prompt on screen: `Generate the April 2026 monthly report and summarize the result.`
 - Start timer.
-- Chatbot prompt: `How do I generate a report?`
-- Open `/reports.html`.
-- Select the frozen factory and `December 2025`.
-- Generate the report.
-- Summarize the result.
+- OVOS prompt: `download report of Apr 2026`
+- Let the user summarize the report-ready confirmation and the automatically downloaded PDF.
 - Stop timer.
 
 ## Closing

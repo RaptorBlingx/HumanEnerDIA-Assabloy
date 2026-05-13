@@ -1030,7 +1030,7 @@
   "refresh": "1m",
   "schemaVersion": 39,
   "tags": [
-    "sota",
+    "enms",
     "forecast",
     "predictive",
     "ml"
@@ -1052,7 +1052,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "SOTA Predictive Analytics",
+  "title": "Predictive Analytics",
   "uid": "sota_predictive_analytics",
   "version": 1,
   "weekStart": ""

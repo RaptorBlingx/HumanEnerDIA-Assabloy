@@ -325,6 +325,8 @@ async def get_machine_data_combined(
 
     views = aggregate_views[aggregate_interval]
 
+    load_factor_column = "er.load_factor" if aggregate_interval == "15min" else "er.avg_load_factor"
+
     query = f"""
         SELECT 
             er.bucket as time,
@@ -332,7 +334,7 @@ async def get_machine_data_combined(
             er.avg_power_kw,
             er.total_energy_kwh,
             er.max_power_kw as peak_demand_kw,
-            er.avg_load_factor,
+            {load_factor_column} as avg_load_factor,
             pd.total_production_count,
             pd.avg_throughput as avg_throughput_units_per_hour,
             pd.total_production_good,
@@ -352,9 +354,9 @@ async def get_machine_data_combined(
             GREATEST(0, ed.avg_outdoor_temp_c - 18) as cooling_degree_hours,
             GREATEST(0, 18 - ed.avg_outdoor_temp_c) as heating_degree_hours,
             ABS(ed.avg_outdoor_temp_c - ed.avg_indoor_temp_c) as temp_difference,
-            ed.avg_outdoor_temp_c * er.avg_load_factor as temp_load_interaction,
+            ed.avg_outdoor_temp_c * {load_factor_column} as temp_load_interaction,
             POWER(ed.avg_outdoor_temp_c, 2) as outdoor_temp_squared,
-            POWER(er.avg_load_factor, 2) as load_factor_squared
+            POWER({load_factor_column}, 2) as load_factor_squared
         FROM {views['energy']} er
         LEFT JOIN {views['production']} pd 
             ON er.machine_id = pd.machine_id 

@@ -5,7 +5,7 @@ Comprehensive ISO 50001 Data Backfill Script
 Generates one full year (2024) of synthetic energy data for ALL machines and energy sources.
 
 Coverage:
-- All 7 machines: Compressor-1, Compressor-EU-1, HVAC-Main, HVAC-EU-North, 
+- All 7 machines: Compressor-1, Compressor-2, HVAC-Main, HVAC-North-1, 
   Conveyor-A, Hydraulic-Pump-1, Injection-Molding-1
 - Multiple energy sources: Electricity, Natural Gas (HVAC), Compressed Air (Compressors)
 - Realistic patterns: Seasonal variations, daily work cycles, weekends, maintenance
@@ -50,7 +50,7 @@ MACHINES = {
         'weekend_factor': 0.3       # 30% operation on weekends
     },
     'c0000000-0000-0000-0000-000000000006': {
-        'name': 'Compressor-EU-1',
+        'name': 'Compressor-2',
         'type': 'compressor',
         'power_base': 48,
         'power_variance': 12,
@@ -74,7 +74,7 @@ MACHINES = {
         'weekend_factor': 0.5       # 50% on weekends (maintain climate)
     },
     'c0000000-0000-0000-0000-000000000007': {
-        'name': 'HVAC-EU-North',
+        'name': 'HVAC-North-1',
         'type': 'hvac',
         'power_base': 32,
         'power_variance': 8,

@@ -2,7 +2,7 @@
 
 **Author:** Mohamad  
 **Date:** October 2025  
-**Last Updated:** December 29, 2025 (V2 Report System Deployed - 9.5/10 SOTA Quality)  
+**Last Updated:** December 29, 2025 (V2 Report System Deployed - 9.5/10 report quality)  
 **Status:** ✅ PRODUCTION READY + 🎯 PHASE 1 COMPLETE + 🚀 PERFORMANCE ENGINE LIVE + 🎁 OPPORTUNITIES & ACTION PLANS + 🔥 MULTI-ENERGY SUPPORT + 🧪 32/32 WORKFLOW TESTS PASSING + 📄 V2 REPORTS LIVE  
 **Purpose:** Complete API reference for Burak's OVOS project integration
 
@@ -329,8 +329,8 @@ curl "http://localhost:8001/api/v1/machines?search=hvac&is_active=true"
     "type": "boiler",
     "rated_power_kw": "45.00",
     "is_active": true,
-    "factory_name": "Demo Manufacturing Plant",
-    "factory_location": "Silicon Valley, CA, USA"
+    "factory_name": "Simulated Romanian Pilot Factory",
+    "factory_location": "Pitesti, Arges County, Romania"
   },
   {
     "id": "c0000000-0000-0000-0000-000000000001",
@@ -339,8 +339,8 @@ curl "http://localhost:8001/api/v1/machines?search=hvac&is_active=true"
     "type": "compressor",
     "rated_power_kw": "55.00",
     "is_active": true,
-    "factory_name": "Demo Manufacturing Plant",
-    "factory_location": "Silicon Valley, CA, USA"
+    "factory_name": "Simulated Romanian Pilot Factory",
+    "factory_location": "Pitesti, Arges County, Romania"
   }
 ]
 ```
@@ -385,8 +385,8 @@ curl "http://localhost:8001/api/v1/machines/c0000000-0000-0000-0000-000000000001
   "type": "compressor",
   "rated_power_kw": "55.00",
   "is_active": true,
-  "factory_name": "Demo Manufacturing Plant",
-  "factory_location": "Silicon Valley, CA, USA"
+  "factory_name": "Simulated Romanian Pilot Factory",
+  "factory_location": "Pitesti, Arges County, Romania"
 }
 ```
 
@@ -430,7 +430,7 @@ curl "http://localhost:8001/api/v1/machines/status/compressor"
   "machine_id": "c0000000-0000-0000-0000-000000000001",
   "machine_name": "Compressor-1",
   "machine_type": "compressor",
-  "location": "Silicon Valley, CA, USA",
+  "location": "Pitesti, Arges County, Romania",
   "is_active": true,
   "current_status": {
     "status": "running",
@@ -1223,6 +1223,8 @@ curl "http://localhost:8001/api/v1/baseline/models?seu_name=InvalidMachine-999&e
 - "List models for Compressor-1" → Use Example 2
 - "Explain all models" → Use Example 3 with `include_explanation=true`
 - "Which model is active?" → Filter `models` array where `is_active=true`
+- For multi-energy machines, send both `seu_name` and `energy_source` so OVOS resolves the correct SEU explicitly.
+- Safe fallback for voice: if the user omits the source, default to `electricity` only when that SEU exists; otherwise ask the user to choose from `/api/v1/seus`.
 
 ### 13. Predict Expected Energy (ENHANCED ✨)
 **Purpose:** Get baseline prediction for given operating conditions
@@ -1609,6 +1611,7 @@ curl "http://localhost:8001/api/v1/baseline/model/00000000-0000-0000-0000-000000
 **OVOS Voice Integration:**
 - "Explain the baseline model" → Use Example 2, speak `voice_summary`
 - "What are the key drivers?" → Use Example 2, speak top 3 from `key_drivers`
+- "What are the key drivers for Boiler-1 natural gas?" → Resolve `seu_name=Boiler-1` and `energy_source=natural_gas`, then speak top 3 from `key_drivers`
 - "How accurate is it?" → Use Example 2, speak `accuracy_explanation`
 - "What increases energy?" → Use Example 2, list `positive_impacts`
 - "What decreases energy?" → Use Example 2, list `negative_impacts`
@@ -1992,7 +1995,7 @@ curl -X POST http://localhost:8001/api/v1/ovos/train-baseline \
 curl -X POST http://localhost:8001/api/v1/ovos/train-baseline \
   -H "Content-Type: application/json" \
   -d '{
-    "seu_name": "Compressor-EU-1",
+    "seu_name": "Compressor-2",
     "energy_source": "electricity",
     "features": [],
     "year": 2025
@@ -2085,7 +2088,7 @@ curl -X POST http://localhost:8001/api/v1/ovos/train-baseline \
 | Voice Command | API Request |
 |---------------|-------------|
 | "Train Compressor-1 electricity baseline for 2025" | `{"seu_name": "Compressor-1", "energy_source": "electricity", "features": [], "year": 2025}` |
-| "Train Compressor-EU-1 electricity baseline for 2025" | `{"seu_name": "Compressor-EU-1", "energy_source": "electricity", "features": [], "year": 2025}` |
+| "Train Compressor-2 electricity baseline for 2025" | `{"seu_name": "Compressor-2", "energy_source": "electricity", "features": [], "year": 2025}` |
 | "Train HVAC-Main electricity baseline for 2025" | `{"seu_name": "HVAC-Main", "energy_source": "electricity", "features": [], "year": 2025}` |
 
 > **Note:** Features array left empty (`[]`) for auto-selection (recommended for maximum accuracy 97-99%)
@@ -3284,7 +3287,7 @@ curl -G "http://localhost:8001/api/v1/stats/aggregated" \
   "machines": [
     {
       "machine_id": "c0000000-0000-0000-0000-000000000006",
-      "machine_name": "Compressor-EU-1",
+      "machine_name": "Compressor-2",
       "machine_type": "compressor",
       "total_energy_kwh": 1623.276,
       "avg_power_kw": 67.721,
@@ -3295,9 +3298,9 @@ curl -G "http://localhost:8001/api/v1/stats/aggregated" \
     }
   ],
   "rankings": {
-    "highest_energy": "Compressor-EU-1",
+    "highest_energy": "Compressor-2",
     "highest_peak_power": "Injection-Molding-1",
-    "highest_avg_power": "Compressor-EU-1"
+    "highest_avg_power": "Compressor-2"
   }
 }
 ```
@@ -3463,7 +3466,7 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
   --data-urlencode "end_time=2025-10-20T23:59:59Z"
 
 # Expected Response: Rankings from highest to lowest energy consumers
-# Compressor-EU-1 (worst), HVAC-EU-North (best)
+# Compressor-2 (worst), HVAC-North-1 (best)
 
 # Example 2: Cost Comparison - Today Only
 curl -G "http://localhost:8001/api/v1/compare/machines" \
@@ -3575,7 +3578,7 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
   "ranking": [
     {
       "machine_id": "c0000000-0000-0000-0000-000000000006",
-      "machine_name": "Compressor-EU-1",
+      "machine_name": "Compressor-2",
       "machine_type": "compressor",
       "metric_value": 1623.276,
       "percentage": 41.22,
@@ -3583,12 +3586,12 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
       "performance": "worst"
     }
   ],
-  "best_performer": "HVAC-EU-North",
-  "worst_performer": "Compressor-EU-1",
+  "best_performer": "HVAC-North-1",
+  "worst_performer": "Compressor-2",
   "insights": [
-    "Compressor-EU-1 consumed 1623.3 kWh (41.2% of total)",
-    "HVAC-EU-North consumed only 44.9 kWh (1.1% of total)",
-    "Compressor-EU-1 used 3516.1% more energy than HVAC-EU-North"
+    "Compressor-2 consumed 1623.3 kWh (41.2% of total)",
+    "HVAC-North-1 consumed only 44.9 kWh (1.1% of total)",
+    "Compressor-2 used 3516.1% more energy than HVAC-North-1"
   ]
 }
 ```
@@ -3685,7 +3688,7 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
   "ranking": [
     {
       "machine_id": "c0000000-0000-0000-0000-000000000006",
-      "machine_name": "Compressor-EU-1",
+      "machine_name": "Compressor-2",
       "machine_type": "compressor",
       "metric_value": 1623.276,
       "percentage": 41.22,
@@ -3694,7 +3697,7 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
     },
     {
       "machine_id": "c0000000-0000-0000-0000-000000000007",
-      "machine_name": "HVAC-EU-North",
+      "machine_name": "HVAC-North-1",
       "machine_type": "hvac",
       "metric_value": 44.89,
       "percentage": 1.14,
@@ -3702,12 +3705,12 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
       "performance": "best"
     }
   ],
-  "best_performer": "HVAC-EU-North",
-  "worst_performer": "Compressor-EU-1",
+  "best_performer": "HVAC-North-1",
+  "worst_performer": "Compressor-2",
   "insights": [
-    "Compressor-EU-1 consumed 1623.3 kWh (41.2% of total)",
-    "HVAC-EU-North consumed only 44.9 kWh (1.1% of total)",
-    "Compressor-EU-1 used 3516.1% more energy than HVAC-EU-North"
+    "Compressor-2 consumed 1623.3 kWh (41.2% of total)",
+    "HVAC-North-1 consumed only 44.9 kWh (1.1% of total)",
+    "Compressor-2 used 3516.1% more energy than HVAC-North-1"
   ]
 }
 ```
@@ -3716,12 +3719,12 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
 ```json
 {
   "metric": "cost",
-  "best_performer": "HVAC-EU-North",
-  "worst_performer": "Compressor-EU-1",
+  "best_performer": "HVAC-North-1",
+  "worst_performer": "Compressor-2",
   "insights": [
     "Total cost across all machines: $590.76",
-    "Compressor-EU-1 cost $243.49 (41.2% of total)",
-    "HVAC-EU-North cost only $6.73 (1.1% of total)"
+    "Compressor-2 cost $243.49 (41.2% of total)",
+    "HVAC-North-1 cost only $6.73 (1.1% of total)"
   ]
 }
 ```
@@ -3731,12 +3734,12 @@ curl -G "http://localhost:8001/api/v1/compare/machines" \
 {
   "metric": "anomalies",
   "machines_count": 7,
-  "best_performer": "Compressor-EU-1",
+  "best_performer": "Compressor-2",
   "worst_performer": "Compressor-1",
   "insights": [
     "Total anomalies: 107 across 7 machines",
     "Compressor-1 had 104 anomalies (needs attention)",
-    "Compressor-EU-1 had no anomalies (excellent performance)"
+    "Compressor-2 had no anomalies (excellent performance)"
   ]
 }
 ```
@@ -3785,12 +3788,12 @@ curl "http://localhost:8001/api/v1/machines?search=compressor&is_active=true"
     "name": "Compressor-1",
     "type": "compressor",
     "rated_power_kw": "55.00",
-    "factory_name": "Demo Manufacturing Plant",
+    "factory_name": "Simulated Romanian Pilot Factory",
     "is_active": true
   },
   {
     "id": "c0000000-0000-0000-0000-000000000006",
-    "name": "Compressor-EU-1",
+    "name": "Compressor-2",
     "type": "compressor",
     "rated_power_kw": "75.00",
     "factory_name": "EU Manufacturing Facility",
@@ -3928,7 +3931,7 @@ curl -s "http://localhost:8001/api/v1/ovos/summary" | jq '{
   },
   "top_consumer": {
     "machine_id": "c0000000-0000-0000-0000-000000000006",
-    "machine_name": "Compressor-EU-1",
+    "machine_name": "Compressor-2",
     "machine_type": "compressor",
     "energy_kwh": 866.71,
     "percent_of_total": 35.6
@@ -3964,7 +3967,7 @@ curl -s "http://localhost:8001/api/v1/ovos/summary" | jq '{
 **Test Results:**
 - ✅ Returns today's total energy (2,437.91 kWh)
 - ✅ Calculates current power across all machines (292.98 kW)
-- ✅ Identifies top consumer (Compressor-EU-1 at 35.6%)
+- ✅ Identifies top consumer (Compressor-2 at 35.6%)
 - ✅ Counts anomalies by severity
 - ✅ Shows latest anomaly details
 - ✅ Estimates monthly cost from daily trend
@@ -3974,7 +3977,7 @@ curl -s "http://localhost:8001/api/v1/ovos/summary" | jq '{
 
 **Voice Response Example:**
 "System is operational. 7 machines active. Today's energy consumption is 
-2,437 kilowatt hours costing $365. Compressor-EU-1 is the top consumer 
+2,437 kilowatt hours costing $365. Compressor-2 is the top consumer 
 at 867 kilowatt hours, representing 35.6% of total usage. There are 2 
 anomalies today, all normal severity."
 
@@ -4042,7 +4045,7 @@ curl -G "http://localhost:8001/api/v1/ovos/top-consumers" \
     {
       "rank": 1,
       "machine_id": "c0000000-0000-0000-0000-000000000006",
-      "machine_name": "Compressor-EU-1",
+      "machine_name": "Compressor-2",
       "machine_type": "compressor",
       "value": 894.0,
       "percentage": 35.4,
@@ -4127,7 +4130,7 @@ curl -G "http://localhost:8001/api/v1/ovos/top-consumers" \
 **OVOS Use Case:** "Which machine uses the most energy?" → Top 5 with percentages
 
 **Voice Response Example:**
-"The top 3 energy consumers today are: Number 1, Compressor-EU-1 used 894 
+"The top 3 energy consumers today are: Number 1, Compressor-2 used 894 
 kilowatt hours, accounting for 35.4% of total consumption. Number 2, 
 Injection-Molding-1 used 581 kilowatt hours or 23%. Number 3, Compressor-1 
 used 547 kilowatt hours or 21.7%."
@@ -4161,7 +4164,7 @@ curl "http://localhost:8001/api/v1/ovos/machines/compressor-eu/status"
 
 # Test ambiguous query (multiple matches)
 curl "http://localhost:8001/api/v1/ovos/machines/compressor/status"
-# Returns: "Multiple machines found matching 'compressor': ['Compressor-1', 'Compressor-EU-1']. Please be more specific."
+# Returns: "Multiple machines found matching 'compressor': ['Compressor-1', 'Compressor-2']. Please be more specific."
 ```
 
 **Test Results - Compressor-1 (Oct 20, 2025):**
@@ -4170,7 +4173,7 @@ curl "http://localhost:8001/api/v1/ovos/machines/compressor/status"
   "machine_id": "c0000000-0000-0000-0000-000000000001",
   "machine_name": "Compressor-1",
   "machine_type": "compressor",
-  "location": "Silicon Valley, CA, USA",
+  "location": "Pitesti, Arges County, Romania",
   "is_active": true,
   "current_status": {
     "status": "running",
@@ -4252,12 +4255,12 @@ curl -G "http://localhost:8001/api/v1/kpi/factories" \
   --data-urlencode "end=2025-10-20T23:59:59"
 ```
 
-**Test Results - Single Factory (Demo Manufacturing Plant):**
+**Test Results - Single Factory (Simulated Romanian Pilot Factory):**
 ```json
 {
   "factory_id": "11111111-1111-1111-1111-111111111111",
-  "factory_name": "Demo Manufacturing Plant",
-  "factory_location": "Silicon Valley, CA, USA",
+  "factory_name": "Simulated Romanian Pilot Factory",
+  "factory_location": "Pitesti, Arges County, Romania",
   "energy_metrics": {
     "total_energy_kwh": 1589.87,
     "total_cost_usd": 238.48,
@@ -4297,13 +4300,13 @@ curl -G "http://localhost:8001/api/v1/kpi/factories" \
     "by_energy": [
       {
         "rank": 1,
-        "factory_name": "Demo Manufacturing Plant",
+        "factory_name": "Simulated Romanian Pilot Factory",
         "energy_kwh": 1593.24,
         "percentage": 60.9
       },
       {
         "rank": 2,
-        "factory_name": "European Production Facility",
+        "factory_name": "Romanian Auxiliary Production Facility",
         "energy_kwh": 1024.28,
         "percentage": 39.1
       }
@@ -4318,7 +4321,7 @@ curl -G "http://localhost:8001/api/v1/kpi/factories" \
 - "Which factory is most efficient?"
 
 **Voice Response Example:**
-"The Demo Manufacturing Plant consumed 1,590 kilowatt hours today costing 
+"The Simulated Romanian Pilot Factory consumed 1,590 kilowatt hours today costing 
 $238.48. Peak demand was 127 kilowatts. 5 machines are active producing 
 12.1 million units at 100% quality."
 
@@ -5241,14 +5244,14 @@ for plan in plans:
 
 ## 📄 Report Generation
 
-### 🆕 V2 Report System (SOTA Quality - December 2025)
+### 🆕 V2 Report System (Report Quality Upgrade - December 2025)
 
 **Major Upgrade**: Complete rewrite with professional design, real-time data, and comprehensive analytics.
 
 ---
 
 ### EP31: POST /api/v1/reports/v2/generate - Generate V2 PDF Report ⭐ RECOMMENDED
-**Purpose:** Generate professional PDF report with live factory data (9.5/10 SOTA quality)
+**Purpose:** Generate professional PDF report with live factory data (9.5/10 report quality)
 
 **Endpoint:** `POST /api/v1/reports/v2/generate`
 
@@ -5327,7 +5330,7 @@ curl -X POST "http://localhost:8080/api/analytics/api/v1/reports/v2/generate" \
 - `timestamp`: Generation timestamp
 
 **Notes:**
-- ✅ **Production Ready**: 9.5/10 SOTA quality (upgraded from 3/10)
+- ✅ **Production Ready**: 9.5/10 report quality (upgraded from 3/10)
 - ✅ **Real-time Data**: Queries TimescaleDB with actual factory data
 - ✅ **Professional Design**: 300 DPI equivalent, 18-color palette
 - ✅ **Comprehensive**: ~11 pages with 20+ charts
@@ -5609,7 +5612,7 @@ curl -G "http://localhost:8001/api/v1/reports/preview" \
       },
       {
         "machine_id": "c0000000-0000-0000-0000-000000000006",
-        "name": "Compressor-EU-1",
+        "name": "Compressor-2",
         "kwh": 1824.63,
         "percent": 34.67,
         "trend": "-"
@@ -5697,5 +5700,5 @@ Would you like me to generate the full PDF report?"
 ---
 
 **Last Updated:** December 29, 2025  
-**Status:** ✅ **PRODUCTION READY** + 🎯 **ENHANCED BASELINE ENDPOINTS** + 📊 **ISO 50001 COMPLIANCE** + 📄 **V2 REPORT SYSTEM (9.5/10 SOTA)** + 🔥 **DEPLOYED TO PRODUCTION**
+**Status:** ✅ **PRODUCTION READY** + 🎯 **ENHANCED BASELINE ENDPOINTS** + 📊 **ISO 50001 COMPLIANCE** + 📄 **V2 REPORT SYSTEM (9.5/10 report quality)** + 🔥 **DEPLOYED TO PRODUCTION**
 

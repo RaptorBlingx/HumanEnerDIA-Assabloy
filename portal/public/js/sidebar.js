@@ -146,7 +146,7 @@ function initializeSidebar() {
                     </svg>
                     Reports
                 </a>
-                <a href="/grafana/" class="sidebar-link" target="_blank">
+                <a href="/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/" class="sidebar-link" target="_blank">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="20" x2="12" y2="10"></line>
                         <line x1="18" y1="20" x2="18" y2="4"></line>
@@ -187,6 +187,22 @@ function initializeSidebar() {
                         <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
                     ISO 50001
+                </a>
+                <a href="/energy-management-learning.html" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                    </svg>
+                    Learning
+                </a>
+                <a href="/pilot-procedures.html" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12h6"></path>
+                        <path d="M9 16h6"></path>
+                        <path d="M14 8H9"></path>
+                        <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+                    </svg>
+                    Pilot Procedures
                 </a>
                 <a href="/contact.html" class="sidebar-link">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

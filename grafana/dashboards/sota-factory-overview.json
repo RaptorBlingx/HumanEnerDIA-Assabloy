@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "SOTA Factory Command Center - Real-time operational overview with ML insights",
+  "description": "Factory Command Center - Real-time operational overview with ML insights",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -895,7 +895,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "SOTA",
+    "EnMS",
     "factory",
     "overview",
     "real-time"
@@ -937,7 +937,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "SOTA Factory Overview",
+  "title": "Factory Overview",
   "uid": "sota-factory-overview",
   "version": 28,
   "weekStart": ""

@@ -375,15 +375,15 @@ async def update_target_progress(target_id: str):
 @router.get("/enpi-report", summary="Generate ISO 50001 EnPI Report")
 async def get_enpi_report(
     factory_id: str = Query(..., description="Factory UUID"),
-    period: str = Query(..., description="Report period (YYYY-QN for quarterly or YYYY for annual)", example="2025-Q3"),
+    period: str = Query(..., description="Report period (YYYY-QN for quarterly or YYYY for annual)", example="2026-Q1"),
     baseline_year: Optional[int] = Query(None, description="Baseline year (auto-detected if omitted)")
 ):
     """
     Generate comprehensive ISO 50001 EnPI compliance report.
     
     **Period Formats**:
-    - Quarterly: `2025-Q1`, `2025-Q2`, `2025-Q3`, `2025-Q4`
-    - Annual: `2025`
+    - Quarterly: `2026-Q1`, `2026-Q2`, `2026-Q3`, `2026-Q4`
+    - Annual: `2026`
     
     **Returns**:
     - Overall factory energy performance vs baseline

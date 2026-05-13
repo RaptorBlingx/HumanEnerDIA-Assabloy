@@ -49,7 +49,7 @@ async def get_ovos_summary() -> Dict[str, Any]:
     
     **Voice Response Example:**
     "System is operational. 7 machines active. Today's energy consumption 
-    is 1,520 kilowatt hours costing $185. Compressor-EU-1 is the top 
+    is 1,520 kilowatt hours costing $185. Compressor-2 is the top 
     consumer at 450 kilowatt hours. There are 2 critical alerts and 
     5 warnings requiring attention."
     """
@@ -313,7 +313,7 @@ async def get_top_consumers(
     ```
     
     **Voice Response Example:**
-    "The top 3 energy consumers are: Compressor-EU-1 at 867 kilowatt hours 
+    "The top 3 energy consumers are: Compressor-2 at 867 kilowatt hours 
     representing 35.6% of total, Compressor-1 at 650 kilowatt hours at 26.7%, 
     and Injection-Molding-1 at 450 kilowatt hours at 18.5%."
     """

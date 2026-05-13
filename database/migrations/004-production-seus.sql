@@ -79,7 +79,7 @@ BEGIN
     RAISE NOTICE '✓ Created SEU: Compressor-1 (Electricity)';
     
     -- ========================================================================
-    -- SEU 2: Compressor-EU-1 (ELECTRICITY)
+    -- SEU 2: Compressor-2 (ELECTRICITY)
     -- ========================================================================
     INSERT INTO seus (
         id,
@@ -91,14 +91,14 @@ BEGIN
         created_at
     ) VALUES (
         'aaaaaaaa-2222-2222-2222-222222222222'::uuid,
-        'Compressor-EU-1',
+        'Compressor-2',
         'Rotary screw air compressor - 90kW rated. Baseline variables: avg_production_count (flow rate proxy), ambient temperature (°C), operating hours. Backup compressor for peak demand periods. Energy source: ELECTRICITY consumption of compressor motor.',
         v_electricity_id,
         ARRAY['c0000000-0000-0000-0000-000000000006'::uuid],
         true,
         NOW()
     );
-    RAISE NOTICE '✓ Created SEU: Compressor-EU-1 (Electricity)';
+    RAISE NOTICE '✓ Created SEU: Compressor-2 (Electricity)';
     
     -- ========================================================================
     -- SEU 3: HVAC-Main (ELECTRICITY)
@@ -123,7 +123,7 @@ BEGIN
     RAISE NOTICE '✓ Created SEU: HVAC-Main (Electricity)';
     
     -- ========================================================================
-    -- SEU 4: HVAC-EU-North (ELECTRICITY)
+    -- SEU 4: HVAC-North-1 (ELECTRICITY)
     -- ========================================================================
     INSERT INTO seus (
         id,
@@ -135,14 +135,14 @@ BEGIN
         created_at
     ) VALUES (
         'aaaaaaaa-4444-4444-4444-444444444444'::uuid,
-        'HVAC-EU-North',
+        'HVAC-North-1',
         'Rooftop packaged HVAC unit - 200kW rated. Baseline variables: heating_degree_days (HDD), cooling_degree_days (CDD), occupancy hours. Serves warehouse (3000 m²) and office spaces (1000 m²). Energy source: ELECTRICITY for compressor, fans, and controls.',
         v_electricity_id,
         ARRAY['c0000000-0000-0000-0000-000000000007'::uuid],
         true,
         NOW()
     );
-    RAISE NOTICE '✓ Created SEU: HVAC-EU-North (Electricity)';
+    RAISE NOTICE '✓ Created SEU: HVAC-North-1 (Electricity)';
     
     -- ========================================================================
     -- SEU 5: Conveyor-A (ELECTRICITY)

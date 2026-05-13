@@ -849,7 +849,7 @@
   "refresh": "5m",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "executive", "summary", "kpi", "c-level"],
+  "tags": ["enms", "executive", "summary", "kpi", "c-level"],
   "templating": {
     "list": []
   },
@@ -865,7 +865,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA Executive Summary",
+  "title": "Executive Summary",
   "uid": "sota-executive-summary",
   "version": 1,
   "weekStart": ""

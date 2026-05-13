@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilot Procedures - HumanEnerDIA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: url('/images/background.png') center center / cover no-repeat fixed,
+                        linear-gradient(135deg, #0A2463 0%, #1E3A8A 50%, #00A8E8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 36, 99, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-bottom: 2px solid rgba(0, 168, 232, 0.3);
+        }
+
+        nav {
+            width: 100%;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 1100px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .content-box {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 3rem;
+        }
+
+        h1 {
+            color: #0A2463;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #1E3A8A;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        h3 {
+            color: #0A2463;
+            margin-top: 1rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        p {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1rem 1.5rem;
+        }
+
+        li {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 0.45rem;
+        }
+
+        .highlight-box {
+            background: #f0f7ff;
+            border-left: 4px solid #00A8E8;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+
+        .procedure-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .procedure-card {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 14px;
+            border-top: 4px solid #1E3A8A;
+        }
+
+        .procedure-card h3 {
+            margin-top: 0;
+        }
+
+        .role-pill {
+            display: inline-block;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(30, 58, 138, 0.1);
+            color: #1E3A8A;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        footer {
+            background: linear-gradient(135deg, #0A2463 0%, #1E3A8A 100%);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            border-top: 2px solid rgba(0, 168, 232, 0.3);
+        }
+
+        footer p {
+            color: white;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .content-box {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo-section" style="padding-left: 5px;">
+                <button onclick="toggleSidebar()" class="hamburger-btn" style="margin: 0; margin-right: 0.5rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <a href="/" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    HumanEnerDIA
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <div id="sidebar-container"></div>
+    <script src="/js/sidebar.js?v=2026051301"></script>
+
+    <div class="container">
+        <div class="content-box">
+            <h1><i class="bi bi-journal-check" style="margin-right: 10px;"></i>Pilot Procedures</h1>
+            <p>
+                This page provides the operational guidance used in the simulated Romanian pilot. It supports the
+                documentation tasks in the benchmark and connects HumanEnerDIA outputs to practical factory procedures.
+            </p>
+
+            <div class="highlight-box">
+                <h3>Simulated Pilot Context</h3>
+                <p style="margin-bottom: 0;">
+                    The guidance below is written for the Simulated Romanian Pilot Factory and the Romanian Auxiliary
+                    Production Facility used in the A/B benchmark recordings.
+                </p>
+            </div>
+
+            <h2>Energy Policy Summary</h2>
+            <ul>
+                <li>The facility commits to continual improvement in energy performance.</li>
+                <li>Energy objectives and targets must align with production, quality, safety, and equipment reliability.</li>
+                <li>Energy data must be reviewed regularly and used to support maintenance, scheduling, and reporting decisions.</li>
+                <li>Energy-efficient purchasing, operational planning, and corrective action are required when performance deviates from baseline.</li>
+                <li>Relevant personnel must know the approved policy, procedures, and the consequences of departing from them.</li>
+            </ul>
+
+            <h2>Anomaly Response Procedure</h2>
+            <ol>
+                <li>Review the anomaly context: affected machine, time window, severity, and deviation from expected performance.</li>
+                <li>Confirm whether it is operational, maintenance-related, or data-quality related.</li>
+                <li>Check current machine status and recent production context before escalation.</li>
+                <li>If the issue is minor and explainable, log it for monitoring and continue observation.</li>
+                <li>If the issue indicates excessive consumption, abnormal operation, or repeated recurrence, notify the energy or maintenance engineer.</li>
+                <li>Record the finding and the action taken in the reporting or improvement workflow.</li>
+            </ol>
+
+            <h2>Energy Efficiency Response Procedure</h2>
+            <ol>
+                <li>Compare actual performance against baseline or expected performance.</li>
+                <li>Identify the machine or process causing the largest deviation or cost impact.</li>
+                <li>Review recent anomalies, uptime pattern, and production context.</li>
+                <li>Decide whether the issue is caused by scheduling, operating practice, maintenance condition, or load pattern.</li>
+                <li>Capture at least one recommended action: adjust scheduling, inspect equipment, verify control settings, or monitor recurrence.</li>
+                <li>Include the finding in the relevant KPI or monthly report.</li>
+            </ol>
+
+            <h2>Monthly Reporting Procedure</h2>
+            <ol>
+                <li>Select the target factory, year, and month on the Reports page.</li>
+                <li>Generate the monthly energy report.</li>
+                <li>Review the executive summary, energy overview, machine profiles, cost analysis, and carbon analysis.</li>
+                <li>Summarize the major consumers, deviations or savings, KPI or EnPI status, and follow-up actions.</li>
+                <li>Share the report output with the operational and technical stakeholders.</li>
+            </ol>
+
+            <h2>Roles And Responsibilities</h2>
+            <div class="procedure-grid">
+                <div class="procedure-card">
+                    <h3><span class="role-pill">Operational User</span>Facility / Production Manager</h3>
+                    <p>Uses overview, documentation, and reports for operational decisions and confirms whether findings require production-side action.</p>
+                </div>
+                <div class="procedure-card">
+                    <h3><span class="role-pill">Technical User</span>Energy / Maintenance / Automation Engineer</h3>
+                    <p>Validates anomalies and deviations, interprets deeper analysis results, and recommends corrective or optimization actions.</p>
+                </div>
+                <div class="procedure-card">
+                    <h3><span class="role-pill">Management Review</span>Reviewer</h3>
+                    <p>Reviews KPI trends, EnPI status, and action outcomes during the management review cycle.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>HumanEnerDIA simulated pilot procedure reference</p>
+    </footer>
+</body>
+</html>

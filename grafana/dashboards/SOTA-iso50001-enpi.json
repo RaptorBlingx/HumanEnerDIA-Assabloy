@@ -867,7 +867,7 @@
   "refresh": "5m",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["sota", "iso50001", "enpi", "compliance", "sustainability"],
+  "tags": ["enms", "iso50001", "enpi", "compliance", "sustainability"],
   "templating": {
     "list": []
   },
@@ -884,7 +884,7 @@
     ]
   },
   "timezone": "",
-  "title": "SOTA ISO 50001 EnPI",
+  "title": "ISO 50001 EnPI",
   "uid": "sota-iso50001-enpi",
   "version": 1,
   "weekStart": ""
