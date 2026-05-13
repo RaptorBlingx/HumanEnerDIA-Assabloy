@@ -66,7 +66,7 @@ Voice-over:
 - Start timer.
 - Open `/api/analytics/ui/baseline`.
 - Cross-check `/api/analytics/ui/model-performance`.
-- Open `/api/analytics/api/v1/performance/opportunities?factory_id=11111111-1111-1111-1111-111111111111&period=month`.
+- Open `/api/analytics/ui/opportunities`.
 - Summarize the baseline deviation for `Compressor-1` and the broader top savings recommendations.
 - Stop timer.
 
@@ -74,7 +74,7 @@ Voice-over:
 - Show prompt on screen: `Retrieve factory KPI and EnPI status for 2026-Q1.`
 - Start timer.
 - Open `/api/analytics/ui/kpi`.
-- Open `/api/analytics/api/v1/iso50001/enpi-report?factory_id=11111111-1111-1111-1111-111111111111&period=2026-Q1&baseline_year=2026`.
+- Open `/api/analytics/ui/enpi-report`.
 - Read the EnPI status for `2026-Q1` and summarize the deviation.
 - Stop timer.
 

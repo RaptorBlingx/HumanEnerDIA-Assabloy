@@ -212,6 +212,10 @@ def _top_consumer_limit(text: str) -> int:
     return 5
 
 
+def _humanize_status(value: str) -> str:
+    return str(value or "unknown").replace("_", " ")
+
+
 async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -> VoiceQueryResponse:
     report = await enpi_tracker.generate_enpi_report(
         factory_id=SIMULATED_PILOT_FACTORY_ID,
@@ -220,11 +224,27 @@ async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -
     )
 
     performance = report["overall_performance"]
+    actual_kwh = performance["total_energy_actual_kwh"]
+    baseline_kwh = performance["total_energy_baseline_kwh"]
+    deviation_percent = performance["deviation_percent"]
+    deviation_kwh = performance.get("deviation_kwh", actual_kwh - baseline_kwh)
+    gap_kwh = abs(deviation_kwh)
+
+    if deviation_percent > 0:
+        direction_text = "above baseline"
+        gap_text = f"a {gap_kwh:,.1f} kilowatt-hour performance gap to review"
+    elif deviation_percent < 0:
+        direction_text = "below baseline"
+        gap_text = f"{gap_kwh:,.1f} kilowatt-hours of savings against baseline"
+    else:
+        direction_text = "aligned with baseline"
+        gap_text = "no material performance gap"
+
     response = (
-        f"For {SIMULATED_PILOT_ENPI_PERIOD}, the ISO 50001 EnPI status is {performance['iso_status']}. "
-        f"{report['seus_analyzed']} SEUs were analyzed. Actual energy was {performance['total_energy_actual_kwh']:.1f} kilowatt hours "
-        f"against a baseline of {performance['total_energy_baseline_kwh']:.1f}, for a deviation of {performance['deviation_percent']:.2f} percent "
-        f"and cumulative savings of {performance['cumulative_savings_kwh']:.1f} kilowatt hours."
+        f"For {SIMULATED_PILOT_ENPI_PERIOD}, the ISO 50001 EnPI status is {_humanize_status(performance['iso_status'])}. "
+        f"{report['seus_analyzed']} significant energy uses were analyzed. Actual energy was {actual_kwh:,.1f} kilowatt hours "
+        f"versus a {baseline_kwh:,.1f} kilowatt-hour baseline, which is {abs(deviation_percent):.2f} percent {direction_text}. "
+        f"This indicates {gap_text}."
     )
 
     latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)

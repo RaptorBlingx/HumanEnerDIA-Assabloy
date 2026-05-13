@@ -39,8 +39,8 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
 - Anomaly view: `/api/analytics/ui/anomaly`
 - KPI view: `/api/analytics/ui/kpi`
 - Model performance: `/api/analytics/ui/model-performance`
-- Performance opportunities API: `/api/analytics/api/v1/performance/opportunities?factory_id=11111111-1111-1111-1111-111111111111&period=month`
-- EnPI API: `/api/analytics/api/v1/iso50001/enpi-report?factory_id=11111111-1111-1111-1111-111111111111&period=2026-Q1&baseline_year=2026`
+- Opportunities view: `/api/analytics/ui/opportunities`
+- EnPI report view: `/api/analytics/ui/enpi-report`
 - Reports: `/reports.html`
 - Learning: `/energy-management-learning.html`
 - ISO 50001 support: `/iso50001.html`

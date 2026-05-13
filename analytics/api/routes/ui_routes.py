@@ -217,6 +217,32 @@ async def model_performance_ui(request: Request):
     return response
 
 
+@router.get("/opportunities", response_class=HTMLResponse, name="ui_opportunities")
+async def opportunities_ui(request: Request):
+    """
+    Energy Improvement Opportunities UI
+
+    Pilot-friendly view over /api/v1/performance/opportunities so the
+    recording flow does not expose raw JSON.
+    """
+    response = templates.TemplateResponse("opportunities.html", {"request": request})
+    response.headers.update(NO_CACHE_HEADERS)
+    return response
+
+
+@router.get("/enpi-report", response_class=HTMLResponse, name="ui_enpi_report")
+async def enpi_report_ui(request: Request):
+    """
+    ISO 50001 EnPI Report UI
+
+    Pilot-friendly view over /api/v1/iso50001/enpi-report so the
+    recording flow does not expose raw JSON.
+    """
+    response = templates.TemplateResponse("enpi_report.html", {"request": request})
+    response.headers.update(NO_CACHE_HEADERS)
+    return response
+
+
 @router.get("/components-demo", response_class=HTMLResponse, name="ui_components_demo")
 async def components_demo_ui(request: Request):
     """

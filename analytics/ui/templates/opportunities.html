@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Energy Improvement Opportunities - HumanEnerDIA Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pilot-page-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .pilot-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .pilot-metric-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1.25rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .pilot-metric-label {
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .pilot-metric-value {
+        color: #0f3b5f;
+        font-size: 2rem;
+        font-weight: 800;
+        margin-top: 0.35rem;
+    }
+
+    .pilot-status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        background: #e0f2fe;
+        color: #075985;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .opportunity-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .rank-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #0f3b5f;
+        color: #ffffff;
+        font-weight: 800;
+        margin-right: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pilot-page-title">
+    <div>
+        <h1 class="display-6 mb-1">Energy Improvement Opportunities</h1>
+        <p class="text-muted mb-0">Browser-friendly view for the simulated pilot. No raw JSON is needed during the manual recording.</p>
+    </div>
+    <span class="pilot-status-pill">Romanian pilot profile</span>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="opportunity-form" class="row g-3">
+            <div class="col-md-7">
+                <label for="factory-id" class="form-label">Factory</label>
+                <select id="factory-id" class="form-select">
+                    <option value="11111111-1111-1111-1111-111111111111" selected>Simulated Romanian Pilot Factory</option>
+                    <option value="22222222-2222-2222-2222-222222222222">Romanian Auxiliary Production Facility</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="period" class="form-label">Analysis Period</label>
+                <select id="period" class="form-select">
+                    <option value="week">Week</option>
+                    <option value="month" selected>Month</option>
+                    <option value="quarter">Quarter</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Load</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="status"></div>
+
+<div class="pilot-kpi-grid" id="summary-grid" style="display: none;">
+    <div class="pilot-metric-card">
+        <div class="pilot-metric-label">Opportunities</div>
+        <div class="pilot-metric-value" id="total-opportunities">-</div>
+    </div>
+    <div class="pilot-metric-card">
+        <div class="pilot-metric-label">Potential Savings</div>
+        <div class="pilot-metric-value" id="total-kwh">-</div>
+    </div>
+    <div class="pilot-metric-card">
+        <div class="pilot-metric-label">Estimated Cost Impact</div>
+        <div class="pilot-metric-value" id="total-usd">-</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Prioritized Recommendations</h5>
+        <a href="/api/analytics/ui/baseline" class="btn btn-sm btn-outline-primary">Open Baseline Analysis</a>
+    </div>
+    <div class="card-body" id="opportunity-list">
+        <p class="text-muted mb-0">Load opportunities to view recommended actions.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const PILOT_FACTORY_ID = '11111111-1111-1111-1111-111111111111';
+
+    function formatKwh(value) {
+        return `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} kWh`;
+    }
+
+    function formatUsd(value) {
+        return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    function humanize(value) {
+        return String(value || '').replaceAll('_', ' ');
+    }
+
+    function showStatus(message, type = 'info') {
+        document.getElementById('status').innerHTML = `
+            <div class="alert alert-${type}" role="alert">${message}</div>
+        `;
+    }
+
+    function renderOpportunities(data) {
+        document.getElementById('summary-grid').style.display = 'grid';
+        document.getElementById('total-opportunities').textContent = data.total_opportunities ?? 0;
+        document.getElementById('total-kwh').textContent = formatKwh(data.total_potential_savings_kwh);
+        document.getElementById('total-usd').textContent = formatUsd(data.total_potential_savings_usd);
+
+        const opportunities = data.opportunities || [];
+        if (!opportunities.length) {
+            document.getElementById('opportunity-list').innerHTML = '<p class="text-muted mb-0">No major opportunities were detected for this period.</p>';
+            return;
+        }
+
+        document.getElementById('opportunity-list').innerHTML = opportunities.map(item => `
+            <div class="opportunity-card">
+                <div class="d-flex align-items-start justify-content-between gap-3">
+                    <div>
+                        <h5 class="mb-2"><span class="rank-badge">${item.rank}</span>${item.seu_name}</h5>
+                        <p class="mb-2">${item.description}</p>
+                        <p class="mb-0"><strong>Recommended action:</strong> ${item.recommended_action}</p>
+                    </div>
+                    <span class="pilot-status-pill">${humanize(item.issue_type)}</span>
+                </div>
+                <hr>
+                <div class="row g-3">
+                    <div class="col-md-3"><strong>Potential:</strong><br>${formatKwh(item.potential_savings_kwh)}</div>
+                    <div class="col-md-3"><strong>Cost impact:</strong><br>${formatUsd(item.potential_savings_usd)}</div>
+                    <div class="col-md-3"><strong>Effort:</strong><br>${humanize(item.effort)}</div>
+                    <div class="col-md-3"><strong>ROI:</strong><br>${item.roi_days} days</div>
+                </div>
+                ${item.detailed_analysis ? `<div class="mt-3 text-muted">${item.detailed_analysis}</div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    async function loadOpportunities(event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        const factoryId = document.getElementById('factory-id').value || PILOT_FACTORY_ID;
+        const period = document.getElementById('period').value || 'month';
+
+        showStatus('Loading improvement opportunities...', 'info');
+        try {
+            const response = await fetch(`${API_BASE}/performance/opportunities?factory_id=${encodeURIComponent(factoryId)}&period=${encodeURIComponent(period)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            showStatus(`Loaded ${data.total_opportunities} opportunities for the selected ${period}.`, 'success');
+            renderOpportunities(data);
+        } catch (error) {
+            showStatus(`Could not load opportunities: ${error.message}`, 'danger');
+        }
+    }
+
+    document.getElementById('opportunity-form').addEventListener('submit', loadOpportunities);
+    loadOpportunities();
+</script>
+{% endblock %}
