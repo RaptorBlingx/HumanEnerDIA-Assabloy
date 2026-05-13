@@ -116,7 +116,7 @@
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                z-index: 10000;
+                z-index: 10020;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
 
@@ -462,6 +462,10 @@
     async function sendMessage(text) {
         if (!text.trim() || isLoading) return;
 
+        window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-query-start', {
+            detail: { source: 'chatbot', text }
+        }));
+
         isLoading = true;
         const input = document.getElementById('enms-chat-input');
         const sendBtn = document.getElementById('enms-chat-send');
@@ -502,15 +506,24 @@
                         addMessage(item.text);
                     }
                 }
+                window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                    detail: { source: 'chatbot', success: true, text: data.map(item => item.text).filter(Boolean).join('\n') }
+                }));
             } else {
                 // Rasa returned empty - provide helpful fallback
                 addMessage("I can help with ISO 50001, HumanEnerDIA pages, reports, energy-management concepts, and troubleshooting. For live machine status or current energy values, use OVOS or the live dashboards.", false, false);
+                window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                    detail: { source: 'chatbot', success: false, error: 'Empty chatbot response' }
+                }));
             }
 
         } catch (error) {
             hideTyping();
             console.error('Chatbot error:', error);
             addMessage('Connection error. The chatbot service may not be running.', false, true);
+            window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                detail: { source: 'chatbot', success: false, error: error.message }
+            }));
         }
 
         isLoading = false;

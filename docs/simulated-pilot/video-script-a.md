@@ -18,74 +18,81 @@ Voice-over:
 
 > This benchmark uses a simulated Romanian pilot factory profile aligned with the HumanEnerDIA pilot-factory scope. In Condition A, the same platform is used without OVOS and without the chatbot, so users rely on manual portal, dashboard, and reporting navigation.
 
+Measurement setup:
+- Enable manual mode with `localStorage.setItem('humanenerdia_pilot_mode', 'manual'); location.reload();`.
+- Use the in-app pilot recorder instead of an external timer.
+- For each task, click `Start Task` before manual navigation and click `Answer Found` when the required answer is visibly identified.
+- Do not include optional narration after `Answer Found` in the task time.
+- For Grafana tasks, open the recorder `Control Window` first so the timer remains visible while the main window is on Grafana.
+
 ## Task Order
 
 ### O1 - Factory Overview And Top Consumers
 - Show prompt on screen: `Get a factory overview and identify the top 3 energy consumers.`
-- Start timer.
+- Select `O1` in the recorder and click `Start Task`.
 - Navigate to `/index.html`.
 - Open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`.
 - Use `Executive Summary` or `Operational Efficiency`.
-- Read the overview and identify the top 3 consumers.
-- Stop timer when the answer is spoken or shown.
+- Identify the top 3 consumers on screen.
+- Click `Answer Found`.
 
 ### O2 - Machine Status And Today's Energy
 - Show prompt on screen: `Check the status and today's energy of Compressor-1.`
-- Start timer.
+- Select `O2` in the recorder and click `Start Task`.
 - Open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`.
 - Use `Machine Health` or real-time dashboard views with `Compressor-1`.
-- Read the current status and today's energy result.
-- Stop timer.
+- Identify the current status and today's energy result on screen.
+- Click `Answer Found`.
 
 ### O3 - ISO 50001 And Baseline Understanding
 - Show prompt on screen: `Understand what ISO 50001 is and what an energy baseline means.`
-- Start timer.
+- Select `O3` in the recorder and click `Start Task`.
 - Open `/energy-management-learning.html`.
 - Open `/api/analytics/ui/baseline`.
-- Summarize both concepts in user language.
-- Stop timer.
+- Identify the ISO 50001 and baseline explanation on screen.
+- Click `Answer Found`.
 
 ### O4 - Policy / Procedure Guidance
 - Show prompt on screen: `Find the policy and procedure guidance for responding to an anomaly or efficiency issue.`
-- Start timer.
+- Select `O4` in the recorder and click `Start Task`.
 - Open `/pilot-procedures.html`.
 - Open `/api/analytics/ui/anomaly` for operational context.
-- Summarize the expected response steps.
-- Stop timer.
+- Identify the expected response steps on screen.
+- Click `Answer Found`.
 
 ### T1 - Review Anomalies
 - Show prompt on screen: `Review anomalies and identify the issue requiring attention.`
-- Start timer.
+- Select `T1` in the recorder and click `Start Task`.
 - Open `/api/analytics/ui/anomaly`.
 - Filter or inspect current / recent anomalies.
 - Identify the unresolved `critical` `Compressor-2` spike as the issue that needs attention.
-- Stop timer.
+- Click `Answer Found`.
 
 ### T2 - Baseline Analysis And Recommendations
 - Show prompt on screen: `Analyze Compressor-1 against baseline and retrieve recommendations.`
-- Start timer.
+- Select `T2` in the recorder and click `Start Task`.
 - Open `/api/analytics/ui/baseline`.
 - Cross-check `/api/analytics/ui/model-performance`.
 - Open `/api/analytics/ui/opportunities`.
-- Summarize the baseline deviation for `Compressor-1` and the broader top savings recommendations.
-- Stop timer.
+- Identify the relevant baseline context and top savings recommendations on screen.
+- Click `Answer Found`.
 
 ### T3 - KPI And EnPI Status
 - Show prompt on screen: `Retrieve factory KPI and EnPI status for 2026-Q1.`
-- Start timer.
+- Select `T3` in the recorder and click `Start Task`.
 - Open `/api/analytics/ui/kpi`.
 - Open `/api/analytics/ui/enpi-report`.
-- Read the EnPI status for `2026-Q1` and summarize the deviation.
-- Stop timer.
+- Identify the EnPI status and deviation for `2026-Q1` on screen.
+- Click `Answer Found`.
 
 ### T4 - Generate Monthly Report
 - Show prompt on screen: `Generate the April 2026 monthly report and summarize the result.`
-- Start timer.
+- Select `T4` in the recorder and click `Start Task`.
 - Open `/reports.html`.
 - Select the frozen factory and `April 2026`.
 - Generate the report.
-- Summarize what was generated or shown on screen.
-- Stop timer.
+- Confirm the April 2026 report generation result on screen.
+- Click `Answer Found`.
 
 ## Closing
 Display on screen:

@@ -2295,6 +2295,10 @@
     async function sendMessage(text) {
         if (!text.trim()) return;
 
+        window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-query-start', {
+            detail: { source: 'ovos', text }
+        }));
+
         finishActiveMessageAnimation();
         collapseInsightsPanel();
         
@@ -2372,6 +2376,9 @@
 
                 await responseRender;
                 renderInsightsPanel(data.insights, data.data);
+                window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                    detail: { source: 'ovos', success: true, text: data.response, intent: data.intent }
+                }));
                 
                 // Trigger PDF download if present (for report generation queries)
                 // V2: REST bridge returns pdf_download object with URL instead of base64
@@ -2394,9 +2401,15 @@
             } else if (data.error) {
                 collapseInsightsPanel();
                 addMessage(data.error, false, true);
+                window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                    detail: { source: 'ovos', success: false, error: data.error }
+                }));
             } else {
                 collapseInsightsPanel();
                 addMessage('No response received.', false, true);
+                window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-response-complete', {
+                    detail: { source: 'ovos', success: false, error: 'No response received' }
+                }));
             }
         } catch (err) {
             hideTyping();
@@ -2833,6 +2846,9 @@
     
     function onWakeWordDetected() {
         console.log('🎯 Wake word activated!');
+        window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-query-start', {
+            detail: { source: 'ovos_wake_word', text: 'Jarvis' }
+        }));
 
         stopActivePlayback();
         
