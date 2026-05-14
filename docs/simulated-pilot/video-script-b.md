@@ -10,7 +10,7 @@ Personas:
 
 Official timing rule:
 - Start one continuous screen recording for the whole Condition B video.
-- Use the in-app Pilot Measurement recorder for each task timer.
+- Use the Chrome extension `Pilot Measurement` overlay for each task timer.
 - For OVOS voice tasks, the task timer starts when the wake word event starts the assistant flow. In practice, this is when you say `Jarvis` if wake word is enabled.
 - If you type into OVOS instead of using the wake word, the task timer starts when you send the prompt.
 - For chatbot tasks, the timer starts when you send the chatbot message.
@@ -21,16 +21,15 @@ Official timing rule:
 ## Pre-Recording Setup
 1. Open `http://10.33.10.103:8080/index.html`.
 2. If a login page appears, log in before the official recording. Do not include login time in the KPI measurement.
-3. Open browser DevTools console.
-4. Run:
+3. Confirm the Chrome extension `HumanEnerDIA Pilot Measurement` is installed and enabled.
+4. Open browser DevTools console only to set assistant mode for OVOS/chatbot pilot timing, then run:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
-5. Confirm the `Pilot Measurement` panel is visible.
+5. Confirm the extension `Pilot Measurement` overlay is visible.
 6. Confirm OVOS is visible and connected.
 7. Confirm the chatbot is visible.
 8. If you will use voice, enable the `Jarvis` wake word before the official recording and allow microphone permission.
@@ -228,8 +227,8 @@ Steps:
 
 > Condition B complete. Same tasks, assistant-supported workflow.
 
-2. Open the Pilot Measurement panel.
-3. Click `Copy CSV` and keep the copied data for the KPI comparison table.
+2. Open the extension `Pilot Measurement` overlay or popup.
+3. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI comparison table.
 4. Stop the screen recorder.
 
 ## Verified Assistant Prompts

@@ -2,16 +2,30 @@
 
 The browser extension is now the preferred recorder for the official simulated pilot because it can automatically count clicks and browser screen changes across HumanEnerDIA and Grafana. See [browser-extension-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/browser-extension-pilot-measurement.md).
 
-The in-app recorder remains available as a platform-native fallback.
+The old in-app recorder has been disabled in the HumanEnerDIA pages to avoid duplicate recorder overlays.
 
 If you want a separate manual measurement page outside HumanEnerDIA, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
 
-## Enable It
+## Enable The Official Extension
+Install and enable the Chrome extension from:
+
+```text
+pilot-measurement-extension/
+```
+
+Then open:
+
+```text
+http://10.33.10.103:8080/index.html
+```
+
+The extension data is stored in Chrome extension local storage under key `humanenerdia_pilot_extension_state_v1`. It is local to the Chrome profile and extension install. It is not saved in HumanEnerDIA, Docker, PostgreSQL, or the Git repo. Use `Copy Raw`, `Copy KPI`, or `JSON` export before clearing the extension data.
+
+## Pilot Mode Toggle
 For Condition A:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
@@ -19,7 +33,6 @@ For Condition B:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
@@ -31,16 +44,15 @@ location.reload();
 ```
 
 ## Condition A - Manual Path
-- Select the task in the recorder.
+- Select the task in the extension overlay.
 - Click `Start Task`.
 - Navigate manually through the required pages.
 - Click `Answer Found` when the required answer is visibly identified on screen.
-- The recorder automatically tracks elapsed time, clicks, and page/screen transitions.
-- Use `+Click` or `+Screen` only when the task moves into a page that cannot be instrumented, such as Grafana.
-- For Grafana tasks, click `Open Control Window` before navigating to Grafana and keep the small control window visible while recording.
+- The extension automatically tracks elapsed time, browser clicks, and URL/history/hash screen transitions.
+- Use `+Screen` only when a meaningful visual screen change does not change the URL/history/hash.
 
 ## Condition B - Assistant Path
-- Set the recorder condition to `B - Assistant`.
+- Set the extension condition to `B - Assistant`.
 - Select the matching task.
 - For OVOS, the recorder starts automatically when `Jarvis` is detected or when the OVOS prompt is submitted.
 - For the chatbot, the recorder starts automatically when the prompt is submitted.
@@ -62,6 +74,6 @@ location.reload();
 - `Auto-stop`: assistant-only timing control; leave checked unless the task needs multiple assistant answers or the report download must be observed.
 
 ## Evidence Export
-- Click `Copy CSV` after the run.
+- Click `Copy Raw` and `Copy KPI` after the run.
 - Paste the copied rows into the KPI measurement sheet.
 - Keep the same task order in both conditions.

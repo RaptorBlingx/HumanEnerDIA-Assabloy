@@ -22,6 +22,18 @@ What it counts automatically:
 - HumanEnerDIA assistant timing events for single-prompt OVOS/chatbot tasks
 - Grafana dashboard redirects are normalized so a quick `/grafana/d/...` to `/grafana/d/...?orgId=...&refresh=...` redirect counts as one screen
 
+## Where Data Is Saved
+
+When you click `Answer Found`, the extension saves the trial into Chrome extension local storage under key:
+
+```text
+humanenerdia_pilot_extension_state_v1
+```
+
+The saved rows are inside the `records` array in that local extension state. This data is local to the Chrome profile and the installed extension. It is not saved to HumanEnerDIA, Docker, PostgreSQL, Grafana, or Git.
+
+Use `Copy Raw`, `Copy KPI`, or `JSON` export before clicking `Reset All`, clearing Chrome extension storage, removing the extension, or switching Chrome profiles.
+
 What still needs manual correction:
 
 - a meaningful visual screen change that does not change URL/history/hash

@@ -10,7 +10,7 @@ Personas:
 
 Official timing rule:
 - Start one continuous screen recording for the whole Condition A video.
-- Use the in-app Pilot Measurement recorder for each task timer.
+- Use the Chrome extension `Pilot Measurement` overlay for each task timer.
 - Click `Start Task` immediately before the first manual action for the task.
 - Click `Answer Found` immediately when the required answer is visibly found.
 - Do not include any after-task explanation, narration, or note-taking in the task time.
@@ -25,19 +25,18 @@ Manual evidence rules:
 ## Pre-Recording Setup
 1. Open `http://10.33.10.103:8080/index.html`.
 2. If a login page appears, log in before the official recording. Do not include login time in the KPI measurement.
-3. Open browser DevTools console.
-4. Run:
+3. Confirm the Chrome extension `HumanEnerDIA Pilot Measurement` is installed and enabled.
+4. Open browser DevTools console only to set manual mode for hiding assistant widgets, then run:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
-5. Confirm the `Pilot Measurement` panel is visible.
+5. Confirm the extension `Pilot Measurement` overlay is visible.
 6. Confirm OVOS and chatbot are not used in this video.
-7. Click `Open Control Window` in the Pilot Measurement panel.
-8. Keep the control window visible beside the main browser. This is required for Grafana because Grafana does not run the HumanEnerDIA recorder script.
+7. Drag the extension overlay away from important dashboard content if needed.
+8. Use `Reset Current`, `Delete Last Try`, or `Reset All` if rehearsal data must be corrected before the official run.
 9. Set the browser zoom and window size you will also use for Condition B.
 10. Open the screen recorder, but do not start recording yet.
 
@@ -48,13 +47,14 @@ location.href = '/index.html';
 - `Auto-stop`: not relevant for Condition A. Leave it checked.
 
 ## Grafana Counting Rules
-Grafana pages do not contain the Pilot Measurement overlay, so use the separate control window.
+The Chrome extension runs on Grafana pages and counts browser clicks automatically.
 
-- Before entering Grafana, select the task in the control window and click `Start Task`.
-- For every click you perform inside Grafana, click `+Click` once in the control window.
-- For every meaningful screen/dashboard change inside Grafana, click `+Screen` once in the control window.
-- Do not count clicks on the Pilot Measurement control window itself.
-- When the answer is visible in Grafana, click `Answer Found` in the control window.
+- Before entering Grafana, select the task in the extension overlay and click `Start Task`.
+- The extension automatically counts page clicks.
+- The extension automatically counts URL/history/hash screen changes.
+- Use `+Screen` only when the visible dashboard state changes but the URL does not.
+- Grafana dashboard redirects from `/grafana/d/...` to `/grafana/d/...?orgId=...&refresh=...` are normalized and should count as one screen.
+- When the answer is visible in Grafana, click `Answer Found` in the extension overlay.
 
 ## Grafana Reference Links
 - Folder: `http://10.33.10.103:8080/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`
@@ -90,16 +90,16 @@ Steps:
 4. Click `Start Task`.
 5. In the main browser, open `/index.html`.
 6. Click the Grafana button or open the `Factory Overview` Grafana link directly.
-7. In the control window, click `+Click` for the Grafana navigation action.
-8. In the control window, click `+Screen` when the Grafana dashboard folder appears.
+7. Let the extension count the Grafana navigation click and screen change automatically.
+8. If the folder view appears without a URL/screen count change, click `+Screen` once.
 9. If the folder view opens first, open `Factory Overview`.
-10. In the control window, click `+Click` for opening the dashboard.
-11. In the control window, click `+Screen` when the dashboard opens.
+10. Let the extension count the dashboard click and dashboard screen change automatically.
+11. If the dashboard visually changes without a URL/screen count change, click `+Screen` once.
 12. Confirm the time range is `Today` because the assistant answer uses today/current factory state.
 13. Use panels `Energy Today`, `Current Power`, `Cost Today`, `Active Anomalies`, `Machine Status & Health`, and `Energy by Machine (Today)`.
 14. If you need the active or running machine count more clearly, open `Operational Efficiency` and use panel `Machine Status Overview`.
 15. Expected answer to capture: the factory today/current summary is visible, and top consumers include `Compressor-2`, `Injection-Molding-1`, and `Compressor-1`.
-16. Click `Answer Found` in the control window as soon as those items are visible.
+16. Click `Answer Found` in the extension overlay as soon as those items are visible.
 17. Manual proof source: Grafana `Factory Overview`, optionally `Operational Efficiency`.
 18. Do not keep the task timer running while explaining the result.
 
@@ -115,14 +115,14 @@ Steps:
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
 4. Open the `Machine Health for Compressor-1` Grafana link directly, or open the Grafana folder if it is not already open.
-5. Use `+Click` and `+Screen` in the control window for the Grafana navigation.
+5. Let the extension count Grafana navigation clicks and URL/screen changes automatically.
 6. If needed, open `Machine Health` and set the machine variable to `Compressor-1`.
 7. Use `+Click` for the dashboard click and `+Screen` when the dashboard view changes.
 8. Confirm the time range is `Today`.
 9. Use panels `Energy Today`, `Current Power`, and `Anomaly Details`.
 10. If you need the explicit running or stopped status, open `Operational Efficiency` and use panel `Machine Status Overview`.
 11. Expected answer to capture: `Compressor-1` is running, current power is visible, today's energy is visible in kWh, and anomaly status is visible. The exact kWh value may move because the simulator is live.
-12. Click `Answer Found` in the control window as soon as the status and energy value are visible.
+12. Click `Answer Found` in the extension overlay as soon as the status and energy value are visible.
 13. Manual proof source: Grafana `Machine Health`, optionally `Operational Efficiency`.
 
 ## O3 - ISO 50001 And Baseline Understanding
@@ -259,6 +259,6 @@ Steps:
 
 > Condition A complete. Same tasks, manual navigation only.
 
-2. Open the Pilot Measurement panel or control window.
-3. Click `Copy CSV` and keep the copied data for the KPI table.
+2. Open the extension `Pilot Measurement` overlay or popup.
+3. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI table.
 4. Stop the screen recorder.

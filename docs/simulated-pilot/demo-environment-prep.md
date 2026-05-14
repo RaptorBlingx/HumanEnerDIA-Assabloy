@@ -8,18 +8,19 @@ This is the internal setup guide for rehearsal and recording.
 - Avoid verbal references to legacy demo identities from older US- and Germany-oriented sample environments.
 
 ## 2. Condition Toggle
-The repo now supports a simple pilot-mode toggle for recording:
+The official measurement recorder is the Chrome extension in `pilot-measurement-extension/`.
+
+The repo still supports a simple pilot-mode toggle for assistant visibility and timing behavior:
 
 - `manual` mode hides assistant widgets for `Condition A`
 - default mode keeps assistants available for `Condition B`
-- `manual`, `assistant`, and `pilot` modes enable the in-app measurement recorder described in [measurement-recorder.md](measurement-recorder.md)
+- `assistant` mode enables pilot voice playback behavior used by OVOS timing
 
 ### Manual Mode
 Run this once in the browser console before recording `Video A`:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
@@ -28,7 +29,6 @@ Run this before recording `Video B`:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
-localStorage.removeItem('humanenerdia_pilot_measurement_state');
 location.href = '/index.html';
 ```
 
