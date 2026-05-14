@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HumanEnerDIA Pilot Measurement",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automatic browser click, screen, and task-time recorder for HumanEnerDIA simulated pilot videos.",
   "permissions": [
     "storage",

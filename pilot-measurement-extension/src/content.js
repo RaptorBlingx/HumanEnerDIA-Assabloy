@@ -8,13 +8,51 @@
   let lastUrl = location.href;
   let lastMessage = 'Extension loaded. Select a task and start measuring.';
   let dragState = null;
+  let extensionContextValid = true;
+
+  function isContextInvalidated(error) {
+    return /Extension context invalidated|context invalidated/i.test(String(error?.message || error || ''));
+  }
+
+  function handleContextInvalidated() {
+    extensionContextValid = false;
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+    setLast('Extension was reloaded. Refresh this page to reconnect the recorder.');
+    const overlay = document.getElementById(rootId);
+    if (overlay) {
+      overlay.classList.add('hpd-context-invalid');
+    }
+    return null;
+  }
 
   function send(message) {
-    return chrome.runtime.sendMessage({
-      url: location.href,
-      title: document.title,
-      ...message
-    });
+    if (!extensionContextValid) {
+      return Promise.resolve(null);
+    }
+
+    try {
+      if (typeof chrome === 'undefined' || !chrome.runtime?.id) {
+        return Promise.resolve(handleContextInvalidated());
+      }
+      return chrome.runtime.sendMessage({
+        url: location.href,
+        title: document.title,
+        ...message
+      }).catch(error => {
+        if (isContextInvalidated(error)) {
+          return handleContextInvalidated();
+        }
+        throw error;
+      });
+    } catch (error) {
+      if (isContextInvalidated(error)) {
+        return Promise.resolve(handleContextInvalidated());
+      }
+      return Promise.reject(error);
+    }
   }
 
   function elapsedMs() {
@@ -226,19 +264,23 @@
     document.getElementById('hpd-last').textContent = lastMessage;
   }
 
+  function applyResponse(response) {
+    if (!response?.state) {
+      return false;
+    }
+    state = response.state;
+    tasks = response.tasks || tasks;
+    render();
+    return true;
+  }
+
   async function refresh() {
     const response = await send({ type: 'getState' });
-    state = response.state;
-    tasks = response.tasks || [];
-    render();
+    applyResponse(response);
   }
 
   function updateSettings(patch) {
-    send({ type: 'updateSettings', patch }).then(response => {
-      state = response.state;
-      tasks = response.tasks || tasks;
-      render();
-    });
+    send({ type: 'updateSettings', patch }).then(applyResponse).catch(() => undefined);
   }
 
   function bindOverlayEvents() {
@@ -266,60 +308,74 @@
     document.getElementById('hpd-notes').addEventListener('input', event => updateSettings({ notes: event.target.value }));
     document.getElementById('hpd-start').addEventListener('click', () => {
       send({ type: 'startTask' }).then(response => {
-        state = response.state;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast(`Started ${state.condition}-${state.taskId}.`);
-      });
+      }).catch(() => undefined);
     });
     document.getElementById('hpd-stop').addEventListener('click', () => {
       send({ type: 'stopTask', reason: 'answer_found' }).then(response => {
-        state = response.state;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast(`Saved ${state.records.at(-1)?.condition || ''}-${state.records.at(-1)?.taskId || ''}.`);
-      });
+      }).catch(() => undefined);
     });
-    document.getElementById('hpd-minus-click').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'clicks', delta: -1 }));
-    document.getElementById('hpd-plus-click').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'clicks', delta: 1 }));
-    document.getElementById('hpd-minus-screen').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'screens', delta: -1 }));
-    document.getElementById('hpd-plus-screen').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'screens', delta: 1 }));
+    document.getElementById('hpd-minus-click').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'clicks', delta: -1 }).then(applyResponse).catch(() => undefined));
+    document.getElementById('hpd-plus-click').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'clicks', delta: 1 }).then(applyResponse).catch(() => undefined));
+    document.getElementById('hpd-minus-screen').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'screens', delta: -1 }).then(applyResponse).catch(() => undefined));
+    document.getElementById('hpd-plus-screen').addEventListener('click', () => send({ type: 'adjustCounter', counter: 'screens', delta: 1 }).then(applyResponse).catch(() => undefined));
     document.getElementById('hpd-copy-raw').addEventListener('click', async () => {
       const response = await send({ type: 'export' });
+      if (!response?.rawCsv) {
+        return;
+      }
       await copyText(response.rawCsv, 'Raw CSV');
     });
     document.getElementById('hpd-copy-summary').addEventListener('click', async () => {
       const response = await send({ type: 'export' });
+      if (!response?.summaryCsv) {
+        return;
+      }
       await copyText(response.summaryCsv, 'KPI Summary CSV');
     });
     document.getElementById('hpd-download-json').addEventListener('click', async () => {
       const response = await send({ type: 'getState' });
+      if (!response?.state) {
+        return;
+      }
       csvDownload(`pilot-measurement-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(response.state.records, null, 2), 'application/json');
     });
     document.getElementById('hpd-reset-current').addEventListener('click', () => {
       send({ type: 'resetCurrent' }).then(response => {
-        state = response.state;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast('Current task reset.');
-      });
+      }).catch(() => undefined);
     });
     document.getElementById('hpd-delete-last').addEventListener('click', () => {
       if (!window.confirm('Delete the last saved try?')) {
         return;
       }
       send({ type: 'deleteLast' }).then(response => {
-        state = response.state;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast('Last saved try deleted.');
-      });
+      }).catch(() => undefined);
     });
     document.getElementById('hpd-clear-all').addEventListener('click', () => {
       if (!window.confirm('Reset all saved tries and current counters?')) {
         return;
       }
       send({ type: 'clearAll' }).then(response => {
-        state = response.state;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast('All saved tries reset.');
-      });
+      }).catch(() => undefined);
     });
   }
 
@@ -420,9 +476,9 @@
         type: 'startTask',
         source: event.detail?.source || 'assistant'
       }).then(response => {
-        state = response.state;
-        tasks = response.tasks || tasks;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast('Assistant task started automatically.');
       }).catch(() => undefined);
     });
@@ -437,9 +493,9 @@
         reason: event.detail?.stopReason || 'assistant_response_complete',
         source: event.detail?.source || 'assistant'
       }).then(response => {
-        state = response.state;
-        tasks = response.tasks || tasks;
-        render();
+        if (!applyResponse(response)) {
+          return;
+        }
         setLast(state.running
           ? 'Assistant response complete. Auto-stop is off.'
           : 'Assistant response complete. Task saved.'

@@ -66,7 +66,7 @@ http://10.33.10.103:8080/index.html
 
 7. Confirm the `Pilot Measurement` overlay appears in the bottom-right of the page.
 
-After `git pull`, go back to `chrome://extensions` and click reload on `HumanEnerDIA Pilot Measurement` so Chrome loads the updated extension files.
+After `git pull`, go back to `chrome://extensions` and click reload on `HumanEnerDIA Pilot Measurement` so Chrome loads the updated extension files. Then refresh any already-open HumanEnerDIA or Grafana tabs so their content scripts reconnect to the updated extension runtime.
 
 ## Official Recording Use
 

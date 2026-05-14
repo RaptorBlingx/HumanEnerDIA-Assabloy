@@ -20,6 +20,10 @@
   box-shadow: 0 22px 58px rgba(15, 23, 42, 0.46);
 }
 
+#hpd-recorder.hpd-context-invalid {
+  border-color: rgba(245, 158, 11, 0.85);
+}
+
 #hpd-recorder * {
   box-sizing: border-box;
 }
@@ -212,6 +216,14 @@
 .hpd-danger {
   color: #fff;
   background: #dc2626;
+}
+
+#hpd-recorder.hpd-context-invalid button,
+#hpd-recorder.hpd-context-invalid input,
+#hpd-recorder.hpd-context-invalid select,
+#hpd-recorder.hpd-context-invalid textarea {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .hpd-checks label {
