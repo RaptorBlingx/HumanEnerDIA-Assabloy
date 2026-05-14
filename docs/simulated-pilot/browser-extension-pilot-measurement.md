@@ -2,6 +2,8 @@
 
 Use the Chrome extension for the official simulated-pilot recordings when automatic browser click and screen counting is required.
 
+For the final edited video structure, use [video-editing-guide.md](video-editing-guide.md). The recommended workflow is to record short task clips and edit each pair as `Condition A` followed by `Condition B`.
+
 Project path:
 
 ```text
@@ -70,7 +72,7 @@ After `git pull`, go back to `chrome://extensions` and click reload on `HumanEne
 
 ## Official Recording Use
 
-1. Start the screen recorder.
+1. Start the screen recorder for the current short task clip.
 2. Select the condition, task, and trial in the overlay.
 3. Click `Start Task` immediately before the first task action.
 4. Perform the task normally.
@@ -80,7 +82,8 @@ After `git pull`, go back to `chrome://extensions` and click reload on `HumanEne
 8. Keep `Auto` checked for single-prompt assistant tasks so the timer can stop when the assistant completion event fires.
 9. Uncheck `Auto` for multi-prompt assistant tasks, then click `Answer Found` after the final response.
 10. Click `Answer Found` manually for Condition A when the required answer is visible.
-11. Export `Copy Raw` and `Copy KPI` at the end.
+11. Stop the screen recorder a few seconds after the saved result is visible.
+12. Export `Copy Raw` and `Copy KPI` at the end of the full A/B recording session.
 
 The overlay is movable. Drag the `Pilot Measurement` header to another part of the page if it covers important content.
 

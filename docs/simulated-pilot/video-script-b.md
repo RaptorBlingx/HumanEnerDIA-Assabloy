@@ -9,7 +9,8 @@ Personas:
 - `Technical user`: energy / maintenance / automation engineer
 
 Official timing rule:
-- Start one continuous screen recording for the whole Condition B video.
+- Preferred workflow: record one short clip per task, then edit it immediately after the matching `Condition A` clip.
+- If recording a full Condition B run instead, keep the same task order and later split the footage by task.
 - Use the Chrome extension `Pilot Measurement` overlay for each task timer.
 - For OVOS voice tasks, the task timer starts when the wake word event starts the assistant flow. In practice, this is when you say `Jarvis` if wake word is enabled.
 - If you type into OVOS instead of using the wake word, the task timer starts when you send the prompt.
@@ -35,7 +36,15 @@ location.href = '/index.html';
 8. If you will use voice, enable the `Jarvis` wake word before the official recording and allow microphone permission.
 9. If wake word recognition is unreliable during rehearsal, use typed OVOS prompts consistently for the whole video. Do not mix voice and typing randomly.
 10. Set the same browser zoom and window size used for Condition A.
-11. Open the screen recorder, but do not start recording yet.
+11. Open the screen recorder, but do not start the task clip yet.
+
+## Clip Recording Rule
+- For task-based editing, start recording a few seconds before selecting the task in the extension.
+- Stop recording a few seconds after clicking `Answer Found`, or after auto-stop has saved the task.
+- Name the clip using the pattern `O1-B-assistant.mp4`, `O2-B-assistant.mp4`, and so on.
+- Keep the extension overlay visible at the beginning and end of the clip so the task ID, condition, timer, clicks, screens, and flags are visible.
+- Keep OVOS voice playback audible in OVOS clips.
+- Keep chatbot prompts and answers visible in chatbot clips.
 
 Pilot voice behavior:
 - In assistant pilot mode, OVOS uses browser speech synthesis for playback timing.
@@ -54,16 +63,18 @@ Pilot voice behavior:
 - Multi-prompt task: `Auto-stop` unchecked. Select task, ask all prompts, then click `Answer Found` manually after the final spoken or visible answer is complete.
 - Report download task: `Auto-stop` unchecked. Stop manually only after the assistant response appears and the PDF download has started or the download message is visible.
 
-## Start The Video Recording
-1. Start the screen recorder.
-2. Show this title on screen or say it clearly:
+## Start An Assistant Task Clip
+1. Start the screen recorder for the current task clip.
+2. Show this title on screen for the first assistant clip, or use the shorter task label for later clips:
 
 > Simulated pilot benchmark - Condition B  
 > HumanEnerDIA with OVOS and chatbot support
 
-3. Say:
+3. For the first assistant clip only, say:
 
 > This benchmark repeats the same simulated Romanian pilot tasks with assistant support. OVOS supports monitoring, analysis, forecasting, opportunities, and reporting. The chatbot supports standards, documentation, and procedure guidance.
+
+4. For later assistant clips, use the task-specific label from [video-editing-guide.md](video-editing-guide.md).
 
 ## O1 - Factory Overview And Top Consumers
 Persona: `Operational user`
@@ -222,14 +233,15 @@ Steps:
 9. Click `Answer Found` immediately after the download start is visible and the spoken playback is finished.
 10. Re-check `Auto-stop` after saving the task record if you continue testing.
 
-## End The Video Recording
-1. Show this closing statement on screen or say it clearly:
+## End An Assistant Task Clip
+1. After the task auto-stops or after clicking `Answer Found`, keep the extension overlay visible for a few seconds.
+2. Stop the screen recorder for that task clip.
+3. After all manual and assistant task clips are recorded, open the extension `Pilot Measurement` overlay or popup.
+4. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI comparison table.
+
+Optional closing line for a full assistant-condition source video:
 
 > Condition B complete. Same tasks, assistant-supported workflow.
-
-2. Open the extension `Pilot Measurement` overlay or popup.
-3. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI comparison table.
-4. Stop the screen recorder.
 
 ## Verified Assistant Prompts
 These are the official prompts to use in the recording. Do not improvise alternatives during the official run.

@@ -17,7 +17,7 @@ The repo still supports a simple pilot-mode toggle for assistant visibility and 
 - `assistant` mode enables pilot voice playback behavior used by OVOS timing
 
 ### Manual Mode
-Run this once in the browser console before recording `Video A`:
+Run this once in the browser console before recording `Condition A` clips:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'manual');
@@ -25,7 +25,7 @@ location.href = '/index.html';
 ```
 
 ### Assistant Mode
-Run this before recording `Video B`:
+Run this before recording `Condition B` clips:
 
 ```js
 localStorage.setItem('humanenerdia_pilot_mode', 'assistant');
@@ -82,13 +82,13 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
   - `download report of Apr 2026`
 
 ## 6. Recording Defaults
-- Use the same browser, zoom level, and screen resolution in both videos.
-- Use the same user account in both videos.
-- Keep the timer style identical across both videos.
+- Use the same browser, zoom level, and screen resolution in both conditions.
+- Use the same user account in both conditions.
+- Keep the extension overlay style identical across both conditions.
 - For OVOS tasks in `Condition B`, include voice playback in the task time.
 - During rehearsal, confirm `Compressor-1` is spoken as `Compressor one` and the default `1.00` pilot speech rate is understandable.
-- Keep the page order identical across both videos.
-- Record `Condition A` first, then `Condition B`.
+- Keep the page/task order identical across both conditions.
+- Record the matching `Condition A` and `Condition B` task clips before editing each A/B comparison segment.
 
 ## 7. Report And Period Defaults
 - EnPI task: `2026-Q1`

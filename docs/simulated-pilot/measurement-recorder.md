@@ -4,7 +4,7 @@ The browser extension is now the preferred recorder for the official simulated p
 
 The old in-app recorder has been disabled in the HumanEnerDIA pages to avoid duplicate recorder overlays.
 
-If you want a separate manual measurement page outside HumanEnerDIA, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
+If you want a separate manual measurement page outside HumanEnerDIA for non-official testing, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
 
 ## Enable The Official Extension
 Install and enable the Chrome extension from:

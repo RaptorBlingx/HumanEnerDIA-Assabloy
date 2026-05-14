@@ -3,11 +3,14 @@
 Use this checklist before sending the package to management or evaluators.
 
 ## Required Files
-- [ ] `Video A` - manual condition
-- [ ] `Video B` - assistant condition
+- [ ] final edited A/B benchmark video
+- [ ] raw task clips, named by task and condition
+- [ ] Pilot Measurement extension raw export
+- [ ] Pilot Measurement extension KPI export
 - [ ] completed KPI comparison sheet
 - [ ] methodology note
 - [ ] simulated pilot factory profile
+- [ ] video editing guide / final video structure notes
 
 ## KPI Sheet Validation
 - [ ] Every task row is filled for both conditions.
@@ -17,8 +20,11 @@ Use this checklist before sending the package to management or evaluators.
 - [ ] Notes explain any failed or partial task.
 
 ## Video Validation
-- [ ] Both videos use the same task order.
-- [ ] Both videos use the same personas.
+- [ ] Each task round shows `Condition A` first and `Condition B` second.
+- [ ] Each task round uses the same task wording and persona.
+- [ ] Each task round keeps the extension overlay visible at the start and end of the measured task.
+- [ ] Each A/B pair is followed by a short comparison card.
+- [ ] The final video includes a consolidated KPI summary.
 - [ ] The simulated-pilot disclosure appears at the start.
 - [ ] Monitoring tasks are visible.
 - [ ] Analyses tasks are visible.

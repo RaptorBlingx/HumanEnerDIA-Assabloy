@@ -68,7 +68,7 @@ Use this exact language at the start of the benchmark and demo:
 > This is a simulated pilot based on a representative Romanian manufacturing profile aligned with the HumanEnerDIA pilot-factory scope. The original field-trial host factory withdrew, so the KPI demonstration is being performed through a realistic A/B simulation on the existing HumanEnerDIA platform.
 
 ## Consistency Rules
-- Use the same factory profile wording in both videos.
+- Use the same factory profile wording in both conditions and all task clips.
 - Do not mix in older sample-factory identities from previous demo environments.
 - Use `Compressor-1` as the default machine for machine-specific benchmark tasks unless rehearsal proves another machine is more stable.
 - Keep the controlled anomaly scenario stable so `T1` always resolves to the recent `Compressor-2` alert.

@@ -39,7 +39,9 @@ Use this checklist before freezing the recording scripts.
 - [ ] The assistant-supported flow is clearly faster or simpler than the manual flow.
 
 ## Recording Setup
-- [ ] Timer overlay is visible and readable.
+- [ ] Pilot Measurement extension overlay is visible and readable.
+- [ ] Extension click, screen, and task-time counters update during a sample manual task.
+- [ ] Extension auto-start/auto-stop works during a sample assistant task.
 - [ ] Screen resolution and zoom are fixed.
 - [ ] Audio capture is clear enough for spoken prompts and summaries.
 - [ ] No debug windows, terminals, or unrelated tabs are visible.

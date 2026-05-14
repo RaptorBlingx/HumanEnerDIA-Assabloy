@@ -9,7 +9,8 @@ Personas:
 - `Technical user`: energy / maintenance / automation engineer
 
 Official timing rule:
-- Start one continuous screen recording for the whole Condition A video.
+- Preferred workflow: record one short clip per task, then edit it beside the matching `Condition B` clip.
+- If recording a full Condition A run instead, keep the same task order and later split the footage by task.
 - Use the Chrome extension `Pilot Measurement` overlay for each task timer.
 - Click `Start Task` immediately before the first manual action for the task.
 - Click `Answer Found` immediately when the required answer is visibly found.
@@ -38,7 +39,14 @@ location.href = '/index.html';
 7. Drag the extension overlay away from important dashboard content if needed.
 8. Use `Reset Current`, `Delete Last Try`, or `Reset All` if rehearsal data must be corrected before the official run.
 9. Set the browser zoom and window size you will also use for Condition B.
-10. Open the screen recorder, but do not start recording yet.
+10. Open the screen recorder, but do not start the task clip yet.
+
+## Clip Recording Rule
+- For task-based editing, start recording a few seconds before selecting the task in the extension.
+- Stop recording a few seconds after clicking `Answer Found`.
+- Name the clip using the pattern `O1-A-manual.mp4`, `O2-A-manual.mp4`, and so on.
+- Keep the extension overlay visible at the beginning and end of the clip so the task ID, condition, timer, clicks, screens, and flags are visible.
+- Do not include login, browser setup, or window arrangement in the measured task clip.
 
 ## Recorder Checkbox Rules
 - `Expert`: leave unchecked unless the task cannot be completed without asking a human expert or leaving HumanEnerDIA. Expected result for the official rehearsal is unchecked.
@@ -65,16 +73,18 @@ The Chrome extension runs on Grafana pages and counts browser clicks automatical
 - Predictive Analytics: `http://10.33.10.103:8080/grafana/d/sota_predictive_analytics/predictive-analytics?orgId=1&from=now-7d&to=now%2B1d`
 - ISO 50001 EnPI: `http://10.33.10.103:8080/grafana/d/sota-iso50001-enpi/iso-50001-enpi?orgId=1&from=2026-01-01T00:00:00.000Z&to=2026-03-31T23:59:59.000Z`
 
-## Start The Video Recording
-1. Start the screen recorder.
-2. Show this title on screen or say it clearly:
+## Start A Manual Task Clip
+1. Start the screen recorder for the current task clip.
+2. Show this title on screen for the first manual clip, or use the shorter task label for later clips:
 
 > Simulated pilot benchmark - Condition A  
 > HumanEnerDIA without OVOS and without chatbot
 
-3. Say:
+3. For the first manual clip only, say:
 
 > This benchmark uses the simulated Romanian pilot factory profile. In Condition A, users complete the same tasks manually through HumanEnerDIA portal pages, Grafana dashboards, analytics views, and reports without assistant support.
+
+4. For later manual clips, use the task-specific label from [video-editing-guide.md](video-editing-guide.md).
 
 ## O1 - Factory Overview And Top Consumers
 Persona: `Operational user`
@@ -117,7 +127,7 @@ Steps:
 4. Open the `Machine Health for Compressor-1` Grafana link directly, or open the Grafana folder if it is not already open.
 5. Let the extension count Grafana navigation clicks and URL/screen changes automatically.
 6. If needed, open `Machine Health` and set the machine variable to `Compressor-1`.
-7. Use `+Click` for the dashboard click and `+Screen` when the dashboard view changes.
+7. Let the extension count the dashboard click and URL/screen change automatically. Use `+Screen` only if the dashboard visibly changes without a URL/screen count change.
 8. Confirm the time range is `Today`.
 9. Use panels `Energy Today`, `Current Power`, and `Anomaly Details`.
 10. If you need the explicit running or stopped status, open `Operational Efficiency` and use panel `Machine Status Overview`.
@@ -254,11 +264,12 @@ Steps:
 10. Click `Answer Found` when the generation/download result is visible.
 11. Manual proof source: `/reports.html`.
 
-## End The Video Recording
-1. Show this closing statement on screen or say it clearly:
+## End A Manual Task Clip
+1. After clicking `Answer Found`, keep the extension overlay visible for a few seconds.
+2. Stop the screen recorder for that task clip.
+3. After all manual and assistant task clips are recorded, open the extension `Pilot Measurement` overlay or popup.
+4. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI table.
+
+Optional closing line for a full manual-condition source video:
 
 > Condition A complete. Same tasks, manual navigation only.
-
-2. Open the extension `Pilot Measurement` overlay or popup.
-3. Click `Copy Raw` and `Copy KPI` and keep the copied data for the KPI table.
-4. Stop the screen recorder.

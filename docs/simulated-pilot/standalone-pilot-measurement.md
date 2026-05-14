@@ -1,5 +1,7 @@
 # Standalone Pilot Measurement App
 
+Status: deprecated for the official simulated-pilot recording. Use the Chrome extension in [browser-extension-pilot-measurement.md](browser-extension-pilot-measurement.md) because it automatically counts browser clicks and screen changes across HumanEnerDIA and Grafana.
+
 Use the standalone app when you want the measurement tool to run outside HumanEnerDIA, for example on a Windows 11 laptop beside Grafana, reports, OVOS, or the chatbot.
 
 Project path:
@@ -92,4 +94,3 @@ Condition B:
 - `Success`: checked only when the assistant result is correct.
 - Start when you begin saying `Jarvis` or submit the chatbot prompt.
 - Stop when OVOS voice playback finishes, the chatbot answer appears, or the report download starts.
-
