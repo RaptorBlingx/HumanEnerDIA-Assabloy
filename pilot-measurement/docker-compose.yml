@@ -1,0 +1,11 @@
+services:
+  pilot-measurement:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: humanenerdia-pilot-measurement:local
+    container_name: humanenerdia-pilot-measurement
+    ports:
+      - "${PILOT_MEASUREMENT_PORT:-8095}:80"
+    restart: unless-stopped
+

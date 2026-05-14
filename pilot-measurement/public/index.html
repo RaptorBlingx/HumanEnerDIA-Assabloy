@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HumanEnerDIA Pilot Measurement</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <section class="recorder-panel" aria-label="Pilot measurement recorder">
+            <header class="app-header">
+                <div>
+                    <p class="eyebrow">HumanEnerDIA</p>
+                    <h1>Pilot Measurement</h1>
+                </div>
+                <div class="status-pill" id="running-state">Idle</div>
+            </header>
+
+            <div class="timer" id="timer">00:00.0</div>
+
+            <div class="control-grid">
+                <label>
+                    Condition
+                    <select id="condition">
+                        <option value="A">A - Manual</option>
+                        <option value="B">B - Assistant</option>
+                    </select>
+                </label>
+                <label>
+                    Task
+                    <select id="task"></select>
+                </label>
+                <label>
+                    Trial
+                    <select id="trial">
+                        <option value="1">Trial 1</option>
+                        <option value="2">Trial 2</option>
+                        <option value="3">Trial 3</option>
+                        <option value="extra">Extra</option>
+                    </select>
+                </label>
+                <label>
+                    Session
+                    <input id="session-name" type="text" value="official-run">
+                </label>
+            </div>
+
+            <div class="metrics">
+                <div>
+                    <span>Clicks</span>
+                    <strong id="clicks">0</strong>
+                </div>
+                <div>
+                    <span>Screens</span>
+                    <strong id="screens">0</strong>
+                </div>
+                <div>
+                    <span>Records</span>
+                    <strong id="record-count">0</strong>
+                </div>
+            </div>
+
+            <div class="primary-actions">
+                <button id="start-task" class="success">Start Task</button>
+                <button id="answer-found" class="warning">Answer Found</button>
+            </div>
+
+            <div class="counter-actions">
+                <button id="add-click">+Click</button>
+                <button id="remove-click">-Click</button>
+                <button id="add-screen">+Screen</button>
+                <button id="remove-screen">-Screen</button>
+            </div>
+
+            <div class="checks">
+                <label><input type="checkbox" id="expert-help"> Expert</label>
+                <label><input type="checkbox" id="manual-reasoning"> Manual reasoning</label>
+                <label><input type="checkbox" id="success" checked> Success</label>
+            </div>
+
+            <label class="notes-label">
+                Notes
+                <textarea id="notes" rows="3" placeholder="Optional evidence note"></textarea>
+            </label>
+
+            <div class="secondary-actions">
+                <button id="reset-current">Reset Current</button>
+                <button id="delete-last">Delete Last</button>
+                <button id="clear-all" class="danger">Clear All</button>
+            </div>
+
+            <div class="export-actions">
+                <button id="copy-raw">Copy Raw CSV</button>
+                <button id="download-raw">Download Raw CSV</button>
+                <button id="copy-summary">Copy KPI Summary CSV</button>
+                <button id="download-summary">Download KPI Summary CSV</button>
+                <button id="download-json">Download JSON</button>
+            </div>
+
+            <p class="last-message" id="last-message">Select a task and start measuring.</p>
+        </section>
+
+        <section class="task-panel" aria-label="Task details">
+            <div class="task-card">
+                <p class="eyebrow" id="task-persona">Operational user</p>
+                <h2 id="task-title">O1 - Factory overview and top consumers</h2>
+                <dl>
+                    <dt>Module</dt>
+                    <dd id="task-module">Monitoring</dd>
+                    <dt>Task</dt>
+                    <dd id="task-description"></dd>
+                    <dt>Manual path</dt>
+                    <dd id="task-manual"></dd>
+                    <dt>Assistant support</dt>
+                    <dd id="task-assistant"></dd>
+                    <dt>Stop when</dt>
+                    <dd id="task-stop"></dd>
+                </dl>
+            </div>
+
+            <div class="summary-card">
+                <h2>KPI Summary</h2>
+                <div class="summary-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>A sec</th>
+                                <th>B sec</th>
+                                <th>Reduction</th>
+                                <th>A clicks</th>
+                                <th>B clicks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="records-panel" aria-label="Saved measurements">
+            <h2>Saved Records</h2>
+            <div class="records-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Condition</th>
+                            <th>Trial</th>
+                            <th>Task</th>
+                            <th>Seconds</th>
+                            <th>Clicks</th>
+                            <th>Screens</th>
+                            <th>Expert</th>
+                            <th>Manual</th>
+                            <th>Success</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>

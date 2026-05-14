@@ -2,6 +2,8 @@
 
 The in-app recorder replaces the external timer and manual click counter for the simulated pilot videos.
 
+If you want to measure from outside HumanEnerDIA, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
+
 ## Enable It
 For Condition A:
 
