@@ -1,8 +1,10 @@
 # Pilot Measurement Recorder
 
-The in-app recorder replaces the external timer and manual click counter for the simulated pilot videos.
+The browser extension is now the preferred recorder for the official simulated pilot because it can automatically count clicks and browser screen changes across HumanEnerDIA and Grafana. See [browser-extension-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/browser-extension-pilot-measurement.md).
 
-If you want to measure from outside HumanEnerDIA, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
+The in-app recorder remains available as a platform-native fallback.
+
+If you want a separate manual measurement page outside HumanEnerDIA, use the standalone Dockerized app in `pilot-measurement/`. See [standalone-pilot-measurement.md](/home/ubuntu/enms/docs/simulated-pilot/standalone-pilot-measurement.md).
 
 ## Enable It
 For Condition A:

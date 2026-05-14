@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "HumanEnerDIA Pilot Measurement",
+  "version": "1.0.0",
+  "description": "Automatic browser click, screen, and task-time recorder for HumanEnerDIA simulated pilot videos.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "webNavigation",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "http://10.33.10.103/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_title": "Pilot Measurement",
+    "default_popup": "src/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://10.33.10.103/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "css": [
+        "src/content.css"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "start-task": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Start the selected pilot task"
+    },
+    "answer-found": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "Stop the active pilot task"
+    },
+    "add-screen": {
+      "suggested_key": {
+        "default": "Alt+Shift+X"
+      },
+      "description": "Add one screen count"
+    }
+  }
+}
+

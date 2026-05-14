@@ -1,6 +1,8 @@
 # HumanEnerDIA Pilot Measurement
 
-Standalone measurement app for the simulated WASABI / HumanEnerDIA pilot videos.
+Standalone manual measurement app for the simulated WASABI / HumanEnerDIA pilot videos.
+
+For the official recording, prefer the Chrome extension in `pilot-measurement-extension/` because it can automatically count clicks and browser screen changes inside HumanEnerDIA and Grafana. This Docker app is useful as a fallback control panel, but it cannot automatically observe clicks outside its own page.
 
 It runs by itself and does not start the full HumanEnerDIA stack. Use it when the official task flow moves through Grafana, reports, browser tabs, or any page where the in-platform recorder is not available.
 
@@ -95,4 +97,3 @@ Condition B:
 - `Success`: checked if the answer/download is correct
 - Start timer when you begin saying `Jarvis`
 - Stop timer when the spoken answer finishes, or when the chatbot answer is visible
-

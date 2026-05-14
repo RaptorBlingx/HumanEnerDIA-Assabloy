@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilot Measurement</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p>HumanEnerDIA</p>
+      <h1>Pilot Measurement</h1>
+      <strong id="status">Idle</strong>
+    </header>
+
+    <div class="timer" id="timer">00:00.0</div>
+
+    <label>Condition
+      <select id="condition">
+        <option value="A">A - Manual</option>
+        <option value="B">B - Assistant</option>
+      </select>
+    </label>
+
+    <label>Task
+      <select id="task"></select>
+    </label>
+
+    <label>Trial
+      <select id="trial">
+        <option value="1">Trial 1</option>
+        <option value="2">Trial 2</option>
+        <option value="3">Trial 3</option>
+        <option value="extra">Extra</option>
+      </select>
+    </label>
+
+    <div class="metrics">
+      <div><span>Clicks</span><strong id="clicks">0</strong></div>
+      <div><span>Screens</span><strong id="screens">0</strong></div>
+      <div><span>Records</span><strong id="records">0</strong></div>
+    </div>
+
+    <div class="actions">
+      <button id="start" class="success">Start</button>
+      <button id="stop" class="warning">Answer Found</button>
+    </div>
+
+    <div class="actions four">
+      <button id="minus-click">-Click</button>
+      <button id="plus-click">+Click</button>
+      <button id="minus-screen">-Screen</button>
+      <button id="plus-screen">+Screen</button>
+    </div>
+
+    <div class="checks">
+      <label><input type="checkbox" id="expert"> Expert</label>
+      <label><input type="checkbox" id="reasoning"> Manual</label>
+      <label><input type="checkbox" id="success" checked> Success</label>
+      <label><input type="checkbox" id="autostop" checked> Auto</label>
+    </div>
+
+    <div class="actions">
+      <button id="copy-raw">Copy Raw CSV</button>
+      <button id="copy-summary">Copy KPI CSV</button>
+    </div>
+
+    <div class="actions">
+      <button id="delete-last">Delete Last</button>
+      <button id="clear-all" class="danger">Clear All</button>
+    </div>
+
+    <p id="message">Open a supported HumanEnerDIA page to use the overlay.</p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
