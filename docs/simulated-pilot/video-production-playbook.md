@@ -12,6 +12,13 @@ Source references:
 
 Create one final edited benchmark video, not two separate final videos.
 
+There are two different timelines:
+
+- Recording timeline: this is how you capture the raw evidence clips.
+- Editing timeline: this is how you arrange those clips into the final video.
+
+Do not mix these two steps. During recording, your job is only to capture clean evidence clips with the Pilot Measurement extension visible. During editing, your job is to add title cards, labels, voiceover, comparison cards, and the final KPI summary.
+
 The final video order is:
 
 1. Opening title and simulated-pilot disclosure.
@@ -31,10 +38,180 @@ The final video order is:
 
 Do not wait until the end to show all comparisons. Show a short comparison card after every A/B task pair, then show the consolidated KPI summary at the end.
 
+## End-To-End Timeline
+
+Follow this order from start to finish.
+
+### Phase 1 - Prepare Once
+
+Do this before recording any official clip:
+
+1. Open Chrome.
+2. Reload the `HumanEnerDIA Pilot Measurement` extension at `chrome://extensions`.
+3. Open `http://10.33.10.103:8080/index.html`.
+4. Log in if needed.
+5. Confirm the Pilot Measurement overlay appears.
+6. Confirm the extension can count a sample click and screen change.
+7. Confirm the screen recorder captures the browser screen.
+8. Confirm audio capture works for microphone and browser audio.
+9. Create a folder for raw clips.
+10. Create a folder for final edited video assets.
+
+Do not record the opening title, methodology slide, task labels, or comparison cards yet. Those are editing assets, not raw evidence clips.
+
+### Phase 2 - Record Raw Evidence Clips
+
+Recommended recording order:
+
+1. Set `manual` mode once.
+2. Record all `Condition A` clips: `O1-A`, `O2-A`, `O3-A`, `O4-A`, `T1-A`, `T2-A`, `T3-A`, `T4-A`.
+3. Set `assistant` mode once.
+4. Record all `Condition B` clips: `O1-B`, `O2-B`, `O3-B`, `O4-B`, `T1-B`, `T2-B`, `T3-B`, `T4-B`.
+
+This is the cleanest workflow because it avoids switching between manual and assistant modes after every task.
+
+Allowed alternative:
+
+```text
+O1-A, O1-B, O2-A, O2-B, ... T4-A, T4-B
+```
+
+Use the alternative only if you strongly prefer checking each A/B pair immediately. The final edited video is the same either way.
+
+For each raw clip:
+
+1. Start the screen recorder.
+2. Set the extension condition and task.
+3. Start the task timer.
+4. Perform the task.
+5. Stop the task timer with `Answer Found` or assistant auto-stop.
+6. Keep the extension overlay visible for a few seconds.
+7. Stop the screen recorder.
+8. Rename the clip immediately using the official clip name.
+
+Important: do not add title cards, labels, subtitles, or voiceover during raw recording. If you need to speak during Condition A, keep it outside the measured task window. OVOS speech in Condition B is different because it is part of the measured assistant interaction.
+
+### Phase 3 - Export Measurements
+
+Do this after all raw clips are recorded:
+
+1. Open the Pilot Measurement extension overlay or popup.
+2. Click `Copy Raw`.
+3. Save the raw rows with the evidence package.
+4. Click `Copy KPI`.
+5. Paste the KPI rows into the KPI sheet.
+6. Verify every task has an `A` row and a `B` row.
+7. Verify time, clicks, screens, expert help, manual reasoning, and success.
+8. Calculate the reduction percentages.
+
+Do not build comparison cards before this phase. The comparison cards need the final measured values.
+
+### Phase 4 - Build The Edited Video Timeline
+
+Now open your video editor and build the final timeline in this order:
+
+1. Add the opening title card.
+2. Add the opening disclosure voiceover.
+3. Add the methodology slide.
+4. Add the methodology voiceover.
+5. Add the `O1` title card.
+6. Add the `Condition A` label.
+7. Insert `O1-A-manual.mp4`.
+8. Add the `Condition B` label.
+9. Insert `O1-B-assistant.mp4`.
+10. Add the `O1` comparison card using measured values.
+11. Repeat the same pattern for `O2`, `O3`, and `O4`.
+12. Add the operational-user subtotal card.
+13. Repeat the same pattern for `T1`, `T2`, `T3`, and `T4`.
+14. Add the technical-user subtotal card.
+15. Add the final KPI summary card.
+16. Add the evidence package slide.
+17. Export the final edited video.
+
+This is when you add the text labels and voiceovers. The raw clips should remain evidence clips; the editing timeline explains them.
+
+## Example Timeline For One Full Round
+
+Use this example for `O1`. Every other task follows the same logic.
+
+Recording stage:
+
+1. Set manual mode.
+2. Start screen recorder.
+3. In the extension, select `A - Manual` and `O1 - Factory overview and top consumers`.
+4. Click `Start Task`.
+5. Complete the manual Grafana lookup.
+6. Click `Answer Found`.
+7. Stop screen recorder.
+8. Save the raw clip as `O1-A-manual.mp4`.
+9. Later, set assistant mode.
+10. Start screen recorder.
+11. In the extension, select `B - Assistant` and `O1 - Factory overview and top consumers`.
+12. Ask the two OVOS prompts.
+13. Click `Answer Found` after the second voice answer finishes.
+14. Stop screen recorder.
+15. Save the raw clip as `O1-B-assistant.mp4`.
+
+Measurement stage:
+
+1. Export `Copy Raw` and `Copy KPI`.
+2. Read the measured `O1-A` and `O1-B` values.
+3. Calculate the `O1` time reduction and confirm clicks/screens, expert help, manual reasoning, and success.
+
+Editing stage:
+
+1. Add title card: `Task O1 - Factory overview and top 3 energy consumers`.
+2. Add voiceover: `This round compares the manual workflow with the assistant-supported workflow for the same task.`
+3. Add label card or lower-third: `Condition A - Manual workflow`.
+4. Insert `O1-A-manual.mp4`.
+5. Add label card or lower-third: `Condition B - Assistant-supported workflow`.
+6. Insert `O1-B-assistant.mp4`.
+7. Add `O1` comparison card with the measured A/B values.
+8. Add comparison voiceover explaining the improvement.
+
+The evaluator should see this sequence in the final video:
+
+```text
+O1 title -> A label -> O1-A clip -> B label -> O1-B clip -> O1 comparison
+```
+
+## What Goes Where
+
+Use this table to decide what belongs in raw recording versus editing.
+
+| Item | Add During Raw Recording? | Add During Editing? |
+| --- | --- | --- |
+| Pilot Measurement extension overlay | Yes | Already visible inside raw clip |
+| Manual task navigation | Yes | Insert raw clip only |
+| OVOS prompt and voice playback | Yes | Insert raw clip with audio |
+| Chatbot prompt and answer | Yes | Insert raw clip only |
+| Opening title | No | Yes |
+| Methodology slide | No | Yes |
+| Task title card | No | Yes |
+| `Condition A` / `Condition B` labels | No | Yes |
+| Lower-third task label | No | Yes |
+| Explanatory voiceover | No, except first clip intro if wanted outside timing | Yes |
+| Per-task comparison card | No | Yes, after KPI values are available |
+| Operational / technical subtotal | No | Yes |
+| Final KPI summary | No | Yes |
+| Evidence package slide | No | Yes |
+
+## Simple Mental Model
+
+Use this rule:
+
+```text
+Recording = evidence.
+Editing = explanation.
+```
+
+If something proves what happened on screen, record it. If something explains the evidence to the evaluator, add it later in the edit.
+
 ## Global Recording Rules
 
 - Record short clips per task, not one long final video.
-- For each task, record the `Condition A` manual clip first, then record the matching `Condition B` assistant clip.
+- Recommended recording order is all `Condition A` clips first, then all `Condition B` clips. The final edited video still shows each task as `A` followed by `B`.
+- If you prefer pair-by-pair recording, you may record `O1-A`, then `O1-B`, then move to `O2-A`, but do not edit until all clips and KPI values are ready.
 - Keep the task wording identical in both conditions.
 - Keep the same browser, zoom, screen resolution, and user account for all clips.
 - Keep the Pilot Measurement extension visible at the start and end of every measured clip.
@@ -76,7 +253,7 @@ O1-A-manual-take2.mp4
 
 Only use the official take in the final edit. Keep extra takes outside the evidence package unless they are needed for audit notes.
 
-## Before Recording
+## Detailed Setup Before Recording
 
 1. Open Chrome.
 2. Reload the Chrome extension at `chrome://extensions` if you recently pulled code changes.
@@ -131,7 +308,7 @@ For `Condition B`:
 - `Success`: checked only if the assistant answer is correct and completes the task
 - `Auto-stop`: checked for single-prompt assistant tasks, unchecked for multi-prompt tasks and the report download task
 
-## Opening Title
+## Editing Asset - Opening Title
 
 Add this at the start of the edited video.
 
@@ -149,7 +326,7 @@ Voiceover:
 This is a simulated pilot based on a representative Romanian manufacturing profile aligned with the HumanEnerDIA pilot-factory scope. The original field-trial host factory withdrew, so the KPI demonstration is being performed through a realistic A/B simulation on the existing HumanEnerDIA platform.
 ```
 
-## Methodology Slide
+## Editing Asset - Methodology Slide
 
 Add this immediately after the opening title.
 
@@ -171,7 +348,7 @@ Voiceover:
 The benchmark compares the same tasks under two conditions. Condition A uses HumanEnerDIA without OVOS and without the chatbot. Condition B repeats the same tasks with OVOS and chatbot support. The Pilot Measurement Chrome extension records task time, click count, screen count, expert-help need, manual-reasoning need, and success.
 ```
 
-## Standard Task Round Pattern
+## Editing Asset - Standard Task Round Pattern
 
 Use this pattern for every task:
 
@@ -249,7 +426,7 @@ Use this alternative voiceover if the time reduction is small but the assistant 
 For this task, the main improvement is reduced manual dashboard hunting and direct access to the required information.
 ```
 
-## Recording A Manual Clip
+## Recording a Condition A Manual Clip
 
 Use this flow for every `A` clip:
 
@@ -269,7 +446,7 @@ Use this flow for every `A` clip:
 14. Stop the screen recorder.
 15. Name the clip with the correct `A` filename.
 
-## Recording A Condition B Assistant Clip
+## Recording a Condition B Assistant Clip
 
 Use this flow for every `B` clip:
 
