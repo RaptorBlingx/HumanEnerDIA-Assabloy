@@ -2,7 +2,7 @@
 
 Use the Chrome extension for the official simulated-pilot recordings when automatic browser click and screen counting is required.
 
-For the final edited video structure, use [video-editing-guide.md](video-editing-guide.md). The recommended workflow is to record short task clips and edit each pair as `Condition A` followed by `Condition B`.
+For the full record-and-edit workflow, use [video-production-playbook.md](video-production-playbook.md). The recommended workflow is to record short task clips and edit each pair as `Condition A` followed by `Condition B`.
 
 Project path:
 

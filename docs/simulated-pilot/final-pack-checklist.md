@@ -10,7 +10,7 @@ Use this checklist before sending the package to management or evaluators.
 - [ ] completed KPI comparison sheet
 - [ ] methodology note
 - [ ] simulated pilot factory profile
-- [ ] video editing guide / final video structure notes
+- [ ] video production playbook / final video structure notes
 
 ## KPI Sheet Validation
 - [ ] Every task row is filled for both conditions.

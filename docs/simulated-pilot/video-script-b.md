@@ -1,5 +1,7 @@
 # Video Script B - Assistant Condition
 
+For the full record-and-edit workflow, use [video-production-playbook.md](video-production-playbook.md). This file remains the detailed source for the assistant condition.
+
 Condition:
 - HumanEnerDIA with OVOS
 - HumanEnerDIA with chatbot

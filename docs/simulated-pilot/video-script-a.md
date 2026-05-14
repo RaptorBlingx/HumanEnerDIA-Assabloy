@@ -1,5 +1,7 @@
 # Video Script A - Manual Condition
 
+For the full record-and-edit workflow, use [video-production-playbook.md](video-production-playbook.md). This file remains the detailed source for the manual condition.
+
 Condition:
 - HumanEnerDIA without OVOS
 - HumanEnerDIA without chatbot

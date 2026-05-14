@@ -1,5 +1,7 @@
 # Video Editing Guide
 
+For the full record-and-edit workflow, use [video-production-playbook.md](video-production-playbook.md). This file remains the focused editing reference.
+
 Use this guide after recording short task clips. The recommended final video is one edited benchmark video organized by task: show `Condition A` first, then `Condition B`, then a short comparison card for that same task.
 
 ## Editing Goal
@@ -308,4 +310,3 @@ The evidence package keeps the simulated-pilot claim separate from a real factor
 - Final KPI summary and evidence slide: `30-45 seconds`
 
 Target final edited video length: `12-18 minutes`.
-
