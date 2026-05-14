@@ -45,6 +45,7 @@
   background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
   cursor: move;
   user-select: none;
+  touch-action: none;
 }
 
 .hpd-title {

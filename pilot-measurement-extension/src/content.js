@@ -75,7 +75,7 @@
   function applyOverlayPosition() {
     const overlay = document.getElementById(rootId);
     if (!overlay || !state) {
-      return;
+      return null;
     }
 
     if (!state.overlayPosition || !Number.isFinite(state.overlayPosition.left) || !Number.isFinite(state.overlayPosition.top)) {
@@ -83,7 +83,7 @@
       overlay.style.top = 'auto';
       overlay.style.right = '16px';
       overlay.style.bottom = '16px';
-      return;
+      return null;
     }
 
     const maxLeft = Math.max(window.innerWidth - overlay.offsetWidth - 8, 8);
@@ -95,6 +95,7 @@
     overlay.style.top = `${top}px`;
     overlay.style.right = 'auto';
     overlay.style.bottom = 'auto';
+    return { left, top };
   }
 
   function createOverlay() {
@@ -197,10 +198,10 @@
     }
     createOverlay();
     renderTaskOptions();
-    applyOverlayPosition();
 
     const overlay = document.getElementById(rootId);
     overlay.classList.toggle('hpd-collapsed', !!state.overlayCollapsed);
+    applyOverlayPosition();
     const task = currentTask();
     document.getElementById('hpd-condition').value = state.condition;
     document.getElementById('hpd-task').value = state.taskId;
@@ -244,7 +245,15 @@
     bindOverlayDragging();
 
     document.getElementById('hpd-toggle').addEventListener('click', () => {
-      updateSettings({ overlayCollapsed: !state.overlayCollapsed });
+      const overlay = document.getElementById(rootId);
+      const nextCollapsed = !state.overlayCollapsed;
+      overlay.classList.toggle('hpd-collapsed', nextCollapsed);
+      state.overlayCollapsed = nextCollapsed;
+      const position = applyOverlayPosition();
+      updateSettings({
+        overlayCollapsed: nextCollapsed,
+        ...(position ? { overlayPosition: position } : {})
+      });
     });
     document.getElementById('hpd-condition').addEventListener('change', event => updateSettings({ condition: event.target.value }));
     document.getElementById('hpd-task').addEventListener('change', event => updateSettings({ taskId: event.target.value }));
