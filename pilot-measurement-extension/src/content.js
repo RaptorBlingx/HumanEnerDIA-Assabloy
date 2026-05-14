@@ -9,6 +9,7 @@
   let lastMessage = 'Extension loaded. Select a task and start measuring.';
   let dragState = null;
   let extensionContextValid = true;
+  let optimisticOverlayPosition = null;
 
   function isContextInvalidated(error) {
     return /Extension context invalidated|context invalidated/i.test(String(error?.message || error || ''));
@@ -110,13 +111,31 @@
     return Math.min(Math.max(value, min), max);
   }
 
+  function currentOptimisticOverlayPosition() {
+    if (!optimisticOverlayPosition) {
+      return null;
+    }
+    if (Date.now() > optimisticOverlayPosition.expiresAt) {
+      optimisticOverlayPosition = null;
+      return null;
+    }
+    return optimisticOverlayPosition;
+  }
+
   function applyOverlayPosition() {
     const overlay = document.getElementById(rootId);
     if (!overlay || !state) {
       return null;
     }
 
-    if (!state.overlayPosition || !Number.isFinite(state.overlayPosition.left) || !Number.isFinite(state.overlayPosition.top)) {
+    if (dragState) {
+      const rect = overlay.getBoundingClientRect();
+      return { left: rect.left, top: rect.top };
+    }
+
+    const storedPosition = currentOptimisticOverlayPosition() || state.overlayPosition;
+
+    if (!storedPosition || !Number.isFinite(storedPosition.left) || !Number.isFinite(storedPosition.top)) {
       overlay.style.left = 'auto';
       overlay.style.top = 'auto';
       overlay.style.right = '16px';
@@ -126,8 +145,8 @@
 
     const maxLeft = Math.max(window.innerWidth - overlay.offsetWidth - 8, 8);
     const maxTop = Math.max(window.innerHeight - overlay.offsetHeight - 8, 8);
-    const left = clamp(state.overlayPosition.left, 8, maxLeft);
-    const top = clamp(state.overlayPosition.top, 8, maxTop);
+    const left = clamp(storedPosition.left, 8, maxLeft);
+    const top = clamp(storedPosition.top, 8, maxTop);
 
     overlay.style.left = `${left}px`;
     overlay.style.top = `${top}px`;
@@ -268,6 +287,17 @@
     if (!response?.state) {
       return false;
     }
+    const optimisticPosition = currentOptimisticOverlayPosition();
+    if (
+      optimisticPosition &&
+      response.state.overlayPosition &&
+      Number.isFinite(response.state.overlayPosition.left) &&
+      Number.isFinite(response.state.overlayPosition.top) &&
+      Math.abs(response.state.overlayPosition.left - optimisticPosition.left) < 1 &&
+      Math.abs(response.state.overlayPosition.top - optimisticPosition.top) < 1
+    ) {
+      optimisticOverlayPosition = null;
+    }
     state = response.state;
     tasks = response.tasks || tasks;
     render();
@@ -281,6 +311,14 @@
 
   function updateSettings(patch) {
     send({ type: 'updateSettings', patch }).then(applyResponse).catch(() => undefined);
+  }
+
+  function persistOverlayPosition(position) {
+    optimisticOverlayPosition = { ...position, expiresAt: Date.now() + 3000 };
+    if (state) {
+      state.overlayPosition = position;
+    }
+    updateSettings({ overlayPosition: position });
   }
 
   function bindOverlayEvents() {
@@ -420,9 +458,10 @@
         return;
       }
       const rect = overlay.getBoundingClientRect();
+      const position = { left: rect.left, top: rect.top };
       dragState = null;
       overlay.classList.remove('hpd-dragging');
-      updateSettings({ overlayPosition: { left: rect.left, top: rect.top } });
+      persistOverlayPosition(position);
     };
 
     header.addEventListener('pointerup', finishDrag);
@@ -430,7 +469,7 @@
     window.addEventListener('resize', () => {
       applyOverlayPosition();
       const rect = overlay.getBoundingClientRect();
-      updateSettings({ overlayPosition: { left: rect.left, top: rect.top } });
+      persistOverlayPosition({ left: rect.left, top: rect.top });
     });
   }
 
