@@ -116,6 +116,14 @@ function bind() {
     applyResponse(response);
     setMessage('Last record deleted.');
   }));
+  els.resetCurrent.addEventListener('click', () => send({ type: 'resetCurrent' }).then(response => {
+    applyResponse(response);
+    setMessage('Current task reset.');
+  }));
+  els.resetPosition.addEventListener('click', () => send({ type: 'updateSettings', patch: { overlayPosition: null } }).then(response => {
+    applyResponse(response);
+    setMessage('Overlay position reset.');
+  }));
   els.clearAll.addEventListener('click', () => {
     if (!window.confirm('Clear all pilot measurement records?')) {
       return;
@@ -140,7 +148,8 @@ function collectElements() {
     'status', 'timer', 'condition', 'task', 'trial', 'clicks', 'screens',
     'records', 'start', 'stop', 'minus-click', 'plus-click', 'minus-screen',
     'plus-screen', 'expert', 'reasoning', 'success', 'copy-raw',
-    'autostop', 'copy-summary', 'delete-last', 'clear-all', 'message'
+    'autostop', 'copy-summary', 'delete-last', 'clear-all', 'reset-current',
+    'reset-position', 'message'
   ].forEach(id => {
     const key = id.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
     els[key] = document.getElementById(id);

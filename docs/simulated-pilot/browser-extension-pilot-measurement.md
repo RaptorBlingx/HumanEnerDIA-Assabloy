@@ -20,6 +20,7 @@ What it counts automatically:
 - screen changes caused by SPA history navigation
 - screen changes caused by hash changes
 - HumanEnerDIA assistant timing events for single-prompt OVOS/chatbot tasks
+- Grafana dashboard redirects are normalized so a quick `/grafana/d/...` to `/grafana/d/...?orgId=...&refresh=...` redirect counts as one screen
 
 What still needs manual correction:
 
@@ -53,6 +54,8 @@ http://10.33.10.103:8080/index.html
 
 7. Confirm the `Pilot Measurement` overlay appears in the bottom-right of the page.
 
+After `git pull`, go back to `chrome://extensions` and click reload on `HumanEnerDIA Pilot Measurement` so Chrome loads the updated extension files.
+
 ## Official Recording Use
 
 1. Start the screen recorder.
@@ -66,6 +69,10 @@ http://10.33.10.103:8080/index.html
 9. Uncheck `Auto` for multi-prompt assistant tasks, then click `Answer Found` after the final response.
 10. Click `Answer Found` manually for Condition A when the required answer is visible.
 11. Export `Copy Raw` and `Copy KPI` at the end.
+
+The overlay is movable. Drag the `Pilot Measurement` header to another part of the page if it covers important content.
+
+Use `Reset Current` if the current timer/counters are wrong before saving. Use `Delete Last Try` if the last saved trial is wrong. Use `Reset All` if you want to clear the whole run and start over.
 
 ## Keyboard Shortcuts
 

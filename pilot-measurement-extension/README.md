@@ -17,6 +17,7 @@ Limitations:
 - It measures browser activity only.
 - It cannot see clicks in non-browser desktop applications.
 - Some UI changes that do not change URL or history may still need the `+Screen` correction button.
+- Grafana dashboard redirects such as `/grafana/d/...` to `/grafana/d/...?orgId=...&refresh=...` are normalized so they count as one screen.
 
 For this pilot, the extension is the best option because the official A/B flow is browser-based.
 
@@ -45,6 +46,8 @@ http://10.33.10.103:8080/index.html
 ```
 
 8. Confirm the `Pilot Measurement` overlay appears on the page.
+
+After pulling extension updates, open `chrome://extensions` and click the reload button on `HumanEnerDIA Pilot Measurement`.
 
 ## Supported Pages
 
@@ -76,6 +79,10 @@ This includes HumanEnerDIA and Grafana at `http://10.33.10.103:8080/...`.
 10. Click `Answer Found` when the target answer is visible. For single-prompt assistant tasks, the extension can stop automatically when the HumanEnerDIA assistant completion event fires. For multi-prompt tasks, keep `Auto` unchecked and stop manually after the final response.
 11. Repeat for all tasks.
 12. Export `Raw CSV` and `KPI Summary CSV`.
+
+The overlay can be moved by dragging its header. The position is saved. Use `Reset Overlay Position` in the extension popup if you want it back in the default bottom-right position.
+
+Use `Reset Current` when the active timer/counters are wrong before saving. Use `Delete Last Try` when the last saved trial is wrong. Use `Reset All` only when you want to clear all saved records.
 
 ## Keyboard Shortcuts
 

@@ -7,6 +7,7 @@
   let timer = null;
   let lastUrl = location.href;
   let lastMessage = 'Extension loaded. Select a task and start measuring.';
+  let dragState = null;
 
   function send(message) {
     return chrome.runtime.sendMessage({
@@ -67,6 +68,35 @@
     }
   }
 
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function applyOverlayPosition() {
+    const overlay = document.getElementById(rootId);
+    if (!overlay || !state) {
+      return;
+    }
+
+    if (!state.overlayPosition || !Number.isFinite(state.overlayPosition.left) || !Number.isFinite(state.overlayPosition.top)) {
+      overlay.style.left = 'auto';
+      overlay.style.top = 'auto';
+      overlay.style.right = '16px';
+      overlay.style.bottom = '16px';
+      return;
+    }
+
+    const maxLeft = Math.max(window.innerWidth - overlay.offsetWidth - 8, 8);
+    const maxTop = Math.max(window.innerHeight - overlay.offsetHeight - 8, 8);
+    const left = clamp(state.overlayPosition.left, 8, maxLeft);
+    const top = clamp(state.overlayPosition.top, 8, maxTop);
+
+    overlay.style.left = `${left}px`;
+    overlay.style.top = `${top}px`;
+    overlay.style.right = 'auto';
+    overlay.style.bottom = 'auto';
+  }
+
   function createOverlay() {
     if (document.getElementById(rootId)) {
       return;
@@ -78,7 +108,6 @@
       <div class="hpd-header">
         <div class="hpd-title">Pilot Measurement</div>
         <div class="hpd-header-actions">
-          <button class="hpd-icon" id="hpd-reset" title="Reset current task">R</button>
           <button class="hpd-icon" id="hpd-toggle" title="Collapse panel">-</button>
         </div>
       </div>
@@ -139,6 +168,11 @@
           <button class="hpd-muted" id="hpd-copy-summary">Copy KPI</button>
           <button class="hpd-muted" id="hpd-download-json">JSON</button>
         </div>
+        <div class="hpd-actions hpd-reset-actions">
+          <button class="hpd-muted" id="hpd-reset-current">Reset Current</button>
+          <button class="hpd-muted" id="hpd-delete-last">Delete Last Try</button>
+          <button class="hpd-danger" id="hpd-clear-all">Reset All</button>
+        </div>
         <div class="hpd-task" id="hpd-task-detail"></div>
         <div class="hpd-last" id="hpd-last"></div>
       </div>
@@ -163,6 +197,7 @@
     }
     createOverlay();
     renderTaskOptions();
+    applyOverlayPosition();
 
     const overlay = document.getElementById(rootId);
     overlay.classList.toggle('hpd-collapsed', !!state.overlayCollapsed);
@@ -206,15 +241,10 @@
   }
 
   function bindOverlayEvents() {
+    bindOverlayDragging();
+
     document.getElementById('hpd-toggle').addEventListener('click', () => {
       updateSettings({ overlayCollapsed: !state.overlayCollapsed });
-    });
-    document.getElementById('hpd-reset').addEventListener('click', () => {
-      send({ type: 'resetCurrent' }).then(response => {
-        state = response.state;
-        render();
-        setLast('Current task reset.');
-      });
     });
     document.getElementById('hpd-condition').addEventListener('change', event => updateSettings({ condition: event.target.value }));
     document.getElementById('hpd-task').addEventListener('change', event => updateSettings({ taskId: event.target.value }));
@@ -255,6 +285,88 @@
       const response = await send({ type: 'getState' });
       csvDownload(`pilot-measurement-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(response.state.records, null, 2), 'application/json');
     });
+    document.getElementById('hpd-reset-current').addEventListener('click', () => {
+      send({ type: 'resetCurrent' }).then(response => {
+        state = response.state;
+        render();
+        setLast('Current task reset.');
+      });
+    });
+    document.getElementById('hpd-delete-last').addEventListener('click', () => {
+      if (!window.confirm('Delete the last saved try?')) {
+        return;
+      }
+      send({ type: 'deleteLast' }).then(response => {
+        state = response.state;
+        render();
+        setLast('Last saved try deleted.');
+      });
+    });
+    document.getElementById('hpd-clear-all').addEventListener('click', () => {
+      if (!window.confirm('Reset all saved tries and current counters?')) {
+        return;
+      }
+      send({ type: 'clearAll' }).then(response => {
+        state = response.state;
+        render();
+        setLast('All saved tries reset.');
+      });
+    });
+  }
+
+  function bindOverlayDragging() {
+    const overlay = document.getElementById(rootId);
+    const header = overlay?.querySelector('.hpd-header');
+    if (!overlay || !header) {
+      return;
+    }
+
+    header.addEventListener('pointerdown', event => {
+      if (event.target.closest('button')) {
+        return;
+      }
+      const rect = overlay.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top
+      };
+      overlay.classList.add('hpd-dragging');
+      header.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    header.addEventListener('pointermove', event => {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+      const maxLeft = Math.max(window.innerWidth - overlay.offsetWidth - 8, 8);
+      const maxTop = Math.max(window.innerHeight - overlay.offsetHeight - 8, 8);
+      const left = clamp(event.clientX - dragState.offsetX, 8, maxLeft);
+      const top = clamp(event.clientY - dragState.offsetY, 8, maxTop);
+      overlay.style.left = `${left}px`;
+      overlay.style.top = `${top}px`;
+      overlay.style.right = 'auto';
+      overlay.style.bottom = 'auto';
+    });
+
+    const finishDrag = event => {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+      const rect = overlay.getBoundingClientRect();
+      dragState = null;
+      overlay.classList.remove('hpd-dragging');
+      updateSettings({ overlayPosition: { left: rect.left, top: rect.top } });
+    };
+
+    header.addEventListener('pointerup', finishDrag);
+    header.addEventListener('pointercancel', finishDrag);
+    window.addEventListener('resize', () => {
+      applyOverlayPosition();
+      const rect = overlay.getBoundingClientRect();
+      updateSettings({ overlayPosition: { left: rect.left, top: rect.top } });
+    });
   }
 
   function bindClickCounter() {
@@ -272,7 +384,7 @@
       return;
     }
     lastUrl = url;
-    send({ type: 'incrementScreen', screenKey: url, source }).catch(() => undefined);
+    send({ type: 'incrementScreen', source }).catch(() => undefined);
   }
 
   function bindNavigationCounter() {

@@ -103,6 +103,7 @@ function blankState() {
     autoStopAssistant: true,
     notes: '',
     overlayCollapsed: false,
+    overlayPosition: null,
     records: []
   };
 }
@@ -133,6 +134,9 @@ function screenKeyFromUrl(url) {
   }
   try {
     const parsed = new URL(url);
+    if (parsed.pathname.startsWith('/grafana/d/')) {
+      return `${parsed.origin}${parsed.pathname}`;
+    }
     return `${parsed.origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch (_) {
     return url;
@@ -310,7 +314,7 @@ async function incrementScreen(context) {
     if (!state.running) {
       return { state, tasks: TASKS };
     }
-    const screenKey = context?.screenKey || screenKeyFromUrl(context?.url);
+    const screenKey = screenKeyFromUrl(context?.url || context?.screenKey);
     if (screenKey && screenKey !== state.lastScreenKey) {
       state.screens += 1;
       state.lastScreenKey = screenKey;
@@ -395,7 +399,9 @@ async function handleMessage(message, sender) {
         taskId: state.taskId,
         trial: state.trial,
         sessionName: state.sessionName,
-        overlayCollapsed: state.overlayCollapsed
+        autoStopAssistant: state.autoStopAssistant,
+        overlayCollapsed: state.overlayCollapsed,
+        overlayPosition: state.overlayPosition
       };
       Object.assign(state, blankState(), preserved, { records });
       state.manualReasoning = state.condition === 'A';
@@ -412,7 +418,11 @@ async function handleMessage(message, sender) {
 
   if (message?.type === 'clearAll') {
     return updateState(state => {
-      Object.assign(state, blankState());
+      const preserved = {
+        overlayCollapsed: state.overlayCollapsed,
+        overlayPosition: state.overlayPosition
+      };
+      Object.assign(state, blankState(), preserved);
       return { state, tasks: TASKS };
     });
   }

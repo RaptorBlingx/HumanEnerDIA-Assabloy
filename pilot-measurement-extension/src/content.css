@@ -15,6 +15,11 @@
   line-height: 1.35;
 }
 
+#hpd-recorder.hpd-dragging {
+  user-select: none;
+  box-shadow: 0 22px 58px rgba(15, 23, 42, 0.46);
+}
+
 #hpd-recorder * {
   box-sizing: border-box;
 }
@@ -38,6 +43,8 @@
   padding: 10px 12px;
   border-radius: 8px 8px 0 0;
   background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+  cursor: move;
+  user-select: none;
 }
 
 .hpd-title {
@@ -179,6 +186,10 @@
 }
 
 .hpd-export {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.hpd-reset-actions {
   grid-template-columns: repeat(3, 1fr);
 }
 
