@@ -468,9 +468,10 @@ async def _build_opportunities_fallback_response(session_id: str, start_time: da
 
     top_items = opportunities[:3]
     response_text = "Top energy saving opportunities: " + " ".join(
-        f"{index}. {opp.seu_name}: {opp.recommended_action} with about {opp.potential_savings_kwh:.1f} kilowatt hours potential savings."
+        f"{index}. {opp.seu_name}, about {opp.potential_savings_kwh:.1f} kilowatt hours."
         for index, opp in enumerate(top_items, start=1)
     )
+    response_text += " Recommended action: time-based setback scheduling for off-hours operation."
 
     return VoiceQueryResponse(
         success=True,

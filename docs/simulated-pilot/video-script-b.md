@@ -64,7 +64,7 @@ Pilot voice behavior:
 
 3. Say:
 
-> This benchmark repeats the same simulated Romanian pilot tasks with assistant support. OVOS supports monitoring, analysis, prediction, forecasting, and reporting. The chatbot supports standards, documentation, and procedure guidance.
+> This benchmark repeats the same simulated Romanian pilot tasks with assistant support. OVOS supports monitoring, analysis, forecasting, opportunities, and reporting. The chatbot supports standards, documentation, and procedure guidance.
 
 ## O1 - Factory Overview And Top Consumers
 Persona: `Operational user`
@@ -82,7 +82,7 @@ Steps:
 6. Wait until the OVOS answer is visible and the spoken playback finishes.
 7. Say `Jarvis`, then ask: `Show top 3 energy consumers`.
 8. Wait until the top-consumers answer is visible and the spoken playback finishes.
-9. Expected answer to capture: top consumers include `Compressor-2`, `Injection-Molding-1`, and `Compressor-1`.
+9. Expected answer to capture: the overview gives today/current factory status, and top consumers include `Compressor-2`, `Injection-Molding-1`, and `Compressor-1`.
 10. Click `Answer Found` immediately after the second spoken answer finishes.
 11. Re-check `Auto-stop` before the next single-prompt task.
 
@@ -159,15 +159,15 @@ Steps:
 5. The recorder should start automatically and stop automatically when the spoken answer finishes.
 6. Expected answer to capture: the assistant identifies recent anomalies and affected machines, including `Boiler-1` and `Compressor-2` when those are the active recent anomalies.
 
-## T2 - Baseline, Forecast, Predict, And Recommendations
+## T2 - Baseline, Forecast, And Recommendations
 Persona: `Technical user`
 
 Task prompt:
 
-> Analyze Compressor-1 against baseline, check forecast/prediction context, and retrieve recommendations.
+> Analyze Compressor-1 against baseline, check forecast context, and retrieve recommendations.
 
 Decision:
-- Forecast and Predict should be part of the Analysis evidence, but not a new KPI task. This keeps the A/B comparison stable while showing that the Analysis module covers baseline, forecast, prediction, and recommendations.
+- Keep the official task focused on baseline/performance analysis, forecast, and opportunities. The standalone baseline-prediction prompt was removed because it adds voice time and has no dedicated manual frontend/Grafana panel.
 
 Steps:
 1. Select `T2 - Baseline analysis and recommendations`.
@@ -175,18 +175,16 @@ Steps:
 3. Uncheck `Auto-stop` because this task uses multiple OVOS prompts.
 4. Say `Jarvis`, then ask: `Analyze performance of Compressor-1`.
 5. Wait until the performance/baseline answer is visible and the spoken playback finishes.
-6. Say `Jarvis`, then ask: `Expected energy for Compressor-1 baseline`.
-7. Wait until the baseline prediction answer is visible and the spoken playback finishes.
-8. Say `Jarvis`, then ask: `Energy forecast for Compressor-1`.
-9. Wait until the forecast answer is visible and the spoken playback finishes.
-10. Say `Jarvis`, then ask: `What are the energy saving opportunities?`
-11. Wait until the recommendations answer is visible and the spoken playback finishes.
-12. Expected answer to capture: performance/baseline status for `Compressor-1`, expected baseline energy, tomorrow forecast, and prioritized savings recommendations.
-13. Click `Answer Found` immediately after the recommendations spoken answer finishes.
-14. Re-check `Auto-stop` before the next single-prompt task.
+6. Say `Jarvis`, then ask: `Energy forecast for Compressor-1`.
+7. Wait until the forecast answer is visible and the spoken playback finishes.
+8. Say `Jarvis`, then ask: `What are the energy saving opportunities?`
+9. Wait until the recommendations answer is visible and the spoken playback finishes.
+10. Expected answer to capture: performance/baseline status for `Compressor-1`, tomorrow forecast, and prioritized savings recommendations.
+11. Click `Answer Found` immediately after the recommendations spoken answer finishes.
+12. Re-check `Auto-stop` before the next single-prompt task.
 
 Typed fallback:
-- If using typed OVOS prompts, send the four prompts in the same order. The timer starts when the first prompt is sent and stops when you click `Answer Found`.
+- If using typed OVOS prompts, send the three prompts in the same order. The timer starts when the first prompt is sent and stops when you click `Answer Found`.
 
 ## T3 - KPI And EnPI Status
 Persona: `Technical user`
@@ -201,7 +199,7 @@ Steps:
 3. Confirm `Auto-stop` checked.
 4. Say `Jarvis`, then ask: `Show energy performance indicators report`.
 5. The recorder should start automatically and stop automatically when the spoken answer finishes.
-6. Expected answer to capture: `2026-Q1` ISO 50001 EnPI status is `on track`, actual energy is about `2.22%` above baseline, and the performance gap is about `5,838.6 kWh`.
+6. Expected answer to capture: `2026-Q1` ISO 50001 EnPI status is `on track`, actual energy is about `4.60%` above baseline, and the performance gap is about `11,809.3 kWh`.
 
 ## T4 - Generate Monthly Report
 Persona: `Technical user`
@@ -246,7 +244,6 @@ These are the official prompts to use in the recording. Do not improvise alterna
 - `What is the procedure for responding to an efficiency issue?`
 - `Show me recent anomalies`
 - `Analyze performance of Compressor-1`
-- `Expected energy for Compressor-1 baseline`
 - `Energy forecast for Compressor-1`
 - `What are the energy saving opportunities?`
 - `Show energy performance indicators report`

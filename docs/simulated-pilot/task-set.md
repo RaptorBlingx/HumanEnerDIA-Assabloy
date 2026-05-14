@@ -10,8 +10,8 @@ This file defines the exact task list for both recordings. Do not improvise task
 
 | ID | Module | Task | Condition A - Manual Path | Condition B - Assistant Support |
 | --- | --- | --- | --- | --- |
-| O1 | Monitoring | Get a factory overview and identify the top 3 energy consumers. | Open `/index.html`, then open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/` and use `Executive Summary` or `Operational Efficiency` to identify the largest consumers. | OVOS prompts: `Give me a factory overview` and `Show top 3 energy consumers`. |
-| O2 | Monitoring | Check the status and today's energy of `Compressor-1`. | Open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/` and use `Machine Health` or the real-time dashboard with a machine filter for `Compressor-1`. | OVOS prompt: `What's the status of Compressor-1?` |
+| O1 | Monitoring | Get a factory overview and identify the top 3 energy consumers. | Open Grafana `Factory Overview` and use `Energy Today`, `Current Power`, `Cost Today`, `Active Anomalies`, and `Energy by Machine (Today)`. | OVOS prompts: `Give me a factory overview` and `Show top 3 energy consumers`. |
+| O2 | Monitoring | Check the status and today's energy of `Compressor-1`. | Open Grafana `Machine Health` for `Compressor-1`; use `Operational Efficiency` / `Machine Status Overview` only if the explicit running status is needed. | OVOS prompt: `What's the status of Compressor-1?` |
 | O3 | Documentation | Understand what ISO 50001 is and what an energy baseline means. | Open `/energy-management-learning.html`, then open `/api/analytics/ui/baseline` to connect the concept to the product. | Rasa prompts: `What is ISO 50001?` and `What is an energy baseline?` |
 | O4 | Documentation | Find the policy / procedure guidance for responding to an anomaly or efficiency issue. | Open `/pilot-procedures.html` together with `/api/analytics/ui/anomaly` for context. | Rasa prompts: `What should we do when an anomaly appears?` and `What is the procedure for responding to an efficiency issue?` |
 
@@ -20,7 +20,7 @@ This file defines the exact task list for both recordings. Do not improvise task
 | ID | Module | Task | Condition A - Manual Path | Condition B - Assistant Support |
 | --- | --- | --- | --- | --- |
 | T1 | Monitoring | Review anomalies and identify the issue requiring attention. | Open `/api/analytics/ui/anomaly` and identify the recent unresolved critical anomaly on `Compressor-2`. | OVOS prompt: `Show me recent anomalies` |
-| T2 | Analyses | Analyze `Compressor-1` against baseline, forecast/prediction context, and recommendations. | Cross-check `/api/analytics/ui/baseline`, `/api/analytics/ui/forecast`, and `/api/analytics/ui/opportunities` to summarize baseline, forecast, prediction, and likely actions. | OVOS prompts: `Analyze performance of Compressor-1`, `Expected energy for Compressor-1 baseline`, `Energy forecast for Compressor-1`, and `What are the energy saving opportunities?` |
+| T2 | Analyses | Analyze `Compressor-1` against baseline, forecast context, and recommendations. | Cross-check Grafana `Machine Health`, `/api/analytics/ui/forecast`, and `/api/analytics/ui/opportunities` to summarize baseline, forecast, and likely actions. | OVOS prompts: `Analyze performance of Compressor-1`, `Energy forecast for Compressor-1`, and `What are the energy saving opportunities?` |
 | T3 | Analyses | Retrieve factory KPI and EnPI status for `2026-Q1`. | Open `/api/analytics/ui/kpi`, then open `/api/analytics/ui/enpi-report` to read the current EnPI status. | OVOS prompt: `Show energy performance indicators report` |
 | T4 | Analyses / Documentation | Generate the `April 2026` monthly report and summarize the result. | Open `/reports.html`, choose the frozen factory and `April 2026`, generate the report, then summarize the visible outcome. | OVOS prompt: `download report of Apr 2026`, then summarize the generated PDF download confirmation. |
 
@@ -45,7 +45,6 @@ Only use the prompts below in the official recording unless rehearsal proves an 
 - `What's the status of Compressor-1?`
 - `Show me recent anomalies`
 - `Analyze performance of Compressor-1`
-- `Expected energy for Compressor-1 baseline`
 - `Energy forecast for Compressor-1`
 - `What are the energy saving opportunities?`
 - `Show energy performance indicators report`

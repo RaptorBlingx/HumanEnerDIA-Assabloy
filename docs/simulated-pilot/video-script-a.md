@@ -15,6 +15,13 @@ Official timing rule:
 - Click `Answer Found` immediately when the required answer is visibly found.
 - Do not include any after-task explanation, narration, or note-taking in the task time.
 
+Manual evidence rules:
+- Use factory `Simulated Romanian Pilot Factory` everywhere.
+- Use `Compressor-1` for machine-specific manual tasks.
+- Live monitoring values move during recording. Match the same KPI, panel, or ranking, not the exact decimal if the value refreshes.
+- Prefer HumanEnerDIA pages and Grafana panels over raw JSON.
+- Do not improvise extra assistant-style questions during Condition A.
+
 ## Pre-Recording Setup
 1. Open `http://10.33.10.103:8080/index.html`.
 2. If a login page appears, log in before the official recording. Do not include login time in the KPI measurement.
@@ -49,6 +56,15 @@ Grafana pages do not contain the Pilot Measurement overlay, so use the separate 
 - Do not count clicks on the Pilot Measurement control window itself.
 - When the answer is visible in Grafana, click `Answer Found` in the control window.
 
+## Grafana Reference Links
+- Folder: `http://10.33.10.103:8080/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`
+- Factory Overview: `http://10.33.10.103:8080/grafana/d/sota-factory-overview/factory-overview?orgId=1&var-factory=Simulated%20Romanian%20Pilot%20Factory&from=now/d&to=now`
+- Machine Health for `Compressor-1`: `http://10.33.10.103:8080/grafana/d/sota-machine-health/machine-health?orgId=1&var-machine_id=c0000000-0000-0000-0000-000000000001&from=now/d&to=now`
+- Operational Efficiency: `http://10.33.10.103:8080/grafana/d/sota-operational-efficiency/operational-efficiency?orgId=1&from=now/d&to=now`
+- Anomaly Detection: `http://10.33.10.103:8080/grafana/d/sota_anomaly_detection/anomaly-detection?orgId=1&from=now-7d&to=now`
+- Predictive Analytics: `http://10.33.10.103:8080/grafana/d/sota_predictive_analytics/predictive-analytics?orgId=1&from=now-7d&to=now%2B1d`
+- ISO 50001 EnPI: `http://10.33.10.103:8080/grafana/d/sota-iso50001-enpi/iso-50001-enpi?orgId=1&from=2026-01-01T00:00:00.000Z&to=2026-03-31T23:59:59.000Z`
+
 ## Start The Video Recording
 1. Start the screen recorder.
 2. Show this title on screen or say it clearly:
@@ -73,16 +89,19 @@ Steps:
 3. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 4. Click `Start Task`.
 5. In the main browser, open `/index.html`.
-6. Click the Grafana button or open `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/`.
+6. Click the Grafana button or open the `Factory Overview` Grafana link directly.
 7. In the control window, click `+Click` for the Grafana navigation action.
 8. In the control window, click `+Screen` when the Grafana dashboard folder appears.
-9. Open `Factory Overview`, `Executive Summary`, or the dashboard that shows factory-level consumption.
+9. If the folder view opens first, open `Factory Overview`.
 10. In the control window, click `+Click` for opening the dashboard.
 11. In the control window, click `+Screen` when the dashboard opens.
-12. Identify the factory overview and the top consumers on screen.
-13. Expected answer to capture: top consumers should include `Compressor-2`, `Injection-Molding-1`, and `Compressor-1`.
-14. Click `Answer Found` in the control window as soon as the top consumers are visible.
-15. Do not keep the task timer running while explaining the result.
+12. Confirm the time range is `Today` because the assistant answer uses today/current factory state.
+13. Use panels `Energy Today`, `Current Power`, `Cost Today`, `Active Anomalies`, `Machine Status & Health`, and `Energy by Machine (Today)`.
+14. If you need the active or running machine count more clearly, open `Operational Efficiency` and use panel `Machine Status Overview`.
+15. Expected answer to capture: the factory today/current summary is visible, and top consumers include `Compressor-2`, `Injection-Molding-1`, and `Compressor-1`.
+16. Click `Answer Found` in the control window as soon as those items are visible.
+17. Manual proof source: Grafana `Factory Overview`, optionally `Operational Efficiency`.
+18. Do not keep the task timer running while explaining the result.
 
 ## O2 - Machine Status And Today's Energy
 Persona: `Operational user`
@@ -95,13 +114,16 @@ Steps:
 1. Select `O2 - Compressor-1 status and today energy`.
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
-4. Open the Grafana folder `/grafana/dashboards/f/f1a99949-9056-4103-96b1-69fa65dec378/` if it is not already open.
+4. Open the `Machine Health for Compressor-1` Grafana link directly, or open the Grafana folder if it is not already open.
 5. Use `+Click` and `+Screen` in the control window for the Grafana navigation.
-6. Open `Machine Health` or the dashboard that shows `Compressor-1`.
+6. If needed, open `Machine Health` and set the machine variable to `Compressor-1`.
 7. Use `+Click` for the dashboard click and `+Screen` when the dashboard view changes.
-8. Find `Compressor-1` status and today's energy consumption.
-9. Expected answer to capture: `Compressor-1` is running and today's energy is visible in kWh. The exact kWh value may move because the simulator is live.
-10. Click `Answer Found` in the control window as soon as the status and energy value are visible.
+8. Confirm the time range is `Today`.
+9. Use panels `Energy Today`, `Current Power`, and `Anomaly Details`.
+10. If you need the explicit running or stopped status, open `Operational Efficiency` and use panel `Machine Status Overview`.
+11. Expected answer to capture: `Compressor-1` is running, current power is visible, today's energy is visible in kWh, and anomaly status is visible. The exact kWh value may move because the simulator is live.
+12. Click `Answer Found` in the control window as soon as the status and energy value are visible.
+13. Manual proof source: Grafana `Machine Health`, optionally `Operational Efficiency`.
 
 ## O3 - ISO 50001 And Baseline Understanding
 Persona: `Operational user`
@@ -115,11 +137,12 @@ Steps:
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
 4. Open `/energy-management-learning.html`.
-5. Find the learning section that explains ISO 50001.
-6. Open `/api/analytics/ui/baseline`.
-7. Find the baseline analysis/training view and the baseline concept context.
+5. Find the `What ISO 50001 Means` section.
+6. Find the `What An Energy Baseline Means` section on the same page.
+7. Open `/api/analytics/ui/baseline` only if you want supporting product context after the learning page definitions are already visible.
 8. Expected answer to capture: ISO 50001 is the Energy Management System standard, and an energy baseline is the reference used to compare current performance against normal expected performance.
-9. Click `Answer Found` when both concepts have been found.
+9. Click `Answer Found` when both concept definitions have been found.
+10. Manual proof source: `/energy-management-learning.html`, optionally `/api/analytics/ui/baseline`.
 
 ## O4 - Policy / Procedure Guidance
 Persona: `Operational user`
@@ -133,11 +156,12 @@ Steps:
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
 4. Open `/pilot-procedures.html`.
-5. Find the anomaly response guidance.
-6. Find the efficiency issue response guidance.
+5. Find the anomaly response guidance section.
+6. Find the efficiency issue response guidance section.
 7. Open `/api/analytics/ui/anomaly` only if you want to show the operational anomaly context.
 8. Expected answer to capture: review affected machine/time/severity, compare against baseline or expected performance, check status and production context, decide monitor/escalate, and record the action/reporting result.
 9. Click `Answer Found` when the response guidance is visible.
+10. Manual proof source: `/pilot-procedures.html`, optionally `/api/analytics/ui/anomaly`.
 
 ## T1 - Review Anomalies
 Persona: `Technical user`
@@ -151,28 +175,31 @@ Steps:
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
 4. Open `/api/analytics/ui/anomaly`.
-5. Review the current/recent anomaly list.
-6. Filter by severity or inspect the visible list if needed.
-7. Expected answer to capture: the issue needing attention is the unresolved high-severity/critical anomaly affecting `Compressor-2` or the highest-severity visible anomaly in the current list.
-8. Click `Answer Found` when the issue is clearly identified on screen.
+5. Review the current or recent anomaly list first.
+6. If you want supporting Grafana evidence, open `Anomaly Detection` with time range `Last 7 days`.
+7. Use Grafana panels `Unresolved Anomalies`, `Critical Anomalies`, and `Top Machines by Anomaly Count` if you need a clearer visual.
+8. Filter by severity or inspect the visible list if needed.
+9. Expected answer to capture: the issue needing attention is the unresolved high-severity or critical anomaly affecting `Compressor-2`, or the highest-severity visible anomaly in the current list at recording time.
+10. Click `Answer Found` when the issue is clearly identified on screen.
+11. Manual proof source: `/api/analytics/ui/anomaly`, optionally Grafana `Anomaly Detection`.
 
-## T2 - Baseline, Forecast, Predict, And Recommendations
+## T2 - Baseline, Forecast, And Recommendations
 Persona: `Technical user`
 
 Task prompt:
 
-> Analyze Compressor-1 against baseline, check forecast/prediction context, and retrieve recommendations.
+> Analyze Compressor-1 against baseline, check forecast context, and retrieve recommendations.
 
 Steps:
 1. Select `T2 - Baseline analysis and recommendations`.
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
-4. Open `/api/analytics/ui/baseline`.
-5. Select or locate `Compressor-1` if the page requires a machine selection.
-6. Identify the baseline model/deviation context.
+4. Open Grafana `Machine Health` for `Compressor-1`.
+5. Confirm the time range is `Today`.
+6. Find panels `Actual vs Baseline Power` and `Baseline Variance (24h)`.
 7. Open `/api/analytics/ui/forecast`.
 8. In `Generate Forecast`, select `Compressor-1`.
-9. Select `Short (1-4 hours)` unless another value is already selected.
+9. Select `Short (1-4 hours)` because this is the trained forecast model available in the demo environment.
 10. Click `Generate Forecast`.
 11. Wait until the forecast result and chart are visible.
 12. Open `/api/analytics/ui/opportunities`.
@@ -180,8 +207,10 @@ Steps:
 14. Keep period as `Month`.
 15. Click `Load` if the page did not already load recommendations.
 16. Identify the top savings recommendations.
-17. Expected answer to capture: baseline/forecast evidence for `Compressor-1` plus top recommendations such as time-based setback scheduling and other prioritized savings opportunities.
-18. Click `Answer Found` only after the baseline/forecast result and recommendations have been found.
+17. If needed, open Grafana `Predictive Analytics` for supporting forecast evidence and use panels `Power Forecast vs Actual (24-Hour)` and `Recent 24-Hour Forecasts (Historical)`.
+18. Expected answer to capture: baseline evidence for `Compressor-1`, forecast evidence, and top recommendations such as time-based setback scheduling and the highest-ranked opportunities for `Injection-Molding-1`, `Compressor-1`, and `Hydraulic-Pump-1`.
+19. Click `Answer Found` only after the baseline result, forecast result, and recommendations have been found.
+20. Manual proof source: Grafana `Machine Health`, `/api/analytics/ui/forecast`, `/api/analytics/ui/opportunities`, optionally Grafana `Predictive Analytics`.
 
 ## T3 - KPI And EnPI Status
 Persona: `Technical user`
@@ -197,9 +226,13 @@ Steps:
 4. Open `/api/analytics/ui/kpi`.
 5. Review the factory KPI dashboard.
 6. Open `/api/analytics/ui/enpi-report`.
-7. Find the `2026-Q1` EnPI report/status.
-8. Expected answer to capture: status is `on track`, actual energy is above baseline by about `2.22%`, and the performance gap is about `5,838.6 kWh`.
-9. Click `Answer Found` when the EnPI status and deviation are visible.
+7. Confirm the factory is `11111111-1111-1111-1111-111111111111` if the page shows the raw factory selector, or confirm the visible factory is the simulated Romanian pilot factory.
+8. Confirm the period is `2026-Q1`.
+9. Find the `2026-Q1` EnPI report/status.
+10. If you want supporting trend evidence, open Grafana `ISO 50001 EnPI`.
+11. Expected answer to capture: status is `on track`, actual energy is above baseline by about `4.60%`, and the performance gap is about `11,809.3 kWh`.
+12. Click `Answer Found` when the EnPI status and deviation are visible.
+13. Manual proof source: `/api/analytics/ui/enpi-report`, optionally Grafana `ISO 50001 EnPI`.
 
 ## T4 - Generate Monthly Report
 Persona: `Technical user`
@@ -219,6 +252,7 @@ Steps:
 8. Wait until the page confirms the April 2026 report is generated or the browser starts downloading the report.
 9. Expected answer to capture: April 2026 monthly report generated/downloaded successfully.
 10. Click `Answer Found` when the generation/download result is visible.
+11. Manual proof source: `/reports.html`.
 
 ## End The Video Recording
 1. Show this closing statement on screen or say it clearly:

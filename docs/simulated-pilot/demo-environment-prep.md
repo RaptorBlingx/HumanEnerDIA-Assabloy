@@ -76,7 +76,6 @@ If needed, append `?pilot_mode=manual` to a page URL for a one-page manual-mode 
   - `What's the status of Compressor-1?`
   - `Show me recent anomalies`
   - `Analyze performance of Compressor-1`
-  - `Expected energy for Compressor-1 baseline`
   - `Energy forecast for Compressor-1`
   - `What are the energy saving opportunities?`
   - `Show energy performance indicators report`
