@@ -514,8 +514,8 @@
         drawHeader(ctx, `Task ${task.id} Comparison`, task.persona, task.module);
         drawMainTitle(ctx, task.title, task.task);
 
-        drawConditionPanel(ctx, 110, 370, 'Condition A', 'Manual path', record.a, '#ffcc66');
-        drawConditionPanel(ctx, 1040, 370, 'Condition B', 'OVOS / Chatbot', record.b, '#35e0a1');
+        drawConditionPanel(ctx, 110, 370, 'Condition A', 'Manual path', record.a, '#ffcc66', 'left');
+        drawConditionPanel(ctx, 1040, 370, 'Condition B', 'OVOS / Chatbot', record.b, '#35e0a1', 'right');
 
         drawReductionBadge(ctx, 690, 570, metric.effortReduction, task.target, metric.met);
 
@@ -622,7 +622,11 @@
         wrapText(ctx, description, 112, 335, 1500, 40, 2);
     }
 
-    function drawConditionPanel(ctx, x, y, heading, subheading, values, accent) {
+    function drawConditionPanel(ctx, x, y, heading, subheading, values, accent, alignment) {
+        const isRightAligned = alignment === 'right';
+        const left = x + 42;
+        const right = x + 718;
+
         ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
         roundedRect(ctx, x, y, 760, 360, 38);
         ctx.fill();
@@ -634,24 +638,37 @@
 
         ctx.fillStyle = accent;
         ctx.font = '800 31px Bahnschrift, Aptos, Segoe UI, sans-serif';
-        ctx.fillText(heading, x + 42, y + 60);
+        ctx.textAlign = isRightAligned ? 'right' : 'left';
+        ctx.fillText(heading, isRightAligned ? right : left, y + 60);
 
         ctx.fillStyle = '#d9fff0';
         ctx.font = '600 24px Aptos, Segoe UI, sans-serif';
-        ctx.fillText(subheading, x + 42, y + 96);
+        ctx.fillText(subheading, isRightAligned ? right : left, y + 96);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '900 76px Bahnschrift, Aptos, Segoe UI, sans-serif';
-        ctx.fillText(`${formatNumber(values.time)}s`, x + 42, y + 195);
+        ctx.fillText(`${formatNumber(values.time)}s`, isRightAligned ? right : left, y + 195);
 
         ctx.fillStyle = '#dbeafe';
         ctx.font = '700 32px Aptos, Segoe UI, sans-serif';
-        ctx.fillText(`${formatNumber(values.clicks)} clicks`, x + 42, y + 260);
-        ctx.fillText(`${formatNumber(values.screens)} screens`, x + 310, y + 260);
+        if (isRightAligned) {
+            ctx.fillText(`${formatNumber(values.clicks)} clicks`, x + 500, y + 260);
+            ctx.fillText(`${formatNumber(values.screens)} screens`, right, y + 260);
+        } else {
+            ctx.fillText(`${formatNumber(values.clicks)} clicks`, left, y + 260);
+            ctx.fillText(`${formatNumber(values.screens)} screens`, x + 310, y + 260);
+        }
 
         ctx.fillStyle = '#cbd5e1';
         ctx.font = '600 24px Aptos, Segoe UI, sans-serif';
-        ctx.fillText(`Expert ${flag(values.expert)}  |  Manual reasoning ${flag(values.manual)}  |  Success ${flag(values.success)}`, x + 42, y + 318);
+        if (isRightAligned) {
+            ctx.fillText(`Expert ${flag(values.expert)}`, x + 360, y + 318);
+            ctx.fillText(`Manual reasoning ${flag(values.manual)}`, x + 585, y + 318);
+            ctx.fillText(`Success ${flag(values.success)}`, right, y + 318);
+        } else {
+            ctx.fillText(`Expert ${flag(values.expert)}  |  Manual reasoning ${flag(values.manual)}  |  Success ${flag(values.success)}`, left, y + 318);
+        }
+        ctx.textAlign = 'left';
     }
 
     function drawReductionBadge(ctx, x, y, effortReduction, target, met) {
