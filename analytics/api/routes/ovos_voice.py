@@ -114,7 +114,9 @@ def _normalize_query(text: str) -> str:
 def _is_enpi_query(text: str) -> bool:
     normalized = _normalize_query(text)
     phrases = [
+        "energy performance indicator report",
         "energy performance indicators report",
+        "show energy performance indicator",
         "enpi report",
         "enpi status",
         "iso 50001 report",
