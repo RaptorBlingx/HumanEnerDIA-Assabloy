@@ -1,23 +1,45 @@
-# HumanEnerDIA Pilot Measurement
+# HumanEnerDIA KPI Comparison Card Generator
 
-Standalone manual measurement app for the simulated WASABI / HumanEnerDIA pilot videos.
+Standalone post-production app for the simulated WASABI / HumanEnerDIA pilot video.
 
-For the official recording, prefer the Chrome extension in `pilot-measurement-extension/` because it can automatically count clicks and browser screen changes inside HumanEnerDIA and Grafana. This Docker app is useful as a fallback control panel, but it cannot automatically observe clicks outside its own page.
+Use this app after recording the A/B clips. Enter the measured values from the pilot measurement extension, calculate the KPI reductions, and export PNG comparison cards for video editing.
 
-It runs by itself and does not start the full HumanEnerDIA stack. Use it when the official task flow moves through Grafana, reports, browser tabs, or any page where the in-platform recorder is not available.
+## What It Generates
 
-## What It Measures
+- One comparison card per task: `O1` to `O4`, `T1` to `T4`
+- Operational subtotal card for the `30%` effort-reduction KPI
+- Technical subtotal card for the `25%` intervention / effort-reduction KPI
+- Final KPI summary card with DIA module coverage: Monitoring, Analyses, Documentation
+- Copyable overlay / voiceover text for each card
+- Downloadable JSON backup of entered values
 
-- Task completion time
-- Click count
-- Screen/dashboard/page count
-- Expert help flag
-- Manual reasoning flag
-- Success flag
-- Raw trial rows
-- Per-task A/B KPI summary
+## Inputs
 
-Important limitation: because this is a Dockerized browser app, it cannot automatically observe clicks in other Windows applications or other browser tabs. Use the `+Click` and `+Screen` controls while you perform the task. This keeps the measurement consistent without needing OS-level monitoring software.
+For each task, enter:
+
+- Condition A time in seconds
+- Condition B time in seconds
+- Condition A clicks and screens
+- Condition B clicks and screens
+
+Default flags follow `docs/simulated-pilot/video-production-playbook.md`:
+
+- Condition A: `Expert help = 0`, `Manual reasoning = 1`, `Success = 1`
+- Condition B: `Expert help = 0`, `Manual reasoning = 0`, `Success = 1`
+
+You can change the flags if a recorded clip is different.
+
+## Calculation Logic
+
+Per task:
+
+- `time reduction = (A time - B time) / A time`
+- `click reduction = (A clicks - B clicks) / A clicks`
+- `screen reduction = (A screens - B screens) / A screens`
+- `interaction reduction = average(click reduction, screen reduction)`
+- `measured effort reduction = average(time reduction, interaction reduction)`
+
+Subtotal cards average the measured effort reductions for the relevant task group.
 
 ## Run On Windows 11
 
@@ -65,35 +87,14 @@ cd pilot-measurement
 docker compose up -d --build
 ```
 
-## Recording Workflow
+## Video Editing Workflow
 
 1. Open `http://localhost:8095`.
-2. Put the measurement app beside HumanEnerDIA/Grafana, or on a second screen.
-3. Start the screen recorder.
-4. Select `Condition A` or `Condition B`.
-5. Select the task.
-6. Click `Start Task` immediately before the first action.
-7. Click `+Click` for each task click performed outside the measurement app.
-8. Click `+Screen` for each meaningful page, dashboard, tab, report, or result-screen change.
-9. Set `Expert`, `Manual reasoning`, and `Success` before stopping if the default is not correct.
-10. Click `Answer Found` when the required answer is visible, or when OVOS voice playback finishes in Condition B.
-11. Repeat for all tasks.
-12. Export `Raw CSV` for evidence and `KPI Summary CSV` for the comparison table.
-
-## Recommended Defaults
-
-Condition A:
-
-- `Manual reasoning`: checked
-- `Expert`: unchecked
-- `Success`: checked if the answer is visible
-- Start timer before manual navigation
-- Stop timer when the answer is visibly found
-
-Condition B:
-
-- `Manual reasoning`: unchecked unless you manually inspect dashboards after the assistant answer
-- `Expert`: unchecked
-- `Success`: checked if the answer/download is correct
-- Start timer when you begin saying `Jarvis`
-- Stop timer when the spoken answer finishes, or when the chatbot answer is visible
+2. Select the task, for example `O1`.
+3. Enter the measured A/B time, clicks, and screens from the recorded clips.
+4. Keep the default Expert / Manual reasoning / Success flags unless the clip evidence says otherwise.
+5. Click `Save Values`.
+6. Click `Export PNG Card`.
+7. Insert the exported card after the matching A/B clip pair in the video timeline.
+8. Repeat for all tasks.
+9. Export the `Operational`, `Technical`, and `Final KPI` cards for the end of the video.

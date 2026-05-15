@@ -102,7 +102,13 @@ Do this after all raw clips are recorded:
 5. Paste the KPI rows into the KPI sheet.
 6. Verify every task has an `A` row and a `B` row.
 7. Verify time, clicks, screens, expert help, manual reasoning, and success.
-8. Calculate the reduction percentages.
+8. Open the KPI Comparison Card Generator from `pilot-measurement/`.
+9. Enter each task's measured `A` and `B` time, clicks, and screens.
+10. Keep the default flags unless the clip evidence says otherwise:
+    - `A`: Expert help `0`, Manual reasoning `1`, Success `1`
+    - `B`: Expert help `0`, Manual reasoning `0`, Success `1`
+11. Export the per-task PNG comparison cards.
+12. Export the operational subtotal, technical subtotal, and final KPI cards.
 
 Do not build comparison cards before this phase. The comparison cards need the final measured values.
 
@@ -119,12 +125,12 @@ Now open your video editor and build the final timeline in this order:
 7. Insert `O1-A-manual.mp4`.
 8. Add the `Condition B` label.
 9. Insert `O1-B-assistant.mp4`.
-10. Add the `O1` comparison card using measured values.
+10. Add the exported `O1` comparison card from the KPI Comparison Card Generator.
 11. Repeat the same pattern for `O2`, `O3`, and `O4`.
 12. Add the operational-user subtotal card.
 13. Repeat the same pattern for `T1`, `T2`, `T3`, and `T4`.
 14. Add the technical-user subtotal card.
-15. Add the final KPI summary card.
+15. Add the exported final KPI summary card.
 16. Add the evidence package slide.
 17. Export the final edited video.
 
@@ -413,6 +419,8 @@ Expert help: A [0/1] | B [0/1]
 Manual reasoning: A [0/1] | B [0/1]
 Success: A [0/1] | B [0/1]
 ```
+
+If using the KPI Comparison Card Generator, this template is produced automatically as the exported PNG card and copyable overlay text.
 
 Standard comparison voiceover:
 
@@ -1115,7 +1123,7 @@ The technical-user tasks show whether assistant support reduces the effort requi
 
 ## Final KPI Summary
 
-Use the completed KPI sheet and extension exports.
+Use the completed KPI sheet, extension exports, and the final KPI card exported by the KPI Comparison Card Generator.
 
 On-screen text:
 

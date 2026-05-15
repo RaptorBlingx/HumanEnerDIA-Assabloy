@@ -3,163 +3,132 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HumanEnerDIA Pilot Measurement</title>
+    <title>HumanEnerDIA KPI Card Generator</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <main class="app-shell">
-        <section class="recorder-panel" aria-label="Pilot measurement recorder">
-            <header class="app-header">
-                <div>
-                    <p class="eyebrow">HumanEnerDIA</p>
-                    <h1>Pilot Measurement</h1>
+        <header class="hero">
+            <div>
+                <p class="eyebrow">HumanEnerDIA simulated pilot</p>
+                <h1>KPI Comparison Card Generator</h1>
+                <p class="hero-copy">
+                    Enter the measured A/B clip values, calculate the KPI reductions, and export video-ready comparison cards.
+                </p>
+            </div>
+            <div class="target-stack" aria-label="KPI targets">
+                <span>Operational target: 30% effort reduction</span>
+                <span>Technical target: 25% effort reduction</span>
+                <span>DIA modules: Monitoring, Analyses, Documentation</span>
+            </div>
+        </header>
+
+        <section class="workspace">
+            <aside class="control-panel" aria-label="Card controls">
+                <div class="mode-tabs" role="tablist" aria-label="Card type">
+                    <button id="mode-task" class="active" type="button" data-mode="task">Task Card</button>
+                    <button id="mode-operational" type="button" data-mode="operational">Operational</button>
+                    <button id="mode-technical" type="button" data-mode="technical">Technical</button>
+                    <button id="mode-final" type="button" data-mode="final">Final KPI</button>
                 </div>
-                <div class="status-pill" id="running-state">Idle</div>
-            </header>
 
-            <div class="timer" id="timer">00:00.0</div>
-
-            <div class="control-grid">
-                <label>
-                    Condition
-                    <select id="condition">
-                        <option value="A">A - Manual</option>
-                        <option value="B">B - Assistant</option>
-                    </select>
-                </label>
-                <label>
+                <label class="field">
                     Task
-                    <select id="task"></select>
+                    <select id="task-select"></select>
                 </label>
-                <label>
-                    Trial
-                    <select id="trial">
-                        <option value="1">Trial 1</option>
-                        <option value="2">Trial 2</option>
-                        <option value="3">Trial 3</option>
-                        <option value="extra">Extra</option>
-                    </select>
-                </label>
-                <label>
-                    Session
-                    <input id="session-name" type="text" value="official-run">
-                </label>
-            </div>
 
-            <div class="metrics">
-                <div>
-                    <span>Clicks</span>
-                    <strong id="clicks">0</strong>
+                <div class="task-detail" id="task-detail"></div>
+
+                <div class="condition-grid">
+                    <fieldset>
+                        <legend>Condition A - Manual Path</legend>
+                        <label class="field">
+                            Time (seconds)
+                            <input id="a-time" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 74.2">
+                        </label>
+                        <div class="two-col">
+                            <label class="field">
+                                Clicks
+                                <input id="a-clicks" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                            <label class="field">
+                                Screens
+                                <input id="a-screens" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                        </div>
+                        <div class="checks">
+                            <label><input id="a-expert" type="checkbox"> Expert help</label>
+                            <label><input id="a-manual" type="checkbox" checked> Manual reasoning</label>
+                            <label><input id="a-success" type="checkbox" checked> Success</label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Condition B - OVOS / Chatbot</legend>
+                        <label class="field">
+                            Time (seconds)
+                            <input id="b-time" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 21.8">
+                        </label>
+                        <div class="two-col">
+                            <label class="field">
+                                Clicks
+                                <input id="b-clicks" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                            <label class="field">
+                                Screens
+                                <input id="b-screens" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                        </div>
+                        <div class="checks">
+                            <label><input id="b-expert" type="checkbox"> Expert help</label>
+                            <label><input id="b-manual" type="checkbox"> Manual reasoning</label>
+                            <label><input id="b-success" type="checkbox" checked> Success</label>
+                        </div>
+                    </fieldset>
                 </div>
-                <div>
-                    <span>Screens</span>
-                    <strong id="screens">0</strong>
+
+                <div class="action-grid">
+                    <button id="save-task" class="primary" type="button">Save Values</button>
+                    <button id="export-card" type="button">Export PNG Card</button>
+                    <button id="copy-text" type="button">Copy Overlay Text</button>
+                    <button id="download-json" type="button">Download JSON</button>
+                    <label class="import-button">
+                        Import JSON
+                        <input id="import-json" type="file" accept="application/json">
+                    </label>
+                    <button id="reset-task" class="quiet" type="button">Reset Task</button>
+                    <button id="reset-all" class="danger" type="button">Reset All</button>
                 </div>
-                <div>
-                    <span>Records</span>
-                    <strong id="record-count">0</strong>
+
+                <section class="task-progress" aria-label="Saved task progress">
+                    <h2>Recorded Tasks</h2>
+                    <div id="task-list" class="task-list"></div>
+                </section>
+            </aside>
+
+            <section class="preview-panel" aria-label="Generated card preview">
+                <div class="summary-strip">
+                    <div>
+                        <span>Selected KPI</span>
+                        <strong id="selected-kpi">Operational effort reduction</strong>
+                    </div>
+                    <div>
+                        <span>Current reduction</span>
+                        <strong id="current-reduction">Waiting for values</strong>
+                    </div>
+                    <div>
+                        <span>Target status</span>
+                        <strong id="target-status">Not calculated</strong>
+                    </div>
                 </div>
-            </div>
 
-            <div class="primary-actions">
-                <button id="start-task" class="success">Start Task</button>
-                <button id="answer-found" class="warning">Answer Found</button>
-            </div>
+                <canvas id="card-canvas" width="1920" height="1080" aria-label="Comparison card preview"></canvas>
 
-            <div class="counter-actions">
-                <button id="add-click">+Click</button>
-                <button id="remove-click">-Click</button>
-                <button id="add-screen">+Screen</button>
-                <button id="remove-screen">-Screen</button>
-            </div>
-
-            <div class="checks">
-                <label><input type="checkbox" id="expert-help"> Expert</label>
-                <label><input type="checkbox" id="manual-reasoning"> Manual reasoning</label>
-                <label><input type="checkbox" id="success" checked> Success</label>
-            </div>
-
-            <label class="notes-label">
-                Notes
-                <textarea id="notes" rows="3" placeholder="Optional evidence note"></textarea>
-            </label>
-
-            <div class="secondary-actions">
-                <button id="reset-current">Reset Current</button>
-                <button id="delete-last">Delete Last</button>
-                <button id="clear-all" class="danger">Clear All</button>
-            </div>
-
-            <div class="export-actions">
-                <button id="copy-raw">Copy Raw CSV</button>
-                <button id="download-raw">Download Raw CSV</button>
-                <button id="copy-summary">Copy KPI Summary CSV</button>
-                <button id="download-summary">Download KPI Summary CSV</button>
-                <button id="download-json">Download JSON</button>
-            </div>
-
-            <p class="last-message" id="last-message">Select a task and start measuring.</p>
-        </section>
-
-        <section class="task-panel" aria-label="Task details">
-            <div class="task-card">
-                <p class="eyebrow" id="task-persona">Operational user</p>
-                <h2 id="task-title">O1 - Factory overview and top consumers</h2>
-                <dl>
-                    <dt>Module</dt>
-                    <dd id="task-module">Monitoring</dd>
-                    <dt>Task</dt>
-                    <dd id="task-description"></dd>
-                    <dt>Manual path</dt>
-                    <dd id="task-manual"></dd>
-                    <dt>Assistant support</dt>
-                    <dd id="task-assistant"></dd>
-                    <dt>Stop when</dt>
-                    <dd id="task-stop"></dd>
-                </dl>
-            </div>
-
-            <div class="summary-card">
-                <h2>KPI Summary</h2>
-                <div class="summary-table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>A sec</th>
-                                <th>B sec</th>
-                                <th>Reduction</th>
-                                <th>A clicks</th>
-                                <th>B clicks</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summary-body"></tbody>
-                    </table>
+                <div class="copy-panel">
+                    <h2>Suggested Overlay / Voiceover Text</h2>
+                    <textarea id="overlay-text" rows="6" readonly></textarea>
                 </div>
-            </div>
-        </section>
-
-        <section class="records-panel" aria-label="Saved measurements">
-            <h2>Saved Records</h2>
-            <div class="records-table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Condition</th>
-                            <th>Trial</th>
-                            <th>Task</th>
-                            <th>Seconds</th>
-                            <th>Clicks</th>
-                            <th>Screens</th>
-                            <th>Expert</th>
-                            <th>Manual</th>
-                            <th>Success</th>
-                        </tr>
-                    </thead>
-                    <tbody id="records-body"></tbody>
-                </table>
-            </div>
+            </section>
         </section>
     </main>
 
