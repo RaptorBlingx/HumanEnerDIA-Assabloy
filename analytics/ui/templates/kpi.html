@@ -2,6 +2,37 @@
 
 {% block title %}KPI Dashboard - EnMS Analytics{% endblock %}
 
+{% block extra_css %}
+<style>
+    .factory-enpi-summary {
+        background: linear-gradient(135deg, rgba(10, 36, 99, 0.08), rgba(0, 168, 232, 0.08));
+        border: 1px solid rgba(10, 36, 99, 0.12);
+        border-left: 5px solid #0A2463;
+        border-radius: 16px;
+        padding: 20px 24px;
+    }
+
+    .factory-enpi-summary strong {
+        color: #0A2463;
+    }
+
+    .factory-kpi-card .kpi-value {
+        font-size: 34px;
+        line-height: 1.12;
+        overflow-wrap: anywhere;
+    }
+
+    .factory-kpi-card .kpi-value.kpi-status-value {
+        font-size: 30px;
+        text-transform: capitalize;
+    }
+
+    .factory-kpi-card .kpi-description {
+        min-height: 18px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
@@ -32,7 +63,6 @@
                             <option value="30d">Last 30 Days</option>
                             <option value="custom">Custom Range</option>
                         </select>
-                        <div class="form-text">Factory scope uses the 2026-Q1 ISO 50001 EnPI period used by OVOS.</div>
                     </div>
                     
                     <div class="col-md-2" id="custom-range-group" style="display:none;">
@@ -68,7 +98,7 @@
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Energy Consumption Trend</h5>
+                <h5 class="mb-0" id="energy-chart-title">Energy Consumption Trend</h5>
             </div>
             <div class="card-body" style="height: 350px; position: relative;">
                 <canvas id="energy-chart"></canvas>
@@ -85,7 +115,7 @@
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Power Demand Profile</h5>
+                <h5 class="mb-0" id="power-chart-title">Power Demand Profile</h5>
             </div>
             <div class="card-body" style="height: 350px; position: relative;">
                 <canvas id="power-chart"></canvas>
@@ -102,7 +132,7 @@
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">SEC Trend (Efficiency)</h5>
+                <h5 class="mb-0" id="sec-chart-title">SEC Trend (Efficiency)</h5>
             </div>
             <div class="card-body" style="height: 350px; position: relative;">
                 <canvas id="sec-chart"></canvas>
@@ -119,7 +149,7 @@
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">KPI Overview</h5>
+                <h5 class="mb-0" id="radar-chart-title">KPI Overview</h5>
             </div>
             <div class="card-body" style="height: 350px; position: relative;">
                 <canvas id="radar-chart"></canvas>
@@ -323,15 +353,37 @@
         return String(value || '').replaceAll('_', ' ');
     }
 
-    function renderChartMessage(loadingId, canvasId, message) {
+    function formatSignedPercent(value) {
+        const numeric = Number(value || 0);
+        return `${numeric > 0 ? '+' : ''}${numeric.toFixed(2)}%`;
+    }
+
+    function setChartTitles(titles) {
+        Object.entries(titles).forEach(([id, title]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = title;
+            }
+        });
+    }
+
+    function resetMachineChartTitles() {
+        setChartTitles({
+            'energy-chart-title': 'Energy Consumption Trend',
+            'power-chart-title': 'Power Demand Profile',
+            'sec-chart-title': 'SEC Trend (Efficiency)',
+            'radar-chart-title': 'KPI Overview'
+        });
+    }
+
+    function showChartCanvas(loadingId, canvasId) {
         const loading = document.getElementById(loadingId);
         const canvas = document.getElementById(canvasId);
-        if (canvas) {
-            canvas.style.display = 'none';
-        }
         if (loading) {
-            loading.style.display = 'block';
-            loading.innerHTML = `<div class="text-muted py-5">${message}</div>`;
+            loading.style.display = 'none';
+        }
+        if (canvas) {
+            canvas.style.display = 'block';
         }
     }
 
@@ -372,7 +424,7 @@
         };
 
         renderFactoryKPIView(factoryResponse.data, enpiResponse.data);
-        renderFactoryChartPlaceholders(enpiResponse.data);
+        renderFactoryCharts(factoryResponse.data, enpiResponse.data);
         document.getElementById('export-kpis-btn').disabled = false;
     }
 
@@ -380,51 +432,69 @@
         const performance = enpiReport.overall_performance || {};
         const deviation = Number(performance.deviation_percent || 0);
         const gap = Math.abs(Number(performance.deviation_kwh || 0));
+        const status = formatStatus(performance.iso_status);
 
         const cardsHtml = `
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #0A2463; --card-gradient-to: #1E3A8A; --card-value-color: #0A2463;">
-                    <div class="kpi-icon">OK</div>
-                    <div class="kpi-value" style="font-size: 30px;">${formatStatus(performance.iso_status)}</div>
+            <div class="col-12">
+                <div class="factory-enpi-summary mb-3">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-2">
+                        <div>
+                            <strong>Factory ISO 50001 EnPI summary for ${enpiReport.report_period}</strong>
+                            <div class="text-muted small mt-1">
+                                Actual energy is ${formatKwh(performance.total_energy_actual_kwh)} kWh against a baseline of ${formatKwh(performance.total_energy_baseline_kwh)} kWh.
+                                The deviation is ${formatSignedPercent(performance.deviation_percent)} with ${formatKwh(gap)} kWh requiring review.
+                            </div>
+                        </div>
+                        <div class="text-lg-end">
+                            <span class="badge bg-warning text-dark text-capitalize">${status}</span>
+                            <div class="text-muted small mt-1">${enpiReport.seus_analyzed ?? 0} SEUs analyzed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #0A2463; --card-gradient-to: #1E3A8A; --card-value-color: #0A2463;">
+                    <div class="kpi-icon"><i class="bi bi-clipboard-check"></i></div>
+                    <div class="kpi-value kpi-status-value">${status}</div>
                     <div class="kpi-label">ISO 50001 STATUS</div>
                     <div class="kpi-description">${enpiReport.report_period}</div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #FF6B35; --card-gradient-to: #D94D1A; --card-value-color: #FF6B35;">
-                    <div class="kpi-icon">%</div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #FF6B35; --card-gradient-to: #D94D1A; --card-value-color: #FF6B35;">
+                    <div class="kpi-icon"><i class="bi bi-percent"></i></div>
                     <div class="kpi-value">${Math.abs(deviation).toFixed(2)}%</div>
                     <div class="kpi-label">DEVIATION</div>
                     <div class="kpi-description">${deviation > 0 ? 'Above baseline' : deviation < 0 ? 'Below baseline' : 'Aligned'}</div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #00A8E8; --card-gradient-to: #007BA7; --card-value-color: #00A8E8;">
-                    <div class="kpi-icon">kWh</div>
-                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(performance.total_energy_actual_kwh)}</div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #00A8E8; --card-gradient-to: #007BA7; --card-value-color: #00A8E8;">
+                    <div class="kpi-icon"><i class="bi bi-lightning-charge"></i></div>
+                    <div class="kpi-value">${formatKwh(performance.total_energy_actual_kwh)}</div>
                     <div class="kpi-label">ACTUAL KWH</div>
                     <div class="kpi-description">Factory EnPI actual</div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #2ECC71; --card-gradient-to: #27AE60; --card-value-color: #2ECC71;">
-                    <div class="kpi-icon">BL</div>
-                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(performance.total_energy_baseline_kwh)}</div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #2ECC71; --card-gradient-to: #27AE60; --card-value-color: #2ECC71;">
+                    <div class="kpi-icon"><i class="bi bi-bar-chart-line"></i></div>
+                    <div class="kpi-value">${formatKwh(performance.total_energy_baseline_kwh)}</div>
                     <div class="kpi-label">BASELINE KWH</div>
                     <div class="kpi-description">ISO 50001 baseline</div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #E74C3C; --card-gradient-to: #C0392B; --card-value-color: #E74C3C;">
-                    <div class="kpi-icon">!</div>
-                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(gap)}</div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #E74C3C; --card-gradient-to: #C0392B; --card-value-color: #E74C3C;">
+                    <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="kpi-value">${formatKwh(gap)}</div>
                     <div class="kpi-label">PERFORMANCE GAP</div>
-                    <div class="kpi-description">kWh to review</div>
+                    <div class="kpi-description">kWh requiring review</div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="kpi-card-premium" style="--card-gradient-from: #3498DB; --card-gradient-to: #2980B9; --card-value-color: #3498DB;">
-                    <div class="kpi-icon">#</div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #3498DB; --card-gradient-to: #2980B9; --card-value-color: #3498DB;">
+                    <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
                     <div class="kpi-value">${enpiReport.seus_analyzed ?? 0}</div>
                     <div class="kpi-label">SEUS ANALYZED</div>
                     <div class="kpi-description">${factory.machine_status?.total_machines ?? '-'} machines tracked</div>
@@ -465,15 +535,194 @@
         `).join('');
     }
 
-    function renderFactoryChartPlaceholders(enpiReport) {
+    function renderFactoryCharts(factory, enpiReport) {
+        const breakdown = enpiReport.seu_breakdown || [];
+        const performance = enpiReport.overall_performance || {};
+        const machineStatus = factory.machine_status || {};
+
         destroyCharts();
-        renderChartMessage('energy-chart-loading', 'energy-chart', `Factory EnPI actual vs baseline is shown above for ${enpiReport.report_period}.`);
-        renderChartMessage('power-chart-loading', 'power-chart', 'Factory-level KPI mode focuses on EnPI status, deviation, gap, and factory totals.');
-        renderChartMessage('sec-chart-loading', 'sec-chart', 'Switch to a machine scope to view machine-level SEC time-series charts.');
+        setChartTitles({
+            'energy-chart-title': 'SEU Actual vs Baseline Energy',
+            'power-chart-title': 'SEU Deviation From Baseline',
+            'sec-chart-title': 'Factory Machine Status',
+            'radar-chart-title': 'Factory EnPI Summary'
+        });
+
+        showChartCanvas('energy-chart-loading', 'energy-chart');
+        energyChart = new Chart(document.getElementById('energy-chart'), {
+            type: 'bar',
+            data: {
+                labels: breakdown.map(row => row.seu_name),
+                datasets: [
+                    {
+                        label: 'Baseline kWh',
+                        data: breakdown.map(row => Number(row.baseline_energy_kwh || 0)),
+                        backgroundColor: 'rgba(46, 204, 113, 0.65)',
+                        borderColor: 'rgb(39, 174, 96)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Actual kWh',
+                        data: breakdown.map(row => Number(row.actual_energy_kwh || 0)),
+                        backgroundColor: 'rgba(0, 168, 232, 0.65)',
+                        borderColor: 'rgb(0, 123, 167)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    title: {
+                        display: true,
+                        text: `Actual vs baseline energy - ${enpiReport.report_period}`,
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString(undefined, { maximumFractionDigits: 1 })} kWh`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Energy (kWh)', font: { size: 12, weight: 'bold' } }
+                    },
+                    x: {
+                        ticks: { maxRotation: 45, minRotation: 30 }
+                    }
+                }
+            }
+        });
+
+        showChartCanvas('power-chart-loading', 'power-chart');
+        powerChart = new Chart(document.getElementById('power-chart'), {
+            type: 'bar',
+            data: {
+                labels: breakdown.map(row => row.seu_name),
+                datasets: [{
+                    label: 'Deviation from baseline (%)',
+                    data: breakdown.map(row => Number(row.deviation_percent || 0)),
+                    backgroundColor: breakdown.map(row => Number(row.deviation_percent || 0) > 0 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(46, 204, 113, 0.7)'),
+                    borderColor: breakdown.map(row => Number(row.deviation_percent || 0) > 0 ? 'rgb(192, 57, 43)' : 'rgb(39, 174, 96)'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: `SEU deviation - ${enpiReport.report_period}`,
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `Deviation: ${formatSignedPercent(context.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: { display: true, text: 'Deviation (%)', font: { size: 12, weight: 'bold' } },
+                        ticks: { callback: value => `${value}%` }
+                    },
+                    x: {
+                        ticks: { maxRotation: 45, minRotation: 30 }
+                    }
+                }
+            }
+        });
+
+        showChartCanvas('sec-chart-loading', 'sec-chart');
+        secChart = new Chart(document.getElementById('sec-chart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Idle', 'Stopped'],
+                datasets: [{
+                    data: [
+                        Number(machineStatus.active || 0),
+                        Number(machineStatus.idle || 0),
+                        Number(machineStatus.stopped || 0)
+                    ],
+                    backgroundColor: [
+                        'rgba(46, 204, 113, 0.75)',
+                        'rgba(243, 156, 18, 0.75)',
+                        'rgba(231, 76, 60, 0.75)'
+                    ],
+                    borderColor: ['#27AE60', '#D68910', '#C0392B'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'bottom' },
+                    title: {
+                        display: true,
+                        text: `${machineStatus.total_machines ?? 0} monitored machines`,
+                        font: { size: 14, weight: 'bold' }
+                    }
+                }
+            }
+        });
+
+        radarChart = new Chart(document.getElementById('radar-chart'), {
+            type: 'bar',
+            data: {
+                labels: ['Actual energy', 'Baseline energy', 'Performance gap'],
+                datasets: [{
+                    label: 'kWh',
+                    data: [
+                        Number(performance.total_energy_actual_kwh || 0),
+                        Number(performance.total_energy_baseline_kwh || 0),
+                        Math.abs(Number(performance.deviation_kwh || 0))
+                    ],
+                    backgroundColor: [
+                        'rgba(0, 168, 232, 0.7)',
+                        'rgba(46, 204, 113, 0.7)',
+                        'rgba(231, 76, 60, 0.7)'
+                    ],
+                    borderColor: ['#007BA7', '#27AE60', '#C0392B'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: `Factory EnPI status: ${formatStatus(performance.iso_status)}`,
+                        font: { size: 14, weight: 'bold' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `${Number(context.parsed.x).toLocaleString(undefined, { maximumFractionDigits: 1 })} kWh`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Energy (kWh)', font: { size: 12, weight: 'bold' } }
+                    }
+                }
+            }
+        });
     }
     
     // Load summary KPIs
     async function loadSummaryKPIs(machineId, dateRange) {
+        resetMachineChartTitles();
         const response = await axios.get(`${API_BASE}/kpi/all`, {
             params: {
                 machine_id: machineId,
