@@ -117,6 +117,8 @@ def _is_enpi_query(text: str) -> bool:
         "energy performance indicator report",
         "energy performance indicators report",
         "show energy performance indicator",
+        "performance indicator report",
+        "performance indicators report",
         "enpi report",
         "enpi status",
         "iso 50001 report",
