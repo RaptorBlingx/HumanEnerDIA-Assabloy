@@ -10,6 +10,7 @@
   let dragState = null;
   let extensionContextValid = true;
   let optimisticOverlayPosition = null;
+  let rasaTypingStartPending = false;
 
   function isContextInvalidated(error) {
     return /Extension context invalidated|context invalidated/i.test(String(error?.message || error || ''));
@@ -543,6 +544,40 @@
     });
   }
 
+  function bindRasaTypingAutoStart() {
+    document.addEventListener('input', async event => {
+      const input = event.target?.closest?.('#enms-chat-input');
+      if (!input || rasaTypingStartPending) {
+        return;
+      }
+      if (!String(input.value || '').trim()) {
+        return;
+      }
+
+      rasaTypingStartPending = true;
+      try {
+        if (!state) {
+          await refresh().catch(() => undefined);
+        }
+        if (state?.condition !== 'B' || state.running) {
+          return;
+        }
+
+        const response = await send({
+          type: 'startTask',
+          source: 'chatbot_typing'
+        });
+        if (applyResponse(response)) {
+          setLast('Rasa chat task started automatically on typing.');
+        }
+      } catch (_) {
+        // Keep normal typing usable even if the extension runtime is reloading.
+      } finally {
+        rasaTypingStartPending = false;
+      }
+    }, true);
+  }
+
   chrome.runtime.onMessage.addListener(message => {
     if (message?.type === 'stateUpdated') {
       state = message.state;
@@ -557,6 +592,7 @@
     bindClickCounter();
     bindNavigationCounter();
     bindAssistantTimingEvents();
+    bindRasaTypingAutoStart();
     timer = window.setInterval(render, 100);
     window.addEventListener('beforeunload', () => {
       if (timer) {

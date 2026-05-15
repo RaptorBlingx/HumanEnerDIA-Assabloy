@@ -72,6 +72,7 @@ This includes HumanEnerDIA and Grafana at `http://10.33.10.103:8080/...`.
    - `Expert` should stay unchecked unless you genuinely need human expert help.
    - `Success` should stay checked only if the result is correct.
 5. Click `Start Task` immediately before the first task action.
+   - For Rasa chatbot tasks in `Condition B`, do not click `Start Task`; select the task/trial, open the chat, and start typing. The timer starts automatically on the first typed character in the Rasa input.
 6. Perform the task normally in HumanEnerDIA, Grafana, OVOS, or chatbot.
 7. Clicks are counted automatically.
 8. URL/history/hash changes are counted automatically as screens.
