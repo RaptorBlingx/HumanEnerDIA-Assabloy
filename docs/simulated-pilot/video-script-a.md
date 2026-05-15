@@ -236,15 +236,14 @@ Steps:
 2. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 3. Click `Start Task`.
 4. Open `/api/analytics/ui/kpi`.
-5. Review the factory KPI dashboard.
-6. Open `/api/analytics/ui/enpi-report`.
-7. Confirm the factory is `11111111-1111-1111-1111-111111111111` if the page shows the raw factory selector, or confirm the visible factory is the simulated Romanian pilot factory.
-8. Confirm the period is `2026-Q1`.
-9. Find the `2026-Q1` EnPI report/status.
+5. In `KPI Scope`, select `Factory - Simulated Romanian Pilot Factory`.
+6. Confirm `Time Period` is `2026-Q1 Pilot Period`.
+7. Review the factory KPI / EnPI cards.
+8. Confirm the same values that OVOS reports are visible: status is `requires attention`, `6` SEUs were analyzed, actual energy is about `268,426.2 kWh`, baseline is about `250,637.2 kWh`, deviation is `7.10%` above baseline, and the performance gap is about `17,789.0 kWh`.
+9. Open `/api/analytics/ui/enpi-report` only if you want supporting details or the SEU breakdown.
 10. If you want supporting trend evidence, open Grafana `ISO 50001 EnPI`.
-11. Expected answer to capture: status is `on track`, actual energy is above baseline by about `4.60%`, and the performance gap is about `11,809.3 kWh`.
-12. Click `Answer Found` when the EnPI status and deviation are visible.
-13. Manual proof source: `/api/analytics/ui/enpi-report`, optionally Grafana `ISO 50001 EnPI`.
+11. Click `Answer Found` when the EnPI status and deviation are visible.
+12. Manual proof source: `/api/analytics/ui/kpi`, optionally `/api/analytics/ui/enpi-report` and Grafana `ISO 50001 EnPI`.
 
 ## T4 - Generate Monthly Report
 Persona: `Technical user`

@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="display-6">KPI Dashboard</h1>
-        <p class="text-muted">Key Performance Indicators with real-time time-series data</p>
+        <p class="text-muted">Factory and machine Key Performance Indicators with pilot EnPI status</p>
     </div>
 </div>
 
@@ -17,20 +17,22 @@
             <div class="card-body">
                 <form id="filter-form" class="row g-3">
                     <div class="col-md-4">
-                        <label for="machine-select" class="form-label">Machine</label>
+                        <label for="machine-select" class="form-label">KPI Scope</label>
                         <select class="form-select" id="machine-select" required>
-                            <option value="">Select machine...</option>
+                            <option value="">Select KPI scope...</option>
                         </select>
                     </div>
                     
                     <div class="col-md-3">
                         <label for="time-period" class="form-label">Time Period</label>
                         <select class="form-select" id="time-period">
+                            <option value="2026q1" selected>2026-Q1 Pilot Period</option>
                             <option value="24h">Last 24 Hours</option>
-                            <option value="7d" selected>Last 7 Days</option>
+                            <option value="7d">Last 7 Days</option>
                             <option value="30d">Last 30 Days</option>
                             <option value="custom">Custom Range</option>
                         </select>
+                        <div class="form-text">Factory scope uses the 2026-Q1 ISO 50001 EnPI period used by OVOS.</div>
                     </div>
                     
                     <div class="col-md-2" id="custom-range-group" style="display:none;">
@@ -148,7 +150,7 @@
                         <tbody id="kpi-tbody">
                             <tr>
                                 <td colspan="4" class="text-center text-muted">
-                                    Select a machine and time period to view KPIs
+                                    Select a KPI scope and time period to view KPIs
                                 </td>
                             </tr>
                         </tbody>
@@ -167,6 +169,10 @@
     let secChart = null;
     let radarChart = null;
     let currentKpiData = null;
+    const PILOT_FACTORY_ID = '11111111-1111-1111-1111-111111111111';
+    const PILOT_FACTORY_LABEL = 'Factory - Simulated Romanian Pilot Factory';
+    const PILOT_ENPI_PERIOD = '2026-Q1';
+    const PILOT_BASELINE_YEAR = '2026';
     
     // Load machines
     async function loadMachines() {
@@ -188,6 +194,11 @@
             while (select.options.length > 1) {
                 select.remove(1);
             }
+
+            const factoryOption = document.createElement('option');
+            factoryOption.value = `factory:${PILOT_FACTORY_ID}`;
+            factoryOption.textContent = PILOT_FACTORY_LABEL;
+            select.appendChild(factoryOption);
             
             machines.forEach(machine => {
                 const option = document.createElement('option');
@@ -196,11 +207,8 @@
                 select.appendChild(option);
             });
             
-            // Auto-select first machine
-            if (machines.length > 0) {
-                select.value = machines[0].id;
-                loadKPIData();
-            }
+            select.value = `factory:${PILOT_FACTORY_ID}`;
+            loadKPIData();
         } catch (error) {
             console.error('Error loading machines:', error);
             showError('Failed to load machines: ' + (error.response?.data?.detail || error.message));
@@ -250,6 +258,13 @@
         }
         
         switch(period) {
+            case '2026q1':
+                return {
+                    start: '2026-01-01T00:00:00.000Z',
+                    end: '2026-03-31T23:59:59.000Z',
+                    interval: '1day',
+                    enpiPeriod: PILOT_ENPI_PERIOD
+                };
             case '24h':
                 startTime = new Date(endTime - 24 * 60 * 60 * 1000);
                 return { start: startTime.toISOString(), end: endTime.toISOString(), interval: '1hour' };
@@ -266,8 +281,8 @@
     
     // Load all KPI data
     async function loadKPIData() {
-        const machineId = document.getElementById('machine-select').value;
-        if (!machineId) return;
+        const scopeId = document.getElementById('machine-select').value;
+        if (!scopeId) return;
         
         const dateRange = getDateRange();
         if (!dateRange) return;
@@ -276,13 +291,18 @@
         spinner.classList.remove('d-none');
         
         try {
+            if (scopeId.startsWith('factory:')) {
+                await loadFactoryKPIData(scopeId.replace('factory:', ''), dateRange);
+                return;
+            }
+
             // Load summary KPIs
-            await loadSummaryKPIs(machineId, dateRange);
+            await loadSummaryKPIs(scopeId, dateRange);
             
             // Load time-series charts
-            await loadEnergyChart(machineId, dateRange);
-            await loadPowerChart(machineId, dateRange);
-            await loadSECChart(machineId, dateRange);
+            await loadEnergyChart(scopeId, dateRange);
+            await loadPowerChart(scopeId, dateRange);
+            await loadSECChart(scopeId, dateRange);
             
             // Update radar chart
             updateRadarChart();
@@ -293,6 +313,163 @@
         } finally {
             spinner.classList.add('d-none');
         }
+    }
+
+    function formatKwh(value) {
+        return `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
+    }
+
+    function formatStatus(value) {
+        return String(value || '').replaceAll('_', ' ');
+    }
+
+    function renderChartMessage(loadingId, canvasId, message) {
+        const loading = document.getElementById(loadingId);
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            canvas.style.display = 'none';
+        }
+        if (loading) {
+            loading.style.display = 'block';
+            loading.innerHTML = `<div class="text-muted py-5">${message}</div>`;
+        }
+    }
+
+    function destroyCharts() {
+        [energyChart, powerChart, secChart, radarChart].forEach(chart => {
+            if (chart) {
+                chart.destroy();
+            }
+        });
+        energyChart = null;
+        powerChart = null;
+        secChart = null;
+        radarChart = null;
+    }
+
+    async function loadFactoryKPIData(factoryId, dateRange) {
+        const enpiPeriod = dateRange.enpiPeriod || PILOT_ENPI_PERIOD;
+        const [factoryResponse, enpiResponse] = await Promise.all([
+            axios.get(`${API_BASE}/kpi/factory/${factoryId}`, {
+                params: {
+                    start: dateRange.start,
+                    end: dateRange.end
+                }
+            }),
+            axios.get(`${API_BASE}/iso50001/enpi-report`, {
+                params: {
+                    factory_id: factoryId,
+                    period: enpiPeriod,
+                    baseline_year: PILOT_BASELINE_YEAR
+                }
+            })
+        ]);
+
+        currentKpiData = {
+            scope: 'factory',
+            factory: factoryResponse.data,
+            enpi: enpiResponse.data
+        };
+
+        renderFactoryKPIView(factoryResponse.data, enpiResponse.data);
+        renderFactoryChartPlaceholders(enpiResponse.data);
+        document.getElementById('export-kpis-btn').disabled = false;
+    }
+
+    function renderFactoryKPIView(factory, enpiReport) {
+        const performance = enpiReport.overall_performance || {};
+        const deviation = Number(performance.deviation_percent || 0);
+        const gap = Math.abs(Number(performance.deviation_kwh || 0));
+
+        const cardsHtml = `
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #0A2463; --card-gradient-to: #1E3A8A; --card-value-color: #0A2463;">
+                    <div class="kpi-icon">OK</div>
+                    <div class="kpi-value" style="font-size: 30px;">${formatStatus(performance.iso_status)}</div>
+                    <div class="kpi-label">ISO 50001 STATUS</div>
+                    <div class="kpi-description">${enpiReport.report_period}</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #FF6B35; --card-gradient-to: #D94D1A; --card-value-color: #FF6B35;">
+                    <div class="kpi-icon">%</div>
+                    <div class="kpi-value">${Math.abs(deviation).toFixed(2)}%</div>
+                    <div class="kpi-label">DEVIATION</div>
+                    <div class="kpi-description">${deviation > 0 ? 'Above baseline' : deviation < 0 ? 'Below baseline' : 'Aligned'}</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #00A8E8; --card-gradient-to: #007BA7; --card-value-color: #00A8E8;">
+                    <div class="kpi-icon">kWh</div>
+                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(performance.total_energy_actual_kwh)}</div>
+                    <div class="kpi-label">ACTUAL KWH</div>
+                    <div class="kpi-description">Factory EnPI actual</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #2ECC71; --card-gradient-to: #27AE60; --card-value-color: #2ECC71;">
+                    <div class="kpi-icon">BL</div>
+                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(performance.total_energy_baseline_kwh)}</div>
+                    <div class="kpi-label">BASELINE KWH</div>
+                    <div class="kpi-description">ISO 50001 baseline</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #E74C3C; --card-gradient-to: #C0392B; --card-value-color: #E74C3C;">
+                    <div class="kpi-icon">!</div>
+                    <div class="kpi-value" style="font-size: 34px;">${formatKwh(gap)}</div>
+                    <div class="kpi-label">PERFORMANCE GAP</div>
+                    <div class="kpi-description">kWh to review</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="kpi-card-premium" style="--card-gradient-from: #3498DB; --card-gradient-to: #2980B9; --card-value-color: #3498DB;">
+                    <div class="kpi-icon">#</div>
+                    <div class="kpi-value">${enpiReport.seus_analyzed ?? 0}</div>
+                    <div class="kpi-label">SEUS ANALYZED</div>
+                    <div class="kpi-description">${factory.machine_status?.total_machines ?? '-'} machines tracked</div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('kpi-cards').innerHTML = cardsHtml;
+        updateFactoryKPITable(factory, enpiReport);
+    }
+
+    function updateFactoryKPITable(factory, enpiReport) {
+        const performance = enpiReport.overall_performance || {};
+        const energy = factory.energy_metrics || {};
+        const production = factory.production_metrics || {};
+        const machineStatus = factory.machine_status || {};
+        const gap = Math.abs(Number(performance.deviation_kwh || 0));
+        const rows = [
+            { name: 'ISO 50001 EnPI Status', value: formatStatus(performance.iso_status), unit: '-', desc: `Factory EnPI status for ${enpiReport.report_period}` },
+            { name: 'SEUs Analyzed', value: enpiReport.seus_analyzed, unit: 'SEUs', desc: 'Significant energy uses included in the report' },
+            { name: 'Actual Energy', value: performance.total_energy_actual_kwh, unit: 'kWh', desc: 'Actual factory energy used in the EnPI report' },
+            { name: 'Baseline Energy', value: performance.total_energy_baseline_kwh, unit: 'kWh', desc: 'ISO 50001 baseline for the same period' },
+            { name: 'Deviation', value: Math.abs(Number(performance.deviation_percent || 0)), unit: '%', desc: 'Deviation from baseline used by OVOS T3' },
+            { name: 'Performance Gap', value: gap, unit: 'kWh', desc: 'Absolute kWh gap requiring review' },
+            { name: 'Factory KPI Energy Cost', value: energy.total_cost_usd, unit: 'USD', desc: 'Factory-wide cost for the selected KPI period' },
+            { name: 'Factory Peak Demand', value: energy.peak_power_kw, unit: 'kW', desc: 'Factory-wide peak demand for the selected KPI period' },
+            { name: 'Factory SEC', value: production.factory_sec_kwh_per_unit, unit: 'kWh/unit', desc: 'Factory-wide specific energy consumption' },
+            { name: 'Machine Status', value: `${machineStatus.active ?? 0} active / ${machineStatus.idle ?? 0} idle / ${machineStatus.stopped ?? 0} stopped`, unit: '-', desc: 'Latest tracked machine status split' }
+        ];
+
+        document.getElementById('kpi-tbody').innerHTML = rows.map(row => `
+            <tr>
+                <td><strong>${row.name}</strong></td>
+                <td>${typeof row.value === 'number' ? row.value.toLocaleString(undefined, { maximumFractionDigits: row.name === 'Factory SEC' ? 6 : 2 }) : row.value}</td>
+                <td>${row.unit || '-'}</td>
+                <td>${row.desc || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderFactoryChartPlaceholders(enpiReport) {
+        destroyCharts();
+        renderChartMessage('energy-chart-loading', 'energy-chart', `Factory EnPI actual vs baseline is shown above for ${enpiReport.report_period}.`);
+        renderChartMessage('power-chart-loading', 'power-chart', 'Factory-level KPI mode focuses on EnPI status, deviation, gap, and factory totals.');
+        renderChartMessage('sec-chart-loading', 'sec-chart', 'Switch to a machine scope to view machine-level SEC time-series charts.');
     }
     
     // Load summary KPIs
@@ -818,6 +995,37 @@
     // Export to CSV
     document.getElementById('export-kpis-btn').addEventListener('click', () => {
         if (!currentKpiData) return;
+
+        if (currentKpiData.scope === 'factory') {
+            const factory = currentKpiData.factory || {};
+            const enpiReport = currentKpiData.enpi || {};
+            const performance = enpiReport.overall_performance || {};
+            const energy = factory.energy_metrics || {};
+            const production = factory.production_metrics || {};
+            const gap = Math.abs(Number(performance.deviation_kwh || 0));
+
+            const csv = [
+                ['KPI', 'Value', 'Unit'],
+                ['ISO 50001 EnPI Status', formatStatus(performance.iso_status), '-'],
+                ['SEUs Analyzed', enpiReport.seus_analyzed, 'SEUs'],
+                ['Actual Energy', performance.total_energy_actual_kwh, 'kWh'],
+                ['Baseline Energy', performance.total_energy_baseline_kwh, 'kWh'],
+                ['Deviation', Math.abs(Number(performance.deviation_percent || 0)), '%'],
+                ['Performance Gap', gap, 'kWh'],
+                ['Factory KPI Energy Cost', energy.total_cost_usd, 'USD'],
+                ['Factory Peak Demand', energy.peak_power_kw, 'kW'],
+                ['Factory SEC', production.factory_sec_kwh_per_unit, 'kWh/unit']
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `factory_kpis_${PILOT_ENPI_PERIOD}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            return;
+        }
         
         const kpis = currentKpiData.kpis || {};
         const totals = currentKpiData.totals || {};

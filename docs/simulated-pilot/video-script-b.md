@@ -211,7 +211,7 @@ Steps:
 3. Confirm `Auto-stop` checked.
 4. Say `Jarvis`, then ask: `Show energy performance indicators report`.
 5. The recorder should start automatically and stop automatically when the spoken answer finishes.
-6. Expected answer to capture: `2026-Q1` ISO 50001 EnPI status is `on track`, actual energy is about `4.60%` above baseline, and the performance gap is about `11,809.3 kWh`.
+6. Expected answer to capture: `2026-Q1` ISO 50001 EnPI status is `requires attention`, `6` SEUs were analyzed, actual energy is about `268,426.2 kWh`, baseline is about `250,637.2 kWh`, deviation is `7.10%` above baseline, and the performance gap is about `17,789.0 kWh`.
 
 ## T4 - Generate Monthly Report
 Persona: `Technical user`

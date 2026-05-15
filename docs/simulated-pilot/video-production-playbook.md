@@ -976,15 +976,14 @@ Record the clip:
 4. Confirm `Expert` unchecked, `Manual reasoning` checked, `Success` checked.
 5. Click `Start Task`.
 6. Open `/api/analytics/ui/kpi`.
-7. Review the factory KPI dashboard.
-8. Open `/api/analytics/ui/enpi-report`.
-9. Confirm the factory is the simulated Romanian pilot factory.
-10. Confirm the period is `2026-Q1`.
-11. Find the `2026-Q1` EnPI report/status.
+7. In `KPI Scope`, select `Factory - Simulated Romanian Pilot Factory`.
+8. Confirm `Time Period` is `2026-Q1 Pilot Period`.
+9. Review the factory KPI / EnPI cards.
+10. Confirm the same values that OVOS reports are visible: status is `requires attention`, `6` SEUs were analyzed, actual energy is about `268,426.2 kWh`, baseline is about `250,637.2 kWh`, deviation is `7.10%` above baseline, and the performance gap is about `17,789.0 kWh`.
+11. Open `/api/analytics/ui/enpi-report` only if supporting details or the SEU breakdown are needed.
 12. If supporting trend evidence is needed, open Grafana `ISO 50001 EnPI`.
-13. Confirm status is `on track`, actual energy is above baseline by about `4.60%`, and the performance gap is about `11,809.3 kWh`.
-14. Click `Answer Found`.
-15. Stop the screen recorder.
+13. Click `Answer Found`.
+14. Stop the screen recorder.
 
 ### T3 B Clip
 
@@ -1005,7 +1004,7 @@ Record the clip:
 5. Confirm `Auto-stop` checked.
 6. Say `Jarvis`, then ask `Show energy performance indicators report`.
 7. Wait for the recorder to stop automatically after voice playback finishes.
-8. Confirm the answer says `2026-Q1` ISO 50001 EnPI status is `on track`, actual energy is about `4.60%` above baseline, and the performance gap is about `11,809.3 kWh`.
+8. Confirm the answer says `2026-Q1` ISO 50001 EnPI status is `requires attention`, `6` SEUs were analyzed, actual energy is about `268,426.2 kWh`, baseline is about `250,637.2 kWh`, deviation is `7.10%` above baseline, and the performance gap is about `17,789.0 kWh`.
 9. Stop the screen recorder.
 
 ### T3 Comparison Card

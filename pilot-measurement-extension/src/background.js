@@ -69,7 +69,7 @@ const TASKS = [
     persona: 'Technical user',
     module: 'Analyses',
     task: 'Retrieve factory KPI and EnPI status for 2026-Q1.',
-    manual: '/api/analytics/ui/kpi and /api/analytics/ui/enpi-report, optionally Grafana ISO 50001 EnPI.',
+    manual: '/api/analytics/ui/kpi with Factory - Simulated Romanian Pilot Factory selected; optionally /api/analytics/ui/enpi-report for SEU details.',
     assistant: 'OVOS: Show energy performance indicators report.',
     stop: 'Stop when 2026-Q1 status, deviation, and performance gap are visible.'
   },

@@ -21,7 +21,7 @@ This file defines the exact task list for both recordings. Do not improvise task
 | --- | --- | --- | --- | --- |
 | T1 | Monitoring | Review anomalies and identify the issue requiring attention. | Open `/api/analytics/ui/anomaly` and identify the recent unresolved critical anomaly on `Compressor-2`. | OVOS prompt: `Show me recent anomalies` |
 | T2 | Analyses | Analyze `Compressor-1` against baseline, forecast context, and recommendations. | Cross-check Grafana `Machine Health`, `/api/analytics/ui/forecast`, and `/api/analytics/ui/opportunities` to summarize baseline, forecast, and likely actions. | OVOS prompts: `Analyze performance of Compressor-1`, `Energy forecast for Compressor-1`, and `What are the energy saving opportunities?` |
-| T3 | Analyses | Retrieve factory KPI and EnPI status for `2026-Q1`. | Open `/api/analytics/ui/kpi`, then open `/api/analytics/ui/enpi-report` to read the current EnPI status. | OVOS prompt: `Show energy performance indicators report` |
+| T3 | Analyses | Retrieve factory KPI and EnPI status for `2026-Q1`. | Open `/api/analytics/ui/kpi`, select `Factory - Simulated Romanian Pilot Factory`, and confirm the `2026-Q1` factory EnPI status. Use `/api/analytics/ui/enpi-report` only for supporting SEU details if needed. | OVOS prompt: `Show energy performance indicators report` |
 | T4 | Analyses / Documentation | Generate the `April 2026` monthly report and summarize the result. | Open `/reports.html`, choose the frozen factory and `April 2026`, generate the report, then summarize the visible outcome. | OVOS prompt: `download report of Apr 2026`, then summarize the generated PDF download confirmation. |
 
 ## Timing And Capture Rules
