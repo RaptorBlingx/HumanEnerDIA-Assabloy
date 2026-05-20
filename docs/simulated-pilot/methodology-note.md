@@ -28,5 +28,13 @@ For each task, the benchmark records:
   - Analyses
   - Documentation
 
+## Final Measured Results
+- Operational-user effort reduction: `61.7%` against the `30%` target.
+- Technical-user intervention / effort reduction: `55.1%` against the `25%` target.
+- DIA module evidence: `3/3` modules demonstrated - Monitoring, Analyses, and Documentation.
+- Final status: all KPI targets met in the simulated pilot benchmark.
+
+One technical task, `T2 - Baseline analysis and recommendations`, took longer in Condition B because the assistant-supported path executed heavier analysis. The task still exceeded the technical KPI target because it substantially reduced clicks and screen transitions while preserving task success.
+
 ## Scope Of The Claim
 The benchmark is intended to show measurable improvement in user interaction, task completion, and access to energy-management information within a simulated pilot scenario. It does not claim a completed live Romanian factory deployment.

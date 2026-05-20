@@ -563,11 +563,10 @@
         drawBigMetric(ctx, 710, 380, 500, 250, 'Technical Effort', formatPercent(final.technical.effortReduction, 'n/a'), 'Target: 25%');
         drawBigMetric(ctx, 1310, 380, 500, 250, 'DIA Modules', `${final.modules.size}/3`, 'Monitoring, Analyses, Documentation');
 
-        const moduleText = MODULE_TARGETS.map(moduleName => `${moduleName}: ${final.modules.has(moduleName) ? 'covered' : 'missing'}`);
         drawBottomEvidence(ctx, [
             ['Operational status', final.operational.effortReduction >= 30 ? 'TARGET MET' : 'BELOW TARGET'],
             ['Technical status', final.technical.effortReduction >= 25 ? 'TARGET MET' : 'BELOW TARGET'],
-            ['Module coverage', moduleText.join(' | ')],
+            ['Module coverage', `${final.modules.size}/3 modules covered`],
             ['Final status', final.allTargetsMet ? 'ALL KPI TARGETS MET' : 'INCOMPLETE KPI EVIDENCE']
         ]);
     }

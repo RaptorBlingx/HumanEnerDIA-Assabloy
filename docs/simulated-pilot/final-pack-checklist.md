@@ -8,6 +8,9 @@ Use this checklist before sending the package to management or evaluators.
 - [ ] Pilot Measurement extension raw export
 - [ ] Pilot Measurement extension KPI export
 - [ ] completed KPI comparison sheet
+- [x] final KPI results CSV: [final-kpi-results.csv](final-kpi-results.csv)
+- [x] exported KPI comparison cards: [../KPIs](../KPIs)
+- [x] final results summary: [final-results-summary.md](final-results-summary.md)
 - [ ] methodology note
 - [ ] simulated pilot factory profile
 - [ ] video production playbook / final video structure notes
@@ -34,3 +37,9 @@ Use this checklist before sending the package to management or evaluators.
 - [ ] Final summary connects the A/B result back to the proposal KPIs.
 - [ ] The simulated nature of the pilot is stated clearly and consistently.
 - [ ] No unsupported claim of a real host-factory deployment is made.
+
+## Final KPI Values
+- Operational-user effort reduction: `61.7%` versus `30%` target.
+- Technical-user intervention / effort reduction: `55.1%` versus `25%` target.
+- DIA modules demonstrated: `3/3` - Monitoring, Analyses, Documentation.
+- Final status: all KPI targets met in the simulated pilot benchmark.
