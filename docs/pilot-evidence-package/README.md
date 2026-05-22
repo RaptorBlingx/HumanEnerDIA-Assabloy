@@ -22,11 +22,11 @@ The demonstrated DIA modules are Monitoring, Analyses, and Documentation.
 | --- | --- |
 | [01-final-results-summary.md](01-final-results-summary.md) | Executive summary of the final measured KPI results. |
 | [02-methodology-note.md](02-methodology-note.md) | Methodology, scope, assumptions, and claim boundary. |
-| [03-simulated-factory-profile.md](03-simulated-factory-profile.md) | Frozen simulated Romanian pilot-factory profile. |
-| [04-task-set-and-measurement-rules.md](04-task-set-and-measurement-rules.md) | Fixed A/B task set, personas, prompts, and timing rules. |
+| [03-simulated-factory-profile.md](03-simulated-factory-profile.md) | Representative simulated Romanian pilot-factory profile. |
+| [04-task-set-and-measurement-rules.md](04-task-set-and-measurement-rules.md) | Fixed A/B task set, personas, evidence paths, and measurement fields. |
 | [05-final-kpi-results.csv](05-final-kpi-results.csv) | Final measured KPI values used for the cards and final conclusion. |
 | [kpi-cards](kpi-cards) | Exported PNG comparison cards for each task, subtotals, and final KPI summary. |
-| [06-measurement-protocol.md](06-measurement-protocol.md) | Reviewer-facing description of how the A/B measurements were collected. |
+| [06-measurement-protocol.md](06-measurement-protocol.md) | Measurement protocol for the A/B benchmark. |
 
 ## Claim Boundary
 

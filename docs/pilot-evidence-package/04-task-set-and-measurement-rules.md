@@ -1,56 +1,59 @@
-# Frozen Task Set
+# Benchmark Task Set And Measurement Rules
 
-This document defines the fixed task list used for both benchmark conditions.
+## Purpose
 
-## Recording Order
-1. Operational user tasks `O1` to `O4`
-2. Technical user tasks `T1` to `T4`
+This document defines the fixed benchmark tasks used to compare HumanEnerDIA performance under two conditions:
+
+| Condition | Description |
+| --- | --- |
+| Condition A | Manual HumanEnerDIA usage without OVOS and without chatbot support |
+| Condition B | HumanEnerDIA usage with OVOS and chatbot support |
+
+The same task objectives, personas, success criteria, and measurement fields were used in both conditions.
 
 ## Operational User Tasks
 
-| ID | Module | Task | Condition A - Manual Path | Condition B - Assistant Support |
+| ID | DIA Module | Task Objective | Condition A Evidence Path | Condition B Evidence Path |
 | --- | --- | --- | --- | --- |
-| O1 | Monitoring | Get a factory overview and identify the top 3 energy consumers. | Open Grafana `Factory Overview` and use `Energy Today`, `Current Power`, `Cost Today`, `Active Anomalies`, and `Energy by Machine (Today)`. | OVOS prompts: `Give me a factory overview` and `Show top 3 energy consumers`. |
-| O2 | Monitoring | Check the status and today's energy of `Compressor-1`. | Open Grafana `Machine Health` for `Compressor-1`; use `Operational Efficiency` / `Machine Status Overview` only if the explicit running status is needed. | OVOS prompt: `What's the status of Compressor-1?` |
-| O3 | Documentation | Understand what ISO 50001 is and what an energy baseline means. | Open `/energy-management-learning.html`, then open `/api/analytics/ui/baseline` to connect the concept to the product. | Rasa prompts: `What is ISO 50001?` and `What is an energy baseline?` |
-| O4 | Documentation | Find the policy / procedure guidance for responding to an anomaly or efficiency issue. | Open `/pilot-procedures.html` together with `/api/analytics/ui/anomaly` for context. | Rasa prompts: `What should we do when an anomaly appears?` and `What is the procedure for responding to an efficiency issue?` |
+| O1 | Monitoring | Obtain a factory overview and identify the top three energy consumers. | Manual review of factory overview and energy-consumption dashboard evidence. | Assistant-supported retrieval of the factory overview and top energy consumers. |
+| O2 | Monitoring | Check the operational status and daily energy use of Compressor-1. | Manual review of machine-health and operational-status dashboard evidence. | Assistant-supported retrieval of Compressor-1 status and energy-use information. |
+| O3 | Documentation | Understand ISO 50001 and the meaning of an energy baseline. | Manual review of energy-management learning and baseline documentation evidence. | Chatbot-supported retrieval of ISO 50001 and energy-baseline explanations. |
+| O4 | Documentation | Identify the policy / procedure guidance for anomaly or efficiency response. | Manual review of procedure and anomaly-context documentation evidence. | Chatbot-supported retrieval of anomaly-response and efficiency-response procedure guidance. |
 
 ## Technical User Tasks
 
-| ID | Module | Task | Condition A - Manual Path | Condition B - Assistant Support |
+| ID | DIA Module | Task Objective | Condition A Evidence Path | Condition B Evidence Path |
 | --- | --- | --- | --- | --- |
-| T1 | Monitoring | Review anomalies and identify the issue requiring attention. | Open `/api/analytics/ui/anomaly` and identify the recent unresolved critical anomaly on `Compressor-2`. | OVOS prompt: `Show me recent anomalies` |
-| T2 | Analyses | Analyze `Compressor-1` against baseline, forecast context, and recommendations. | Cross-check Grafana `Machine Health`, `/api/analytics/ui/forecast`, and `/api/analytics/ui/opportunities` to summarize baseline, forecast, and likely actions. | OVOS prompts: `Analyze performance of Compressor-1`, `Energy forecast for Compressor-1`, and `What are the energy saving opportunities?` |
-| T3 | Analyses | Retrieve factory KPI and EnPI status for `2026-Q1`. | Open `/api/analytics/ui/kpi`, select `Factory - Simulated Romanian Pilot Factory`, and confirm the `2026-Q1` factory EnPI status. Use `/api/analytics/ui/enpi-report` only for supporting SEU details if needed. | OVOS prompt: `Show energy performance indicators report` |
-| T4 | Analyses / Documentation | Generate the `April 2026` monthly report and summarize the result. | Open `/reports.html`, choose the frozen factory and `April 2026`, generate the report, then summarize the visible outcome. | OVOS prompt: `download report of Apr 2026`, then summarize the generated PDF download confirmation. |
+| T1 | Monitoring | Review anomalies and identify the issue requiring attention. | Manual review of anomaly evidence and unresolved critical alert context. | Assistant-supported retrieval of recent anomaly information. |
+| T2 | Analyses | Analyze Compressor-1 against baseline, forecast context, and recommendations. | Manual cross-check of machine-health, forecast, baseline, and opportunity evidence. | Assistant-supported analysis of performance, forecast context, and saving opportunities. |
+| T3 | Analyses | Retrieve factory KPI and EnPI status for 2026-Q1. | Manual review of factory KPI / EnPI dashboard evidence. | Assistant-supported retrieval of energy performance indicator status. |
+| T4 | Analyses / Documentation | Generate and summarize the April 2026 monthly report. | Manual report generation and summary from report evidence. | Assistant-supported April 2026 report generation and confirmation. |
 
-## Timing And Capture Rules
-- Use the same task order in both conditions.
-- Preferred editing workflow: record short task clips and edit each pair as `Condition A` followed by `Condition B`.
-- Start the Chrome extension recorder when the first task action begins. In Condition B, OVOS/chatbot prompts can start the recorder automatically.
-- Stop the Chrome extension recorder when the required answer is visible in Condition A and chatbot tasks.
-- For single-prompt OVOS tasks, `Auto-stop` stops after voice playback finishes.
-- For multi-prompt assistant tasks, disable `Auto-stop` and click `Answer Found` after the final spoken or visible answer is complete.
-- Record click / screen count, need for expert help, need for manual dashboard hunting / manual API-style reasoning, and task success / failure for every task.
+## Measurement Fields
 
-## Frozen Factory / Period Inputs
-- Machine-specific tasks use `Compressor-1`.
-- EnPI task uses `2026-Q1`.
-- Monthly report task uses `April 2026`.
-- Anomaly task uses the seeded unresolved critical anomaly on `Compressor-2`.
+Each task was measured using the same fields in both conditions:
 
-## Safe Assistant Prompt Set
-Only use the prompts below in the official recording unless rehearsal proves an equivalent prompt is more stable:
-- `Give me a factory overview`
-- `Show top 3 energy consumers`
-- `What's the status of Compressor-1?`
-- `Show me recent anomalies`
-- `Analyze performance of Compressor-1`
-- `Energy forecast for Compressor-1`
-- `What are the energy saving opportunities?`
-- `Show energy performance indicators report`
-- `download report of Apr 2026`
-- `What is ISO 50001?`
-- `What is an energy baseline?`
-- `What should we do when an anomaly appears?`
-- `What is the procedure for responding to an efficiency issue?`
+| Field | Description |
+| --- | --- |
+| Task completion time | Time required to reach the required task result. |
+| Click count | Number of task-relevant browser interactions. |
+| Screen count | Number of meaningful page, dashboard, report, or result-screen transitions. |
+| Expert help | Whether external expert assistance was required. |
+| Manual reasoning | Whether the user had to manually inspect dashboards, reports, or API-style outputs to derive the answer. |
+| Success | Whether the required task result was obtained. |
+
+## Success Criteria
+
+| Task Group | Success Criteria |
+| --- | --- |
+| Operational tasks | The operational user obtains the required operational, documentation, or procedure answer. |
+| Technical tasks | The technical user obtains the required monitoring, analysis, KPI, or report answer. |
+| DIA coverage | Monitoring, Analyses, and Documentation are all represented in the task evidence. |
+
+## KPI Mapping
+
+| Proposal KPI | Benchmark Evidence |
+| --- | --- |
+| 30% reduction in operational-user energy-management effort | Operational task subtotal across O1-O4 |
+| 25% reduction in technical-user intervention / effort | Technical task subtotal across T1-T4 |
+| Integration of DIA modules including monitoring, analyses, and documentation | Task coverage across Monitoring, Analyses, and Documentation |

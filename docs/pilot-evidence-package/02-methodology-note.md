@@ -1,7 +1,7 @@
 # Methodology Note
 
 ## Purpose
-This benchmark demonstrates HumanEnerDIA through a simulated pilot factory because the originally planned field-trial host factory withdrew. The simulation uses a representative Romanian manufacturing profile aligned with the HumanEnerDIA pilot-factory scope and proposal context.
+This benchmark demonstrates HumanEnerDIA through a simulated pilot factory. The simulation uses a representative Romanian manufacturing profile aligned with the HumanEnerDIA pilot-factory scope and proposal context.
 
 ## Design
 - Two conditions were compared:
@@ -17,7 +17,7 @@ For each task, the benchmark records:
 - task completion time
 - click / screen count
 - need for expert help
-- need for manual dashboard hunting / manual API-style reasoning
+- need for manual dashboard or API-style analysis
 - task success / failure
 
 ## KPI Interpretation
@@ -37,4 +37,4 @@ For each task, the benchmark records:
 One technical task, `T2 - Baseline analysis and recommendations`, took longer in Condition B because the assistant-supported path executed heavier analysis. The task still exceeded the technical KPI target because it substantially reduced clicks and screen transitions while preserving task success.
 
 ## Scope Of The Claim
-The benchmark is intended to show measurable improvement in user interaction, task completion, and access to energy-management information within a simulated pilot scenario. It does not claim a completed live Romanian factory deployment.
+The benchmark shows measurable improvement in user interaction, task completion, and access to energy-management information within a simulated pilot scenario. It does not claim a completed live Romanian factory deployment.

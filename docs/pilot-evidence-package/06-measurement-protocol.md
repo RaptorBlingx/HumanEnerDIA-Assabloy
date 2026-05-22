@@ -61,4 +61,4 @@ The DIA module KPI is considered met when the benchmark demonstrates Monitoring,
 
 ## Scope
 
-The measurements support a simulated pilot benchmark. They should not be presented as evidence of a completed live factory deployment.
+The measurements support a simulated pilot benchmark. They are not evidence of a completed live factory deployment.
