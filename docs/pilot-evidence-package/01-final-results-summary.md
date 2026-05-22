@@ -49,12 +49,12 @@ The exported KPI cards are stored in [kpi-cards](kpi-cards).
 | Operational user | 188s | 94s | 55.1% | 68.3% | 61.7% | 30% | Target met |
 | Technical user | 212s | 151s | 30.9% | 79.3% | 55.1% | 25% | Target met |
 
-## Notes For The Final Explanation
+## Interpretation Notes
 
-- The benchmark should be described as a simulated pilot, not as a completed live Romanian factory deployment.
-- `T2` should be explained transparently: the assistant-supported path took longer because it performed heavier analysis, but it substantially reduced clicks and screens, so the measured effort reduction still exceeded the technical KPI target.
-- The final video should be packaged with the exported KPI cards, raw task clips, measurement exports, methodology note, and simulated factory profile.
+- The benchmark is a simulated pilot, not a completed live Romanian factory deployment.
+- `T2 - Baseline analysis and recommendations` took longer in Condition B because the assistant-supported path executed heavier analysis. The task still exceeded the technical KPI target because it substantially reduced clicks and screen transitions while preserving task success.
+- The result interpretation is based on the measured A/B task evidence, the exported KPI cards, and the methodology documented in this evidence package.
 
-## Recommended Closing Statement
+## Final Evidence Statement
 
 The simulated A/B pilot shows that adding OVOS and chatbot support to HumanEnerDIA reduced operational-user effort by `61.7%`, reduced technical-user effort / intervention need by `55.1%`, and demonstrated the required DIA modules: Monitoring, Analyses, and Documentation. These results exceed the committed KPI thresholds in the proposal within the simulated pilot scope.

@@ -6,7 +6,7 @@ This document defines the simulated pilot factory profile used consistently in t
 ## Reference Name
 `HumanEnerDIA Simulated Pilot - Romanian Automotive Plastics Components Facility`
 
-## Recommended Display Name For Slides And Video
+## Display Name Used In The Benchmark
 `Simulated Romanian Pilot Factory`
 
 ## Pilot Summary
