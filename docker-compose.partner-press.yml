@@ -6,9 +6,22 @@ services:
       PARTNER_PRESS_START: "2025-05-01T00:00:00"
       PARTNER_PRESS_END: "2026-06-01T00:00:00"
       PARTNER_PRESS_SOURCE_DATASET: "partner_press_shop_2026_06_10"
+      PARTNER_PRESS_PILOT_DEFAULT: "true"
       OVOS_BRIDGE_HOST: "ovos-enms"
       OVOS_BRIDGE_PORT: "5000"
       OVOS_BRIDGE_TIMEOUT: "30"
+
+  auth-service:
+    environment:
+      PARTNER_PILOT_LOGIN_ENABLED: "true"
+      PARTNER_PILOT_USERNAME: "assaabloy"
+      PARTNER_PILOT_EMAIL: "assaabloy@partner.local"
+      PARTNER_PILOT_PASSWORD: "assaabloy"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5500/api/auth/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   simulator:
     environment:

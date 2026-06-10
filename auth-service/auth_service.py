@@ -61,6 +61,11 @@ SIGNUP_ALERT_RECIPIENTS = [email.strip().lower() for email in os.environ.get(
     'SIGNUP_ALERT_RECIPIENTS', ''
 ).split(',') if email.strip()]
 
+PARTNER_PILOT_LOGIN_ENABLED = os.environ.get('PARTNER_PILOT_LOGIN_ENABLED', 'false').lower() == 'true'
+PARTNER_PILOT_USERNAME = os.environ.get('PARTNER_PILOT_USERNAME', 'assaabloy').lower().strip()
+PARTNER_PILOT_EMAIL = os.environ.get('PARTNER_PILOT_EMAIL', 'assaabloy@partner.local').lower().strip()
+PARTNER_PILOT_PASSWORD = os.environ.get('PARTNER_PILOT_PASSWORD', 'assaabloy')
+
 # ============================================================================
 # Database Connection
 # ============================================================================
@@ -79,6 +84,66 @@ def get_db_connection():
     except Exception as e:
         logger.error(f"Database connection error: {e}")
         raise
+
+
+def normalize_login_identifier(identifier: str) -> str:
+    """Map dev pilot username aliases to the stored auth email."""
+    normalized = (identifier or '').lower().strip()
+    if PARTNER_PILOT_LOGIN_ENABLED and normalized == PARTNER_PILOT_USERNAME:
+        return PARTNER_PILOT_EMAIL
+    return normalized
+
+
+def ensure_partner_pilot_user() -> None:
+    """Create/update the dev-only ASSA ABLOY pilot login when enabled."""
+    if not PARTNER_PILOT_LOGIN_ENABLED:
+        return
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        password_hash = hash_password(PARTNER_PILOT_PASSWORD)
+        cursor.execute("""
+            INSERT INTO demo_users
+                (email, password_hash, organization, full_name, position, mobile, country,
+                 role, email_verified, verified_at, is_active)
+            VALUES
+                (%s, %s, %s, %s, %s, %s, %s, %s, TRUE, NOW(), TRUE)
+            ON CONFLICT (email) DO UPDATE SET
+                password_hash = EXCLUDED.password_hash,
+                organization = EXCLUDED.organization,
+                full_name = EXCLUDED.full_name,
+                position = EXCLUDED.position,
+                country = EXCLUDED.country,
+                role = EXCLUDED.role,
+                email_verified = TRUE,
+                verified_at = COALESCE(demo_users.verified_at, NOW()),
+                is_active = TRUE,
+                updated_at = NOW()
+        """, (
+            PARTNER_PILOT_EMAIL,
+            password_hash,
+            "ASSA ABLOY Partner Press Shop",
+            "ASSA ABLOY Partner Pilot",
+            "Partner Pilot User",
+            None,
+            "Romania",
+            "user",
+        ))
+        conn.commit()
+        logger.info("Partner pilot login ensured for username '%s'", PARTNER_PILOT_USERNAME)
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error(f"Failed to ensure partner pilot login: {e}")
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # ============================================================================
 # Password Management
@@ -487,7 +552,7 @@ def verify_email_token(token: str) -> Dict:
 def login_user(email: str, password: str, ip_address: str = None, user_agent: str = None) -> Dict:
     """Authenticate user and create session"""
     try:
-        email = email.lower().strip()
+        email = normalize_login_identifier(email)
         
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)

@@ -43,6 +43,7 @@ OVOS_BRIDGE_HOST = os.getenv("OVOS_BRIDGE_HOST", "192.168.1.103")
 OVOS_BRIDGE_PORT = os.getenv("OVOS_BRIDGE_PORT", "5000")
 OVOS_BRIDGE_TIMEOUT = float(os.getenv("OVOS_BRIDGE_TIMEOUT", "20"))
 OVOS_BRIDGE_URL = f"http://{OVOS_BRIDGE_HOST}:{OVOS_BRIDGE_PORT}"
+PARTNER_PRESS_PILOT_DEFAULT = os.getenv("PARTNER_PRESS_PILOT_DEFAULT", "false").lower() == "true"
 SIMULATED_PILOT_FACTORY_ID = os.getenv(
     "SIMULATED_PILOT_FACTORY_ID",
     "11111111-1111-1111-1111-111111111111",
@@ -161,6 +162,30 @@ def _is_partner_press_query(text: str) -> bool:
         "sqdc",
     ]
     return any(term in normalized for term in terms)
+
+
+def _is_partner_pilot_default_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    if _is_partner_press_query(normalized):
+        return True
+    if not PARTNER_PRESS_PILOT_DEFAULT:
+        return False
+
+    demo_terms = [
+        "compressor", "boiler", "hvac", "conveyor", "injection", "molding",
+        "hydraulic", "pump", "machine status", "anomaly", "forecast",
+        "report", "enpi", "baseline", "opportunity", "save energy",
+    ]
+    if any(term in normalized for term in demo_terms):
+        return False
+
+    partner_default_terms = [
+        "energy", "consumption", "kwh", "electricity", "power",
+        "production", "produced", "quantity", "units", "parts",
+        "kpi", "sec", "energy per", "top consumer", "top consumers",
+        "summary", "overview",
+    ]
+    return any(term in normalized for term in partner_default_terms)
 
 
 MONTH_ALIASES = {
@@ -294,7 +319,7 @@ async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -
 
 async def _build_top_consumers_fallback_response(session_id: str, start_time: datetime, normalized_text: str) -> VoiceQueryResponse:
     limit = _top_consumer_limit(normalized_text)
-    if _is_partner_press_query(normalized_text):
+    if _is_partner_pilot_default_query(normalized_text):
         ranking_data = await get_top_consumers(
             metric="energy",
             start_time=datetime(2025, 5, 1),

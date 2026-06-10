@@ -14,6 +14,7 @@ from auth_service import (
     reset_password,
     require_admin,
     get_db_connection,
+    ensure_partner_pilot_user,
     verify_token,
     submit_pilot_factory_application,
     send_pilot_factory_confirmation_email,
@@ -31,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
+
+try:
+    ensure_partner_pilot_user()
+except Exception as e:
+    logger.error(f"Partner pilot login initialization failed: {e}")
 
 # Configure CORS
 CORS(app, resources={
