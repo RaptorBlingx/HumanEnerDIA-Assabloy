@@ -66,9 +66,9 @@
         createAnomalyUrl: window.location.port === '8001'
             ? 'http://' + window.location.hostname + ':8001/api/v1/anomaly/create'
             : '/api/analytics/api/v1/anomaly/create',
-        welcomeMessage: 'Hello! I\'m your EnMS voice assistant. Ask me about energy consumption, machine status, anomalies, forecasts, or say "factory overview" for a summary. Say "Jarvis" to activate hands-free!',
-        placeholder: 'Ask about energy, machines, anomalies...',
-        title: 'OVOS Voice Assistant',
+        welcomeMessage: 'Hello! I\'m your ASSA ABLOY partner press-shop assistant. Ask about Bret, Raster, Dimeco, production quantities, group energy, or press-shop KPIs. Say "Jarvis" to activate hands-free!',
+        placeholder: 'Ask about the partner press shop...',
+        title: 'ASSA ABLOY Press-Shop Assistant',
         subtitle: 'Energy Management',
         devToolsEnabled: devToolsEnabled,
         sessionPrefix: 'enms_ovos_',
@@ -820,9 +820,9 @@
                             </div>
                             <!-- Quick Reply Buttons in Chat -->
                             <div class="ovos-quick-replies">
-                                <button class="ovos-quick-btn" data-query="factory overview">Overview</button>
-                                <button class="ovos-quick-btn" data-query="any anomalies today?">Anomalies</button>
-                                <button class="ovos-quick-btn" data-query="top energy consumers">Top Consumers</button>
+                                <button class="ovos-quick-btn" data-query="Show KPIs for the partner press shop">KPIs</button>
+                                <button class="ovos-quick-btn" data-query="Compare Bret, Raster, and Dimeco energy consumption">Compare Groups</button>
+                                <button class="ovos-quick-btn" data-query="What are the top energy consumers in the ASSA ABLOY press shop?">Top Consumers</button>
                             </div>
                         </div>
 
@@ -836,7 +836,7 @@
                                 <button id="ovos-insights-close" class="ovos-insights-close" aria-label="Close extra insights">×</button>
                             </div>
                             <div id="ovos-insights-body" class="ovos-insights-body">
-                                <div class="ovos-insights-empty">Ask about a machine, anomalies, or factory performance to expand this view.</div>
+                                <div class="ovos-insights-empty">Ask about partner press-shop energy, production, or KPIs to expand this view.</div>
                             </div>
                         </aside>
                     </div>
@@ -1820,7 +1820,7 @@
         panel.setAttribute('aria-hidden', 'true');
         title.textContent = 'Operational insights';
         subtitle.textContent = '';
-        body.innerHTML = '<div class="ovos-insights-empty">Ask about a machine, anomalies, or factory performance to expand this view.</div>';
+        body.innerHTML = '<div class="ovos-insights-empty">Ask about partner press-shop energy, production, or KPIs to expand this view.</div>';
     }
 
     function hasInsightsContent(insights) {

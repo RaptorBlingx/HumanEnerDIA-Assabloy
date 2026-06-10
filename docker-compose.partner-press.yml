@@ -1,4 +1,15 @@
 services:
+  analytics:
+    environment:
+      PARTNER_PRESS_FACTORY_NAME: "Partner Press Shop"
+      PARTNER_PRESS_DISPLAY_NAME: "ASSA ABLOY Partner Press Shop"
+      PARTNER_PRESS_START: "2025-05-01T00:00:00"
+      PARTNER_PRESS_END: "2026-06-01T00:00:00"
+      PARTNER_PRESS_SOURCE_DATASET: "partner_press_shop_2026_06_10"
+      OVOS_BRIDGE_HOST: "ovos-enms"
+      OVOS_BRIDGE_PORT: "5000"
+      OVOS_BRIDGE_TIMEOUT: "30"
+
   simulator:
     environment:
       SIMULATOR_AUTO_START: "false"

@@ -75,6 +75,19 @@ SIMULATOR_AUTO_START=false
 SIMULATOR_ENABLE_ANOMALIES=false
 ```
 
+The same override also sets the dev pilot profile and OVOS bridge target for
+analytics:
+
+```text
+PARTNER_PRESS_FACTORY_NAME=Partner Press Shop
+PARTNER_PRESS_DISPLAY_NAME=ASSA ABLOY Partner Press Shop
+PARTNER_PRESS_START=2025-05-01T00:00:00
+PARTNER_PRESS_END=2026-06-01T00:00:00
+PARTNER_PRESS_SOURCE_DATASET=partner_press_shop_2026_06_10
+OVOS_BRIDGE_HOST=ovos-enms
+OVOS_BRIDGE_PORT=5000
+```
+
 Do not use this override for production deployment.
 
 ## Dry Run
@@ -137,6 +150,18 @@ Raster: 45,598.376 kWh
 Dimeco: 59,661.969 kWh
 ```
 
+The dev pilot analytics profile uses `2025-05-01T00:00:00` through
+`2026-06-01T00:00:00`, matching the partner May 2025 through May 2026 scope and
+excluding April energy rows present in the Bret/Raster exports. In that pilot
+period the group-meter energy totals are:
+
+```text
+Bret:   39,611.06 kWh
+Raster: 41,981.81 kWh
+Dimeco: 59,661.97 kWh
+Total: 141,254.84 kWh
+```
+
 Derived group production totals:
 
 ```text
@@ -175,12 +200,47 @@ OVOS/API ranking check:
 curl "http://localhost:8001/api/v1/ovos/top-consumers?metric=energy&factory_name=Partner%20Press%20Shop&start_time=2025-05-01T00:00:00Z&end_time=2026-06-01T00:00:00Z&limit=3"
 ```
 
-OVOS voice fallback check:
+Partner profile API checks:
+
+```bash
+curl "http://localhost:8001/api/v1/partner-press/profile"
+curl "http://localhost:8001/api/v1/partner-press/summary?question_type=kpis"
+curl "http://localhost:8080/api/analytics/api/v1/partner-press/summary?question_type=top_energy"
+```
+
+OVOS runtime checks:
+
+```bash
+cd /home/ubuntu/ovos-llm
+docker compose up -d
+curl "http://localhost:5000/health"
+curl "http://localhost:8080/api/ovos/voice/health"
+```
+
+OVOS voice checks:
 
 ```bash
 curl -s -X POST "http://localhost:8001/api/v1/ovos/voice/query" \
   -H "Content-Type: application/json" \
-  -d '{"text":"top energy consumers in the partner press shop","include_audio":false}'
+  -d '{"text":"What are the top energy consumers in the ASSA ABLOY press shop?","include_audio":false}'
+```
+
+Direct bridge check, matching the OVOS skill development guide:
+
+```bash
+curl -s -X POST "http://localhost:5000/query" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Show KPIs for the partner press shop"}'
+```
+
+Useful partner questions:
+
+```text
+What are the top energy consumers in the ASSA ABLOY press shop?
+How much energy did the Bret press group use?
+Compare Bret, Raster, and Dimeco energy consumption.
+What was the production quantity for Bret presses?
+Show KPIs for the partner press shop.
 ```
 
 Grafana:

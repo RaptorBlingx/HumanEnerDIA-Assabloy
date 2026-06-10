@@ -1,0 +1,419 @@
+"""
+Partner press-shop pilot API routes.
+
+These endpoints expose the imported ASSA ABLOY / partner press-shop dataset
+without mixing it with simulator assets. Energy remains at meter-group level;
+press production remains available per press and as derived group totals.
+"""
+
+from datetime import datetime
+from decimal import Decimal
+import os
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Query
+
+from database import db
+
+router = APIRouter(prefix="/partner-press", tags=["Partner Press Shop"])
+
+PARTNER_FACTORY_NAME = os.getenv("PARTNER_PRESS_FACTORY_NAME", "Partner Press Shop")
+PARTNER_DISPLAY_NAME = os.getenv("PARTNER_PRESS_DISPLAY_NAME", "ASSA ABLOY Partner Press Shop")
+PARTNER_START = os.getenv("PARTNER_PRESS_START", "2025-05-01T00:00:00")
+PARTNER_END = os.getenv("PARTNER_PRESS_END", "2026-06-01T00:00:00")
+PARTNER_SOURCE_DATASET = os.getenv("PARTNER_PRESS_SOURCE_DATASET", "partner_press_shop_2026_06_10")
+
+GROUP_LABELS = {
+    "bret": "Bret Presses Meter Group",
+    "raster": "Raster Presses Meter Group",
+    "dimeco": "Dimeco Presses Meter Group",
+}
+
+
+def _parse_dt(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
+
+
+def _number(value: Any, digits: int = 2) -> float:
+    if value is None:
+        return 0.0
+    if isinstance(value, Decimal):
+        value = float(value)
+    return round(float(value), digits)
+
+
+def _group_key(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = value.lower()
+    for key in GROUP_LABELS:
+        if key in normalized:
+            return key
+    return None
+
+
+def _period_label(start: datetime, end: datetime) -> str:
+    inclusive_end = end.date()
+    return f"{start.date().isoformat()} to {inclusive_end.isoformat()}"
+
+
+async def _partner_factory(conn) -> Optional[dict]:
+    row = await conn.fetchrow(
+        """
+        SELECT id, name, location, metadata
+        FROM factories
+        WHERE name = $1
+        LIMIT 1
+        """,
+        PARTNER_FACTORY_NAME,
+    )
+    return dict(row) if row else None
+
+
+@router.get("/profile")
+async def get_partner_press_profile() -> Dict[str, Any]:
+    start = _parse_dt(PARTNER_START)
+    end = _parse_dt(PARTNER_END)
+
+    async with db.pool.acquire() as conn:
+        factory = await _partner_factory(conn)
+        assets = await conn.fetch(
+            """
+            SELECT
+                m.id,
+                m.name,
+                m.metadata->>'group' AS group_key,
+                m.metadata->>'asset_level' AS asset_level,
+                m.metadata->>'energy_scope' AS energy_scope
+            FROM machines m
+            JOIN factories f ON f.id = m.factory_id
+            WHERE f.name = $1
+            ORDER BY
+                CASE WHEN m.metadata->>'asset_level' = 'meter_group' THEN 0 ELSE 1 END,
+                m.name
+            """,
+            PARTNER_FACTORY_NAME,
+        )
+
+    meter_groups = []
+    presses = []
+    for row in assets:
+        item = {
+            "id": str(row["id"]),
+            "name": row["name"],
+            "group": row["group_key"],
+            "asset_level": row["asset_level"],
+            "energy_scope": row["energy_scope"],
+        }
+        if row["asset_level"] == "meter_group":
+            meter_groups.append(item)
+        else:
+            presses.append(item)
+
+    return {
+        "display_name": PARTNER_DISPLAY_NAME,
+        "factory": {
+            "id": str(factory["id"]) if factory else None,
+            "name": factory["name"] if factory else PARTNER_FACTORY_NAME,
+            "location": factory["location"] if factory else None,
+        },
+        "source_dataset": PARTNER_SOURCE_DATASET,
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "label": _period_label(start, end),
+        },
+        "meter_groups": meter_groups,
+        "presses": presses,
+        "modeling_note": (
+            "Energy is represented honestly at the three imported meter-group assets. "
+            "No per-press energy is allocated or invented."
+        ),
+    }
+
+
+@router.get("/summary")
+async def get_partner_press_summary(
+    question_type: str = Query("summary", description="summary, top_energy, group_energy, compare_groups, group_production, kpis"),
+    group: Optional[str] = Query(None, description="Optional group: bret, raster, dimeco"),
+) -> Dict[str, Any]:
+    start = _parse_dt(PARTNER_START)
+    end = _parse_dt(PARTNER_END)
+    selected_group = _group_key(group)
+
+    async with db.pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off")
+            factory = await _partner_factory(conn)
+            assets = await conn.fetch(
+                """
+                SELECT
+                    m.id,
+                    m.name,
+                    m.metadata->>'group' AS group_key,
+                    m.metadata->>'asset_level' AS asset_level
+                FROM machines m
+                JOIN factories f ON f.id = m.factory_id
+                WHERE f.name = $1
+                  AND m.metadata->>'source_dataset' = $2
+                ORDER BY m.name
+                """,
+                PARTNER_FACTORY_NAME,
+                PARTNER_SOURCE_DATASET,
+            )
+
+            meter_group_ids = [
+                row["id"]
+                for row in assets
+                if row["asset_level"] == "meter_group"
+            ]
+            press_ids = [
+                row["id"]
+                for row in assets
+                if row["asset_level"] == "press"
+            ]
+            all_partner_ids = meter_group_ids + press_ids
+
+            energy_rows = await conn.fetch(
+                """
+                SELECT
+                    m.metadata->>'group' AS group_key,
+                    m.name AS asset_name,
+                    SUM(er.energy_kwh) AS energy_kwh,
+                    AVG(er.power_kw) AS avg_power_kw,
+                    MAX(er.power_kw) AS peak_power_kw,
+                    COUNT(*) AS readings
+                FROM energy_readings er
+                JOIN machines m ON m.id = er.machine_id
+                WHERE er.machine_id = ANY($1::uuid[])
+                  AND er.time >= $2
+                  AND er.time < $3
+                GROUP BY m.metadata->>'group', m.name
+                ORDER BY energy_kwh DESC
+                """,
+                meter_group_ids,
+                start,
+                end,
+            )
+            production_group_rows = await conn.fetch(
+                """
+                SELECT
+                    m.metadata->>'group' AS group_key,
+                    m.name AS asset_name,
+                    SUM(pd.production_count) AS production_units,
+                    SUM(pd.production_count_good) AS good_units,
+                    SUM(pd.production_count_bad) AS bad_units,
+                    COUNT(*) AS rows
+                FROM production_data pd
+                JOIN machines m ON m.id = pd.machine_id
+                WHERE pd.machine_id = ANY($1::uuid[])
+                  AND pd.time >= $2
+                  AND pd.time < $3
+                GROUP BY m.metadata->>'group', m.name
+                ORDER BY production_units DESC
+                """,
+                meter_group_ids,
+                start,
+                end,
+            )
+            production_press_rows = await conn.fetch(
+                """
+                SELECT
+                    m.metadata->>'group' AS group_key,
+                    m.name AS press_name,
+                    SUM(pd.production_count) AS production_units
+                FROM production_data pd
+                JOIN machines m ON m.id = pd.machine_id
+                WHERE pd.machine_id = ANY($1::uuid[])
+                  AND pd.time >= $2
+                  AND pd.time < $3
+                GROUP BY m.metadata->>'group', m.name
+                ORDER BY m.metadata->>'group', production_units DESC
+                """,
+                press_ids,
+                start,
+                end,
+            )
+            data_range = await conn.fetchrow(
+                """
+                WITH energy_range AS (
+                    SELECT MIN(time) AS start_time, MAX(time) AS end_time, COUNT(*) AS row_count
+                    FROM energy_readings
+                    WHERE machine_id = ANY($1::uuid[])
+                ),
+                production_range AS (
+                    SELECT MIN(time) AS start_time, MAX(time) AS end_time, COUNT(*) AS row_count
+                    FROM production_data
+                    WHERE machine_id = ANY($2::uuid[])
+                )
+                SELECT
+                  energy_range.start_time AS energy_start,
+                  energy_range.end_time AS energy_end,
+                  energy_range.row_count AS energy_rows,
+                  production_range.start_time AS production_start,
+                  production_range.end_time AS production_end,
+                  production_range.row_count AS production_rows
+                FROM energy_range, production_range
+                """,
+                meter_group_ids,
+                all_partner_ids,
+            )
+
+    energy_by_group = [
+        {
+            "group": row["group_key"],
+            "asset_name": row["asset_name"],
+            "energy_kwh": _number(row["energy_kwh"]),
+            "avg_power_kw": _number(row["avg_power_kw"]),
+            "peak_power_kw": _number(row["peak_power_kw"]),
+            "readings": int(row["readings"] or 0),
+        }
+        for row in energy_rows
+    ]
+    production_by_group = [
+        {
+            "group": row["group_key"],
+            "asset_name": row["asset_name"],
+            "production_units": int(row["production_units"] or 0),
+            "good_units": int(row["good_units"] or 0),
+            "bad_units": int(row["bad_units"] or 0),
+            "rows": int(row["rows"] or 0),
+        }
+        for row in production_group_rows
+    ]
+    production_by_press = [
+        {
+            "group": row["group_key"],
+            "press_name": row["press_name"],
+            "production_units": int(row["production_units"] or 0),
+        }
+        for row in production_press_rows
+    ]
+
+    production_lookup = {item["group"]: item for item in production_by_group}
+    kpis = []
+    for item in energy_by_group:
+        production = production_lookup.get(item["group"], {}).get("production_units", 0)
+        sec = item["energy_kwh"] / production if production else None
+        kpis.append({
+            "group": item["group"],
+            "asset_name": item["asset_name"],
+            "energy_kwh": item["energy_kwh"],
+            "production_units": production,
+            "sec_kwh_per_unit": round(sec, 6) if sec is not None else None,
+        })
+
+    total_energy = round(sum(item["energy_kwh"] for item in energy_by_group), 2)
+    total_production = sum(item["production_units"] for item in production_by_group)
+    response = _build_response(
+        question_type=question_type,
+        group=selected_group,
+        energy_by_group=energy_by_group,
+        production_by_group=production_by_group,
+        kpis=kpis,
+        total_energy=total_energy,
+        total_production=total_production,
+        period=_period_label(start, end),
+    )
+
+    return {
+        "display_name": PARTNER_DISPLAY_NAME,
+        "factory": {
+            "id": str(factory["id"]) if factory else None,
+            "name": factory["name"] if factory else PARTNER_FACTORY_NAME,
+        },
+        "source_dataset": PARTNER_SOURCE_DATASET,
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "label": _period_label(start, end),
+        },
+        "scope_note": "Energy is group-level meter data only; press-level energy is not allocated.",
+        "question_type": question_type,
+        "selected_group": selected_group,
+        "total_energy_kwh": total_energy,
+        "total_production_units": total_production,
+        "energy_by_group": energy_by_group,
+        "production_by_group": production_by_group,
+        "production_by_press": production_by_press,
+        "kpis": kpis,
+        "data_range": {
+            "energy_start": data_range["energy_start"].isoformat() if data_range and data_range["energy_start"] else None,
+            "energy_end": data_range["energy_end"].isoformat() if data_range and data_range["energy_end"] else None,
+            "energy_rows": int(data_range["energy_rows"] or 0) if data_range else 0,
+            "production_start": data_range["production_start"].isoformat() if data_range and data_range["production_start"] else None,
+            "production_end": data_range["production_end"].isoformat() if data_range and data_range["production_end"] else None,
+            "production_rows": int(data_range["production_rows"] or 0) if data_range else 0,
+        },
+        "response": response,
+    }
+
+
+def _build_response(
+    question_type: str,
+    group: Optional[str],
+    energy_by_group: list[dict],
+    production_by_group: list[dict],
+    kpis: list[dict],
+    total_energy: float,
+    total_production: int,
+    period: str,
+) -> str:
+    question = (question_type or "summary").lower()
+    group_energy = {item["group"]: item for item in energy_by_group}
+    group_production = {item["group"]: item for item in production_by_group}
+
+    if question == "group_energy" and group:
+        item = group_energy.get(group)
+        if not item:
+            return f"No energy data was found for the {group} press group in the partner period."
+        return (
+            f"For {period}, the {GROUP_LABELS[group]} used {item['energy_kwh']:,.2f} kWh. "
+            "This is meter-group energy; no per-press allocation has been invented."
+        )
+
+    if question == "group_production" and group:
+        item = group_production.get(group)
+        if not item:
+            return f"No production data was found for the {group} press group in the partner period."
+        return (
+            f"For {period}, {GROUP_LABELS[group]} produced {item['production_units']:,} units "
+            "based on SQDC press production summed to the group."
+        )
+
+    if question == "compare_groups":
+        parts = [
+            f"{GROUP_LABELS[item['group']]}: {item['energy_kwh']:,.2f} kWh"
+            for item in energy_by_group
+        ]
+        return f"For {period}, energy by press-meter group was: " + "; ".join(parts) + "."
+
+    if question == "kpis":
+        parts = []
+        for item in kpis:
+            sec = item["sec_kwh_per_unit"]
+            sec_text = f"{sec:.6f} kWh/unit" if sec is not None else "SEC unavailable"
+            parts.append(
+                f"{GROUP_LABELS[item['group']]}: {item['energy_kwh']:,.2f} kWh, "
+                f"{item['production_units']:,} units, {sec_text}"
+            )
+        return (
+            f"Partner press-shop KPIs for {period}: total energy {total_energy:,.2f} kWh "
+            f"and total production {total_production:,} units. " + "; ".join(parts) + "."
+        )
+
+    ranked = energy_by_group[:3]
+    if question in {"top_energy", "summary"}:
+        parts = [
+            f"{idx}. {item['asset_name']} {item['energy_kwh']:,.2f} kWh"
+            for idx, item in enumerate(ranked, start=1)
+        ]
+        return (
+            f"For the {PARTNER_DISPLAY_NAME} dataset ({period}), total group-meter energy was "
+            f"{total_energy:,.2f} kWh. Top energy consumers: " + "; ".join(parts) + "."
+        )
+
+    return (
+        f"For {period}, total partner press-shop group-meter energy was {total_energy:,.2f} kWh "
+        f"and summed group production was {total_production:,} units."
+    )
