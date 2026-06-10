@@ -241,7 +241,36 @@ How much energy did the Bret press group use?
 Compare Bret, Raster, and Dimeco energy consumption.
 What was the production quantity for Bret presses?
 Show KPIs for the partner press shop.
+What is the SEC for Bret group?
+Production quantity for Raster160
+How many parts did Dimeco80-1 produce?
+Energy consumption of Bret125-1
+How much energy did the press shop use in March 2026?
+Latest energy for the partner press shop
 ```
+
+Expected behavior:
+
+- Press-shop energy answers use only the three meter-group assets.
+- Press production answers use SQDC press-level production.
+- Per-press energy questions should explicitly say that per-press energy is not
+  available instead of allocating group energy to a press.
+- `today`, `current`, `live`, or `latest` partner questions should explain that
+  the package is historical and ends on `2026-05-31`.
+- Unknown press names should list the known imported presses and keep energy at
+  group level.
+
+## Dev Service Health Notes
+
+The partner pilot flow depends on PostgreSQL, analytics, nginx, Grafana, and the
+separate `ovos-enms` runtime. On the current dev stack:
+
+- `auth-service` may report unhealthy even while the public dev portal and
+  partner analytics are reachable. Check it separately if login/admin flows are
+  required.
+- `query-service` is a placeholder service and can report unhealthy because its
+  image lacks the `curl` binary used by the healthcheck. It is not part of the
+  partner press-shop analytics or OVOS path.
 
 Grafana:
 

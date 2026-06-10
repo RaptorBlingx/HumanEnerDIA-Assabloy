@@ -29,6 +29,60 @@ GROUP_LABELS = {
     "dimeco": "Dimeco Presses Meter Group",
 }
 
+PRESS_ALIASES = {
+    "bret1251": "Bret125-1",
+    "bret125-1": "Bret125-1",
+    "bret 125 1": "Bret125-1",
+    "bret1601": "Bret160-1",
+    "bret160-1": "Bret160-1",
+    "bret 160 1": "Bret160-1",
+    "bret2501": "Bret250-1",
+    "bret250-1": "Bret250-1",
+    "bret 250 1": "Bret250-1",
+    "bret2502": "Bret250-2",
+    "bret250-2": "Bret250-2",
+    "bret 250 2": "Bret250-2",
+    "dimeco801": "Dimeco80-1",
+    "dimeco80-1": "Dimeco80-1",
+    "dimeco 80 1": "Dimeco80-1",
+    "dimeco802": "Dimeco80-2",
+    "dimeco80-2": "Dimeco80-2",
+    "dimeco 80 2": "Dimeco80-2",
+    "flexi1": "Flexi-1",
+    "flexi-1": "Flexi-1",
+    "flexi 1": "Flexi-1",
+    "rast1251": "Rast125-1",
+    "rast125-1": "Rast125-1",
+    "rast 125 1": "Rast125-1",
+    "raster1251": "Rast125-1",
+    "raster 125 1": "Rast125-1",
+    "rast1252": "Rast125-2",
+    "rast125-2": "Rast125-2",
+    "rast 125 2": "Rast125-2",
+    "raster1252": "Rast125-2",
+    "raster 125 2": "Rast125-2",
+    "rast1601": "Rast160-1",
+    "rast160-1": "Rast160-1",
+    "rast 160 1": "Rast160-1",
+    "raster160": "Rast160-1",
+    "raster 160": "Rast160-1",
+    "raster1601": "Rast160-1",
+    "raster 160 1": "Rast160-1",
+    "rast2501": "Rast250-1",
+    "rast250-1": "Rast250-1",
+    "rast 250 1": "Rast250-1",
+    "raster2501": "Rast250-1",
+    "raster 250 1": "Rast250-1",
+    "rast2502": "Rast250-2",
+    "rast250-2": "Rast250-2",
+    "rast 250 2": "Rast250-2",
+    "raster2502": "Rast250-2",
+    "raster 250 2": "Rast250-2",
+    "schu801": "Schu80-1",
+    "schu80-1": "Schu80-1",
+    "schu 80 1": "Schu80-1",
+}
+
 
 def _parse_dt(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
@@ -52,9 +106,20 @@ def _group_key(value: Optional[str]) -> Optional[str]:
     return None
 
 
+def _normalize_press(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = " ".join(value.lower().replace("_", " ").split())
+    compact = normalized.replace("-", "").replace(" ", "")
+    candidates = {normalized, compact, normalized.replace(" ", "-")}
+    for candidate in candidates:
+        if candidate in PRESS_ALIASES:
+            return PRESS_ALIASES[candidate]
+    return None
+
+
 def _period_label(start: datetime, end: datetime) -> str:
-    inclusive_end = end.date()
-    return f"{start.date().isoformat()} to {inclusive_end.isoformat()}"
+    return f"{start.date().isoformat()} to {end.date().isoformat()}"
 
 
 async def _partner_factory(conn) -> Optional[dict]:
@@ -134,12 +199,23 @@ async def get_partner_press_profile() -> Dict[str, Any]:
 
 @router.get("/summary")
 async def get_partner_press_summary(
-    question_type: str = Query("summary", description="summary, top_energy, group_energy, compare_groups, group_production, kpis"),
+    question_type: str = Query(
+        "summary",
+        description=(
+            "summary, top_energy, total_energy, group_energy, compare_groups, "
+            "group_production, press_production, press_energy, kpis, group_kpis, "
+            "current_data, unknown_press"
+        ),
+    ),
     group: Optional[str] = Query(None, description="Optional group: bret, raster, dimeco"),
+    press: Optional[str] = Query(None, description="Optional press name or alias"),
+    start_time: Optional[str] = Query(None, description="Optional ISO start time"),
+    end_time: Optional[str] = Query(None, description="Optional ISO end time"),
 ) -> Dict[str, Any]:
-    start = _parse_dt(PARTNER_START)
-    end = _parse_dt(PARTNER_END)
+    start = _parse_dt(start_time or PARTNER_START)
+    end = _parse_dt(end_time or PARTNER_END)
     selected_group = _group_key(group)
+    selected_press = _normalize_press(press)
 
     async with db.pool.acquire() as conn:
         async with conn.transaction():
@@ -308,9 +384,11 @@ async def get_partner_press_summary(
     response = _build_response(
         question_type=question_type,
         group=selected_group,
+        press=selected_press,
         energy_by_group=energy_by_group,
         production_by_group=production_by_group,
         kpis=kpis,
+        production_by_press=production_by_press,
         total_energy=total_energy,
         total_production=total_production,
         period=_period_label(start, end),
@@ -331,6 +409,7 @@ async def get_partner_press_summary(
         "scope_note": "Energy is group-level meter data only; press-level energy is not allocated.",
         "question_type": question_type,
         "selected_group": selected_group,
+        "selected_press": selected_press,
         "total_energy_kwh": total_energy,
         "total_production_units": total_production,
         "energy_by_group": energy_by_group,
@@ -352,9 +431,11 @@ async def get_partner_press_summary(
 def _build_response(
     question_type: str,
     group: Optional[str],
+    press: Optional[str],
     energy_by_group: list[dict],
     production_by_group: list[dict],
     kpis: list[dict],
+    production_by_press: list[dict],
     total_energy: float,
     total_production: int,
     period: str,
@@ -362,6 +443,47 @@ def _build_response(
     question = (question_type or "summary").lower()
     group_energy = {item["group"]: item for item in energy_by_group}
     group_production = {item["group"]: item for item in production_by_group}
+    press_production = {item["press_name"]: item for item in production_by_press}
+
+    if question == "current_data":
+        return (
+            "The ASSA ABLOY partner press-shop package has historical data, not live data. "
+            f"The configured pilot period is {period}, and the latest imported readings end on "
+            "2026-05-31. I will not substitute simulator or today's demo data for this partner answer."
+        )
+
+    if question == "unknown_press":
+        return (
+            "I could not match that press name to the imported ASSA ABLOY press-shop list. "
+            "Known presses are Bret125-1, Bret160-1, Bret250-1, Bret250-2, Rast160-1, "
+            "Rast125-1, Rast250-1, Rast250-2, Dimeco80-1, Dimeco80-2, Flexi-1, "
+            "Schu80-1, and Rast125-2. Energy is only available at Bret, Raster, "
+            "and Dimeco meter-group level."
+        )
+
+    if question == "total_energy":
+        return (
+            f"For {period}, the ASSA ABLOY partner press shop used {total_energy:,.2f} kWh "
+            "across the three imported press-shop meter groups."
+        )
+
+    if question == "press_energy" and press:
+        item = press_production.get(press)
+        group_text = f" Its production belongs to the {GROUP_LABELS[item['group']]}." if item else ""
+        return (
+            f"No per-press energy is available for {press}. Energy is only metered at the "
+            f"Bret, Raster, and Dimeco group level, so I will not allocate or invent "
+            f"energy for an individual press.{group_text}"
+        )
+
+    if question == "press_production" and press:
+        item = press_production.get(press)
+        if not item:
+            return f"No SQDC production data was found for press {press} in {period}."
+        return (
+            f"For {period}, press {press} produced {item['production_units']:,} units "
+            f"in the {GROUP_LABELS[item['group']]}."
+        )
 
     if question == "group_energy" and group:
         item = group_energy.get(group)
@@ -379,6 +501,17 @@ def _build_response(
         return (
             f"For {period}, {GROUP_LABELS[group]} produced {item['production_units']:,} units "
             "based on SQDC press production summed to the group."
+        )
+
+    if question == "group_kpis" and group:
+        item = next((kpi for kpi in kpis if kpi["group"] == group), None)
+        if not item:
+            return f"No KPI data was found for the {group} press group in {period}."
+        sec = item["sec_kwh_per_unit"]
+        sec_text = f"{sec:.6f} kWh/unit" if sec is not None else "SEC unavailable"
+        return (
+            f"For {period}, {GROUP_LABELS[group]} used {item['energy_kwh']:,.2f} kWh, "
+            f"produced {item['production_units']:,} units, and had SEC {sec_text}."
         )
 
     if question == "compare_groups":

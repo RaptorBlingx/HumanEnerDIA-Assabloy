@@ -151,6 +151,7 @@ def _is_top_consumers_query(text: str) -> bool:
 def _is_partner_press_query(text: str) -> bool:
     normalized = _normalize_query(text)
     terms = [
+        "assa abloy",
         "partner",
         "press shop",
         "press-shop",
