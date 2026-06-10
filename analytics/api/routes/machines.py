@@ -8,6 +8,7 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime
+import os
 
 from database import get_machines, get_machine_by_id, db
 
@@ -15,12 +16,15 @@ router = APIRouter()
 
 # Constants
 # Removed hardcoded rates - using database functions instead
+PARTNER_PRESS_PILOT_DEFAULT = os.getenv("PARTNER_PRESS_PILOT_DEFAULT", "false").lower() == "true"
+PARTNER_PRESS_FACTORY_NAME = os.getenv("PARTNER_PRESS_FACTORY_NAME", "Partner Press Shop")
 
 
 @router.get("/machines", tags=["Machines"])
 async def list_machines(
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    search: Optional[str] = Query(None, description="Search by machine name (case-insensitive partial match)")
+    search: Optional[str] = Query(None, description="Search by machine name (case-insensitive partial match)"),
+    factory_name: Optional[str] = Query(None, description="Filter by factory name (case-insensitive partial match)")
 ) -> List[Dict[str, Any]]:
     """
     Get list of all machines with optional search.
@@ -46,6 +50,17 @@ async def list_machines(
     ```
     """
     machines = await get_machines(is_active=is_active)
+
+    effective_factory_name = factory_name
+    if not effective_factory_name and PARTNER_PRESS_PILOT_DEFAULT:
+        effective_factory_name = PARTNER_PRESS_FACTORY_NAME
+
+    if effective_factory_name:
+        factory_lower = effective_factory_name.lower()
+        machines = [
+            machine for machine in machines
+            if factory_lower in str(machine.get("factory_name", "")).lower()
+        ]
     
     # Apply search filter if provided
     if search:

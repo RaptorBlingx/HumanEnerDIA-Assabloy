@@ -24,6 +24,13 @@ services:
       retries: 3
 
   simulator:
+    command: ["sh", "-c", "echo 'Partner press pilot mode: simulator disabled'; tail -f /dev/null"]
+    restart: "no"
     environment:
       SIMULATOR_AUTO_START: "false"
       SIMULATOR_ENABLE_ANOMALIES: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 1

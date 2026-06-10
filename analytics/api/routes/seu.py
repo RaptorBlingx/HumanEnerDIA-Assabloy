@@ -12,6 +12,7 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
 import logging
+import os
 
 from models.seu import (
     SEUCreate,
@@ -33,6 +34,9 @@ from database import db
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+PARTNER_PRESS_PILOT_DEFAULT = os.getenv("PARTNER_PRESS_PILOT_DEFAULT", "false").lower() == "true"
+PARTNER_PRESS_FACTORY_NAME = os.getenv("PARTNER_PRESS_FACTORY_NAME", "Partner Press Shop")
 
 
 # ============================================================================
@@ -125,7 +129,8 @@ async def create_seu(request: SEUCreate):
 async def list_seus(
     energy_source: Optional[str] = Query(None, description="Filter by energy source name"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    has_baseline: Optional[bool] = Query(None, description="Filter by baseline existence")
+    has_baseline: Optional[bool] = Query(None, description="Filter by baseline existence"),
+    factory_name: Optional[str] = Query(None, description="Filter by factory name (case-insensitive partial match)")
 ):
     """
     List all SEUs with metadata.
@@ -139,7 +144,14 @@ async def list_seus(
     - List of SEUs with machine count and last report period
     """
     try:
-        logger.info(f"[SEU-API] Listing SEUs: energy_source={energy_source}, has_baseline={has_baseline}")
+        effective_factory_name = factory_name
+        if not effective_factory_name and PARTNER_PRESS_PILOT_DEFAULT:
+            effective_factory_name = PARTNER_PRESS_FACTORY_NAME
+
+        logger.info(
+            f"[SEU-API] Listing SEUs: energy_source={energy_source}, "
+            f"has_baseline={has_baseline}, factory_name={effective_factory_name}"
+        )
         
         query = """
             SELECT 
@@ -194,6 +206,19 @@ async def list_seus(
                 query += " AND s.baseline_year IS NOT NULL"
             else:
                 query += " AND s.baseline_year IS NULL"
+
+        if effective_factory_name:
+            query += f"""
+                AND EXISTS (
+                    SELECT 1
+                    FROM unnest(s.machine_ids) mid
+                    JOIN machines m ON m.id = mid
+                    JOIN factories f ON f.id = m.factory_id
+                    WHERE LOWER(f.name) LIKE LOWER(${param_idx})
+                )
+            """
+            params.append(f"%{effective_factory_name}%")
+            param_idx += 1
         
         query += " ORDER BY s.name"
         
