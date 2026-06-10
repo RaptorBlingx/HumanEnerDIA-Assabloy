@@ -8,6 +8,7 @@ Handles model selection, training, prediction, and persistence.
 
 import logging
 from datetime import datetime, timedelta
+import os
 from pathlib import Path
 from typing import Dict, List, Optional, Literal
 from uuid import UUID
@@ -19,6 +20,8 @@ from models.arima_forecast import ARIMAForecastModel
 from models.prophet_forecast import ProphetForecastModel
 
 logger = logging.getLogger(__name__)
+
+PARTNER_PRESS_PILOT_DEFAULT = os.getenv("PARTNER_PRESS_PILOT_DEFAULT", "false").lower() == "true"
 
 
 class ForecastService:
@@ -108,12 +111,44 @@ class ForecastService:
         logger.info(f"[FORECAST-SVC] Fetched {len(df)} data points")
         
         return df
+
+    async def resolve_training_window(
+        self,
+        machine_id: UUID,
+        lookback_days: int,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None
+    ) -> tuple[datetime, datetime]:
+        """
+        Resolve the training window for live or imported historical data.
+
+        In partner pilot mode, imported data is historical and may end before the
+        server clock. Defaulting to datetime.now() can miss the dataset, so the
+        default end is the latest reading for the selected machine.
+        """
+        if end_time is None and PARTNER_PRESS_PILOT_DEFAULT:
+            async with db.pool.acquire() as conn:
+                latest = await conn.fetchval(
+                    """
+                    SELECT MAX(bucket)
+                    FROM energy_readings_1min
+                    WHERE machine_id = $1
+                    """,
+                    machine_id
+                )
+            end_time = latest
+
+        end_time = end_time or datetime.now()
+        start_time = start_time or (end_time - timedelta(days=lookback_days))
+        return start_time, end_time
     
     async def train_arima(
         self,
         machine_id: UUID,
         lookback_days: int = 14,
-        auto_order: bool = True
+        auto_order: bool = True,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None
     ) -> Dict:
         """
         Train ARIMA model for short-term forecasting.
@@ -129,8 +164,12 @@ class ForecastService:
         logger.info(f"[FORECAST-SVC] Training ARIMA for machine {machine_id}")
         
         # Fetch training data
-        end_time = datetime.now()
-        start_time = end_time - timedelta(days=lookback_days)
+        start_time, end_time = await self.resolve_training_window(
+            machine_id=machine_id,
+            lookback_days=lookback_days,
+            start_time=start_time,
+            end_time=end_time
+        )
         
         data = await self.fetch_training_data(
             machine_id=machine_id,
@@ -167,7 +206,9 @@ class ForecastService:
         self,
         machine_id: UUID,
         lookback_days: int = 60,
-        use_regressors: bool = True
+        use_regressors: bool = True,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None
     ) -> Dict:
         """
         Train Prophet model for medium/long-term forecasting.
@@ -183,8 +224,12 @@ class ForecastService:
         logger.info(f"[FORECAST-SVC] Training Prophet for machine {machine_id}")
         
         # Fetch training data
-        end_time = datetime.now()
-        start_time = end_time - timedelta(days=lookback_days)
+        start_time, end_time = await self.resolve_training_window(
+            machine_id=machine_id,
+            lookback_days=lookback_days,
+            start_time=start_time,
+            end_time=end_time
+        )
         
         data = await self.fetch_training_data(
             machine_id=machine_id,
@@ -287,6 +332,21 @@ class ForecastService:
         if model_type == 'arima':
             model = ARIMAForecastModel.load(str(model_path))
             predictions = model.predict(steps=periods, return_conf_int=True)
+            confidence_intervals = predictions.get('confidence_intervals') or {}
+            if confidence_intervals:
+                predictions['lower_bound'] = confidence_intervals.get('lower')
+                predictions['upper_bound'] = confidence_intervals.get('upper')
+            if PARTNER_PRESS_PILOT_DEFAULT:
+                async with db.pool.acquire() as conn:
+                    latest_time = await conn.fetchval(
+                        "SELECT MAX(time) FROM energy_readings WHERE machine_id = $1",
+                        machine_id
+                    )
+                if latest_time:
+                    predictions['timestamps'] = [
+                        (latest_time + timedelta(minutes=15 * (idx + 1))).isoformat()
+                        for idx in range(periods)
+                    ]
             
             result = {
                 'model_type': 'ARIMA',
@@ -434,8 +494,14 @@ class ForecastService:
             values = []
             timestamps = predictions.get('timestamps', [])
             preds = predictions['predictions']
-            lower_bounds = predictions.get('lower_bound', [None] * len(preds))
-            upper_bounds = predictions.get('upper_bound', [None] * len(preds))
+            lower_bounds = predictions.get('lower_bound')
+            upper_bounds = predictions.get('upper_bound')
+            if lower_bounds is None or upper_bounds is None:
+                confidence_intervals = predictions.get('confidence_intervals') or {}
+                lower_bounds = confidence_intervals.get('lower')
+                upper_bounds = confidence_intervals.get('upper')
+            lower_bounds = lower_bounds or [None] * len(preds)
+            upper_bounds = upper_bounds or [None] * len(preds)
             
             # Extract model metrics
             rmse = None
@@ -452,7 +518,12 @@ class ForecastService:
             
             # Build rows for insertion
             for i, pred in enumerate(preds):
-                forecast_time = datetime.fromisoformat(timestamps[i]) if timestamps else forecasted_at + timedelta(hours=i)
+                if timestamps:
+                    forecast_time = datetime.fromisoformat(timestamps[i])
+                elif horizon == 'short':
+                    forecast_time = forecasted_at + timedelta(minutes=15 * (i + 1))
+                else:
+                    forecast_time = forecasted_at + timedelta(hours=i + 1)
                 lower = lower_bounds[i] if i < len(lower_bounds) else None
                 upper = upper_bounds[i] if i < len(upper_bounds) else None
                 

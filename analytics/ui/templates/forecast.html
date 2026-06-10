@@ -224,12 +224,50 @@
 {% block extra_js %}
 <script>
     let forecastChart = null;
+    window.partnerPilot = false;
     
     // Load machines
     async function loadMachines() {
         try {
+            const profileResponse = await axios.get(`${API_BASE}/partner-press/profile`);
+            const profile = profileResponse.data;
+            if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
+                window.partnerPilot = true;
+                const machineSelects = [
+                    'train-machine-select',
+                    'forecast-machine-select',
+                    'schedule-machine-select'
+                ];
+                machineSelects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    select.innerHTML = '<option value="">Select meter group...</option>';
+                    profile.meter_groups.forEach(asset => {
+                        const option = document.createElement('option');
+                        option.value = asset.id;
+                        option.textContent = asset.name;
+                        select.appendChild(option);
+                    });
+                });
+                const horizonSelect = document.getElementById('horizon-select');
+                if (horizonSelect) {
+                    horizonSelect.value = 'short';
+                    [...horizonSelect.options].forEach(option => {
+                        option.disabled = option.value !== 'short';
+                    });
+                }
+                loadModelStatus(profile.meter_groups.map(asset => ({
+                    id: asset.id,
+                    name: asset.name
+                })));
+                return;
+            }
+        } catch (partnerError) {
+            console.warn('Partner profile unavailable, using machine list', partnerError);
+        }
+
+        try {
             const response = await axios.get(`${API_BASE}/machines`);
-            const machines = response.data;
+            const machines = (response.data || []).filter(machine => machine.energy_scope !== 'no_direct_energy_meter');
             
             const machineSelects = [
                 'train-machine-select',
@@ -312,7 +350,7 @@
                     machine_id: machineId,
                     lookback_days: lookbackDays,
                     auto_order: true,
-                    use_regressors: true
+                    use_regressors: !window.partnerPilot
                 }
             );
             

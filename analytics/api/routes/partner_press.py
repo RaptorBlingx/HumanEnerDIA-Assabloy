@@ -6,7 +6,7 @@ without mixing it with simulator assets. Energy remains at meter-group level;
 press production remains available per press and as derived group totals.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import os
 from typing import Any, Dict, Optional
@@ -14,8 +14,11 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Query
 
 from database import db
+from services.baseline_service import baseline_service
+from services.forecast_service import ForecastService
 
 router = APIRouter(prefix="/partner-press", tags=["Partner Press Shop"])
+forecast_service = ForecastService()
 
 PARTNER_FACTORY_NAME = os.getenv("PARTNER_PRESS_FACTORY_NAME", "Partner Press Shop")
 PARTNER_DISPLAY_NAME = os.getenv("PARTNER_PRESS_DISPLAY_NAME", "ASSA ABLOY Partner Press Shop")
@@ -135,6 +138,29 @@ async def _partner_factory(conn) -> Optional[dict]:
     return dict(row) if row else None
 
 
+async def _partner_meter_groups(conn) -> list[dict]:
+    rows = await conn.fetch(
+        """
+        SELECT
+            m.id,
+            m.name,
+            m.type,
+            m.metadata->>'group' AS group_key,
+            m.metadata->>'asset_level' AS asset_level,
+            m.metadata->>'energy_scope' AS energy_scope
+        FROM machines m
+        JOIN factories f ON f.id = m.factory_id
+        WHERE f.name = $1
+          AND m.metadata->>'source_dataset' = $2
+          AND m.metadata->>'asset_level' = 'meter_group'
+        ORDER BY m.metadata->>'group'
+        """,
+        PARTNER_FACTORY_NAME,
+        PARTNER_SOURCE_DATASET,
+    )
+    return [dict(row) for row in rows]
+
+
 @router.get("/profile")
 async def get_partner_press_profile() -> Dict[str, Any]:
     start = _parse_dt(PARTNER_START)
@@ -194,6 +220,187 @@ async def get_partner_press_profile() -> Dict[str, Any]:
             "Energy is represented honestly at the three imported meter-group assets. "
             "No per-press energy is allocated or invented."
         ),
+    }
+
+
+@router.get("/ml-readiness")
+async def get_partner_press_ml_readiness() -> Dict[str, Any]:
+    start = _parse_dt(PARTNER_START)
+    end = _parse_dt(PARTNER_END)
+
+    async with db.pool.acquire() as conn:
+        meter_groups = await _partner_meter_groups(conn)
+        forecast_table_exists = await conn.fetchval(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name = 'energy_forecasts'
+            )
+            """
+        )
+
+        readiness = []
+        for group in meter_groups:
+            machine_id = group["id"]
+            stats = await conn.fetchrow(
+                """
+                SELECT
+                    COUNT(*) AS raw_energy_rows,
+                    MIN(time) AS energy_start,
+                    MAX(time) AS energy_end,
+                    SUM(energy_kwh) AS energy_kwh
+                FROM energy_readings
+                WHERE machine_id = $1
+                  AND time >= $2
+                  AND time < $3
+                """,
+                machine_id,
+                start,
+                end,
+            )
+            hourly_rows = await conn.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM energy_readings_1hour
+                WHERE machine_id = $1
+                  AND bucket >= $2
+                  AND bucket < $3
+                """,
+                machine_id,
+                start,
+                end,
+            )
+            baseline = await conn.fetchrow(
+                """
+                SELECT id, model_version, training_samples, r_squared, rmse, mae, created_at
+                FROM energy_baselines
+                WHERE machine_id = $1
+                  AND is_active = TRUE
+                ORDER BY model_version DESC
+                LIMIT 1
+                """,
+                machine_id,
+            )
+            forecast_rows = 0
+            if forecast_table_exists:
+                forecast_rows = await conn.fetchval(
+                    """
+                    SELECT COUNT(*)
+                    FROM energy_forecasts
+                    WHERE machine_id = $1
+                    """,
+                    machine_id,
+                )
+
+            readiness.append({
+                "machine_id": str(machine_id),
+                "name": group["name"],
+                "group": group["group_key"],
+                "asset_level": group["asset_level"],
+                "energy_scope": group["energy_scope"],
+                "raw_energy_rows": int(stats["raw_energy_rows"] or 0),
+                "hourly_energy_rows": int(hourly_rows or 0),
+                "energy_kwh": _number(stats["energy_kwh"]),
+                "energy_start": stats["energy_start"].isoformat() if stats and stats["energy_start"] else None,
+                "energy_end": stats["energy_end"].isoformat() if stats and stats["energy_end"] else None,
+                "baseline": dict(baseline) if baseline else None,
+                "baseline_trained": bool(baseline),
+                "forecast_rows": int(forecast_rows or 0),
+            })
+
+    return {
+        "display_name": PARTNER_DISPLAY_NAME,
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "label": _period_label(start, end),
+        },
+        "forecast_table_exists": bool(forecast_table_exists),
+        "meter_groups": readiness,
+        "scope_note": (
+            "ML baselines and forecasts are trained only for Bret, Raster, and Dimeco "
+            "meter-group energy assets. Presses have production data only."
+        ),
+    }
+
+
+@router.post("/train-ml")
+async def train_partner_press_ml(
+    train_baselines: bool = Query(True, description="Train baseline models for meter groups"),
+    train_arima: bool = Query(True, description="Train ARIMA forecast models for meter groups"),
+    train_prophet: bool = Query(False, description="Also train Prophet models; slower and optional"),
+) -> Dict[str, Any]:
+    start = _parse_dt(PARTNER_START)
+    end = _parse_dt(PARTNER_END)
+    baseline_drivers = ["total_production_count", "hour_of_day", "day_of_week"]
+
+    async with db.pool.acquire() as conn:
+        meter_groups = await _partner_meter_groups(conn)
+
+    results = []
+    for group in meter_groups:
+        machine_id = group["id"]
+        item = {
+            "machine_id": str(machine_id),
+            "name": group["name"],
+            "group": group["group_key"],
+            "baseline": None,
+            "arima": None,
+            "prophet": None,
+            "errors": [],
+        }
+
+        if train_baselines:
+            try:
+                item["baseline"] = await baseline_service.train_baseline(
+                    machine_id=machine_id,
+                    start_date=start,
+                    end_date=end,
+                    drivers=baseline_drivers,
+                    include_machine_status=False,
+                )
+            except Exception as exc:
+                item["errors"].append(f"baseline: {exc}")
+
+        if train_arima:
+            try:
+                item["arima"] = await forecast_service.train_arima(
+                    machine_id=machine_id,
+                    lookback_days=90,
+                    auto_order=True,
+                    start_time=end.replace(tzinfo=None) - timedelta(days=90),
+                    end_time=end,
+                )
+            except Exception as exc:
+                item["errors"].append(f"arima: {exc}")
+
+        if train_prophet:
+            try:
+                item["prophet"] = await forecast_service.train_prophet(
+                    machine_id=machine_id,
+                    lookback_days=180,
+                    use_regressors=False,
+                    start_time=end.replace(tzinfo=None) - timedelta(days=180),
+                    end_time=end,
+                )
+            except Exception as exc:
+                item["errors"].append(f"prophet: {exc}")
+
+        results.append(item)
+
+    return {
+        "display_name": PARTNER_DISPLAY_NAME,
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "label": _period_label(start, end),
+        },
+        "trained_assets": len(results),
+        "baseline_drivers": baseline_drivers,
+        "scope_note": "Training targets meter-group energy assets only; no per-press energy models are created.",
+        "results": results,
     }
 
 

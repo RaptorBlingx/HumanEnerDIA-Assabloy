@@ -405,6 +405,7 @@
 <script>
     // State
     let forecastChart = null;
+    window.partnerPilot = false;
 
     // Initialization
     window.addEventListener('DOMContentLoaded', () => {
@@ -443,8 +444,35 @@
 
     async function loadMachines() {
         try {
+            const profileRes = await axios.get(`${API_BASE}/partner-press/profile`);
+            const profile = profileRes.data;
+            if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
+                window.partnerPilot = true;
+                ['train-machine-select', 'forecast-machine-select', 'schedule-machine-select'].forEach(id => {
+                    const sel = document.getElementById(id);
+                    sel.innerHTML = '<option value="" disabled selected>Select meter group...</option>';
+                    profile.meter_groups.forEach(asset => {
+                        const opt = document.createElement('option');
+                        opt.value = asset.id;
+                        opt.textContent = asset.name;
+                        sel.appendChild(opt);
+                    });
+                });
+                syncMachineSelectors(profile.meter_groups[0].id);
+                loadModelStatus(profile.meter_groups.map(asset => ({
+                    id: asset.id,
+                    name: asset.name,
+                    type: 'meter_group'
+                })));
+                return;
+            }
+        } catch (partnerError) {
+            console.warn('Partner profile unavailable, using machine list', partnerError);
+        }
+
+        try {
             const res = await axios.get(`${API_BASE}/machines`);
-            const machines = res.data;
+            const machines = (res.data || []).filter(m => m.energy_scope !== 'no_direct_energy_meter');
             
             ['train-machine-select', 'forecast-machine-select', 'schedule-machine-select'].forEach(id => {
                 const sel = document.getElementById(id);
@@ -487,7 +515,7 @@
                 machine_id: document.getElementById('train-machine-select').value,
                 lookback_days: parseInt(document.getElementById('lookback-days').value),
                 auto_order: true,
-                use_regressors: true
+                use_regressors: !window.partnerPilot
             };
             const type = document.querySelector('input[name="modelType"]:checked').value;
             

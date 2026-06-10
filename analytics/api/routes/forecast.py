@@ -7,6 +7,7 @@ REST API endpoints for time-series energy forecasting.
 
 import logging
 from datetime import datetime
+import os
 from typing import Literal, Optional
 from uuid import UUID
 
@@ -22,6 +23,9 @@ router = APIRouter(prefix="/forecast", tags=["Forecasting"])
 # Initialize service
 forecast_service = ForecastService()
 
+PARTNER_PRESS_PILOT_DEFAULT = os.getenv("PARTNER_PRESS_PILOT_DEFAULT", "false").lower() == "true"
+PARTNER_PRESS_FACTORY_NAME = os.getenv("PARTNER_PRESS_FACTORY_NAME", "Partner Press Shop")
+
 
 # ============================================================================
 # Request/Response Models
@@ -33,7 +37,7 @@ class TrainRequest(BaseModel):
     lookback_days: int = Field(
         14,
         ge=7,
-        le=90,
+        le=366,
         description="Days of historical data to use for training"
     )
     auto_order: bool = Field(
@@ -43,6 +47,14 @@ class TrainRequest(BaseModel):
     use_regressors: bool = Field(
         True,
         description="Include external regressors (Prophet only)"
+    )
+    start_time: Optional[datetime] = Field(
+        None,
+        description="Optional explicit training window start. Useful for imported historical datasets."
+    )
+    end_time: Optional[datetime] = Field(
+        None,
+        description="Optional explicit training window end. Defaults to latest available data in partner pilot mode."
     )
 
 
@@ -150,7 +162,9 @@ async def train_arima_model(request: TrainRequest):
         result = await forecast_service.train_arima(
             machine_id=request.machine_id,
             lookback_days=request.lookback_days,
-            auto_order=request.auto_order
+            auto_order=request.auto_order,
+            start_time=request.start_time,
+            end_time=request.end_time
         )
         
         return TrainResponse(**result)
@@ -198,8 +212,10 @@ async def train_prophet_model(request: TrainRequest):
     try:
         result = await forecast_service.train_prophet(
             machine_id=request.machine_id,
-            lookback_days=max(request.lookback_days, 30),  # Prophet needs more data
-            use_regressors=request.use_regressors
+            lookback_days=max(request.lookback_days, 120),  # Prophet needs more data
+            use_regressors=request.use_regressors,
+            start_time=request.start_time,
+            end_time=request.end_time
         )
         
         return TrainResponse(**result)
@@ -461,17 +477,26 @@ async def get_short_term_forecast(
     from datetime import timedelta
     
     try:
-        # Get tomorrow's date range
-        today = datetime.utcnow().date()
-        tomorrow = today + timedelta(days=1)
-        tomorrow_start = datetime.combine(tomorrow, datetime.min.time())
-        tomorrow_end = datetime.combine(tomorrow, datetime.max.time())
-        
         ENERGY_RATE = 0.15  # $/kWh
+
+        async def latest_reading_time(conn, mid):
+            return await conn.fetchval(
+                "SELECT MAX(time) FROM energy_readings WHERE machine_id = $1",
+                mid
+            )
         
         if machine_id:
             # Single machine forecast
             async with db.pool.acquire() as conn:
+                latest_time = await latest_reading_time(conn, machine_id)
+                if not latest_time:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"No historical data for machine {machine_id}"
+                    )
+                history_start = latest_time - timedelta(days=7)
+                forecast_date = latest_time.date() + timedelta(days=1)
+
                 # Get last 7 days of data for simple moving average forecast
                 historical = await conn.fetch("""
                     SELECT 
@@ -481,12 +506,12 @@ async def get_short_term_forecast(
                         MAX(power_kw) as peak_power
                     FROM energy_readings
                     WHERE machine_id = $1
-                        AND time >= NOW() - INTERVAL '7 days'
-                        AND time < NOW()
+                        AND time >= $2
+                        AND time <= $3
                     GROUP BY DATE(time)
                     ORDER BY date DESC
                     LIMIT 7
-                """, machine_id)
+                """, machine_id, history_start, latest_time)
                 
                 if not historical or len(historical) == 0:
                     raise HTTPException(
@@ -522,7 +547,7 @@ async def get_short_term_forecast(
             
             response = {
                 "forecast_type": "single_machine",
-                "forecast_date": tomorrow.isoformat(),
+                "forecast_date": forecast_date.isoformat(),
                 "machine_id": str(machine_id),
                 "machine_name": machine.get('name'),
                 "machine_type": machine.get('type'),
@@ -534,6 +559,8 @@ async def get_short_term_forecast(
                 "confidence": round(confidence, 2),
                 "historical_days_used": len(historical),
                 "method": "7-day moving average",
+                "historical_data_mode": PARTNER_PRESS_PILOT_DEFAULT,
+                "latest_source_reading": latest_time.isoformat(),
                 "timestamp": datetime.utcnow().isoformat()
             }
         
@@ -541,6 +568,12 @@ async def get_short_term_forecast(
             # Factory-wide forecast (all machines)
             machines = await get_machines()
             active_machines = [m for m in machines if m.get('is_active')]
+            if PARTNER_PRESS_PILOT_DEFAULT:
+                active_machines = [
+                    m for m in active_machines
+                    if m.get('factory_name') == PARTNER_PRESS_FACTORY_NAME
+                    and m.get('asset_level') == 'meter_group'
+                ]
             
             machine_forecasts = []
             total_energy = 0.0
@@ -548,10 +581,17 @@ async def get_short_term_forecast(
             max_peak_power = 0.0
             peak_machine = None
             total_confidence = 0.0
+            latest_source_reading = None
             
             async with db.pool.acquire() as conn:
                 for machine in active_machines:
                     mid = machine['id']
+                    latest_time = await latest_reading_time(conn, mid)
+                    if not latest_time:
+                        continue
+                    if latest_source_reading is None or latest_time > latest_source_reading:
+                        latest_source_reading = latest_time
+                    history_start = latest_time - timedelta(days=7)
                     
                     # Get historical data
                     historical = await conn.fetch("""
@@ -561,12 +601,12 @@ async def get_short_term_forecast(
                             MAX(power_kw) as peak_power
                         FROM energy_readings
                         WHERE machine_id = $1
-                            AND time >= NOW() - INTERVAL '7 days'
-                            AND time < NOW()
+                            AND time >= $2
+                            AND time <= $3
                         GROUP BY DATE(time)
                         ORDER BY date DESC
                         LIMIT 7
-                    """, mid)
+                    """, mid, history_start, latest_time)
                     
                     if not historical or len(historical) == 0:
                         continue
@@ -613,7 +653,10 @@ async def get_short_term_forecast(
             
             response = {
                 "forecast_type": "factory_wide",
-                "forecast_date": tomorrow.isoformat(),
+                "forecast_date": (
+                    (latest_source_reading.date() + timedelta(days=1))
+                    if latest_source_reading else (datetime.utcnow().date() + timedelta(days=1))
+                ).isoformat(),
                 "total_predicted_energy_kwh": round(total_energy, 2),
                 "total_predicted_cost_usd": round(total_cost, 2),
                 "predicted_peak_demand_kw": round(max_peak_power, 2),
@@ -623,6 +666,8 @@ async def get_short_term_forecast(
                 "machines_forecasted": len(machine_forecasts),
                 "by_machine": machine_forecasts,
                 "method": "7-day moving average (per machine)",
+                "historical_data_mode": PARTNER_PRESS_PILOT_DEFAULT,
+                "latest_source_reading": latest_source_reading.isoformat() if latest_source_reading else None,
                 "timestamp": datetime.utcnow().isoformat()
             }
         

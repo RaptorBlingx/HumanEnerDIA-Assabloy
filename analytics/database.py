@@ -96,6 +96,10 @@ async def get_machines(
             m.type, 
             m.rated_power_kw,
             m.is_active,
+            m.metadata,
+            m.metadata->>'asset_level' AS asset_level,
+            m.metadata->>'energy_scope' AS energy_scope,
+            m.metadata->>'group' AS group_key,
             f.name as factory_name,
             f.location as factory_location
         FROM machines m

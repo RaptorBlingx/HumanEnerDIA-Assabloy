@@ -58,7 +58,7 @@ class ReportDataFetcher:
         async with self.db.pool.acquire() as conn:
             result = await conn.fetchval(
                 """
-                SELECT COALESCE(SUM(avg_power_kw * 1.0), 0) as total_kwh
+                SELECT COALESCE(SUM(total_energy_kwh), 0) as total_kwh
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
@@ -84,7 +84,7 @@ class ReportDataFetcher:
                 """
                 SELECT 
                     m.type as category,
-                    SUM(er.avg_power_kw * 1.0) as total_kwh,
+                    SUM(er.total_energy_kwh) as total_kwh,
                     COUNT(DISTINCT m.id) as machine_count
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
@@ -113,7 +113,7 @@ class ReportDataFetcher:
                 """
                 SELECT 
                     DATE(er.bucket) as date,
-                    SUM(er.avg_power_kw * 24.0) as total_kwh,
+                    SUM(er.total_energy_kwh) as total_kwh,
                     AVG(er.avg_power_kw) as avg_power_kw
                 FROM energy_readings_1day er
                 JOIN machines m ON er.machine_id = m.id
@@ -205,7 +205,7 @@ class ReportDataFetcher:
                     m.name,
                     m.type,
                     m.rated_power_kw,
-                    SUM(er.avg_power_kw * 1.0) as total_kwh,
+                    SUM(er.total_energy_kwh) as total_kwh,
                     AVG(er.avg_power_kw) as avg_power_kw,
                     MAX(er.max_power_kw) as peak_power_kw,
                     COUNT(*) as hours_run
@@ -255,7 +255,7 @@ class ReportDataFetcher:
             energy_stats = await conn.fetchrow(
                 """
                 SELECT 
-                    SUM(er.avg_power_kw * 1.0) as total_kwh,
+                    SUM(er.total_energy_kwh) as total_kwh,
                     AVG(er.avg_power_kw) as avg_power_kw,
                     MAX(er.max_power_kw) as peak_power_kw,
                     MIN(er.min_power_kw) as min_power_kw,
@@ -275,7 +275,7 @@ class ReportDataFetcher:
                 """
                 SELECT 
                     DATE(er.bucket) as date,
-                    SUM(er.avg_power_kw * 24.0) as total_kwh
+                    SUM(er.total_energy_kwh) as total_kwh
                 FROM energy_readings_1day er
                 WHERE er.machine_id = $1
                 AND er.bucket >= $2
@@ -323,7 +323,7 @@ class ReportDataFetcher:
             baseline_stats = await conn.fetchrow(
                 """
                 SELECT 
-                    SUM(er.avg_power_kw * 1.0) as total_kwh,
+                    SUM(er.total_energy_kwh) as total_kwh,
                     AVG(er.avg_power_kw) as avg_power_kw
                 FROM energy_readings_1hour er
                 WHERE er.machine_id = $1

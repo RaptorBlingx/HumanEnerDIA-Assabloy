@@ -60,6 +60,13 @@ class TrainBaselineRequest(BaseModel):
     machine_id: UUID = Field(..., description="Machine UUID")
     start_date: datetime = Field(..., description="Training data start date (ISO 8601)")
     end_date: datetime = Field(..., description="Training data end date (ISO 8601)")
+    include_machine_status: bool = Field(
+        True,
+        description=(
+            "Filter out rows where machine_status says the asset was not running. "
+            "Set false for imported historical datasets that do not have machine_status rows."
+        )
+    )
     drivers: Optional[List[str]] = Field(
         None,
         description="List of driver/feature names (if None, auto-select)",
@@ -206,7 +213,8 @@ async def train_baseline(request: TrainBaselineRequest):
             machine_id=request.machine_id,
             start_date=request.start_date,
             end_date=request.end_date,
-            drivers=drivers
+            drivers=drivers,
+            include_machine_status=request.include_machine_status
         )
         
         logger.info(f"[TRAIN-API] Training completed successfully")

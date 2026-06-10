@@ -96,7 +96,8 @@ class BaselineService:
         start_date: datetime,
         end_date: datetime,
         drivers: Optional[List[str]] = None,
-        energy_source_id: Optional[UUID] = None  # NEW: For multi-energy support
+        energy_source_id: Optional[UUID] = None,  # NEW: For multi-energy support
+        include_machine_status: bool = True
     ) -> Dict[str, Any]:
         """
         Train energy baseline model for a machine.
@@ -106,6 +107,8 @@ class BaselineService:
             start_date: Training data start date
             end_date: Training data end date
             drivers: Optional list of driver/feature names
+            include_machine_status: Filter training rows by live machine status.
+                Historical imported datasets may not have machine_status rows.
             
         Returns:
             Training results with model metadata
@@ -129,7 +132,7 @@ class BaselineService:
             machine_id=machine_id,
             start_time=start_date,
             end_time=end_date,
-            include_machine_status=True  # Filter out maintenance/fault periods
+            include_machine_status=include_machine_status
         )
         
         logger.info(f"[TRAIN-SVC] Retrieved {len(data) if data else 0} data records")
