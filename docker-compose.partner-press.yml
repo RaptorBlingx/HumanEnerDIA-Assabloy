@@ -1,0 +1,5 @@
+services:
+  simulator:
+    environment:
+      SIMULATOR_AUTO_START: "false"
+      SIMULATOR_ENABLE_ANOMALIES: "false"

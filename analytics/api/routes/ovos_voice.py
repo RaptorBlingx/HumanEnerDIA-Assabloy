@@ -148,6 +148,20 @@ def _is_top_consumers_query(text: str) -> bool:
     )
 
 
+def _is_partner_press_query(text: str) -> bool:
+    normalized = _normalize_query(text)
+    terms = [
+        "partner",
+        "press shop",
+        "press-shop",
+        "bret",
+        "raster",
+        "dimeco",
+        "sqdc",
+    ]
+    return any(term in normalized for term in terms)
+
+
 MONTH_ALIASES = {
     "jan": 1,
     "january": 1,
@@ -279,7 +293,18 @@ async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -
 
 async def _build_top_consumers_fallback_response(session_id: str, start_time: datetime, normalized_text: str) -> VoiceQueryResponse:
     limit = _top_consumer_limit(normalized_text)
-    ranking_data = await get_top_consumers(metric="energy", limit=limit)
+    if _is_partner_press_query(normalized_text):
+        ranking_data = await get_top_consumers(
+            metric="energy",
+            start_time=datetime(2025, 5, 1),
+            end_time=datetime(2026, 6, 1),
+            limit=limit,
+            factory_name="Partner Press Shop",
+        )
+        subtitle = "Partner press-shop dataset, May 2025 through May 2026"
+    else:
+        ranking_data = await get_top_consumers(metric="energy", limit=limit)
+        subtitle = "Current ranking snapshot"
     ranking = ranking_data.get("ranking", [])
 
     latency_ms = int((datetime.now() - start_time).total_seconds() * 1000)
@@ -292,7 +317,7 @@ async def _build_top_consumers_fallback_response(session_id: str, start_time: da
             intent="ranking",
             confidence=1.0,
             data=ranking_data,
-            insights={"source": "analytics_fallback", "metric": "energy"},
+            insights={"source": "analytics_fallback", "metric": "energy", "factory_filter": ranking_data.get("factory_filter")},
             audio_base64=None,
             audio_format=None,
             pdf_base64=None,
@@ -322,7 +347,7 @@ async def _build_top_consumers_fallback_response(session_id: str, start_time: da
         insights={
             "panel_type": "ranking",
             "title": "Energy Consumption",
-            "subtitle": "Current ranking snapshot",
+            "subtitle": subtitle,
             "spotlight": {
                 "kicker": "Top consumer",
                 "title": top_item["machine_name"],
@@ -342,6 +367,7 @@ async def _build_top_consumers_fallback_response(session_id: str, start_time: da
             ],
             "links": [{"label": "Open reports", "href": "/reports.html"}],
             "source": "analytics_fallback",
+            "factory_filter": ranking_data.get("factory_filter"),
         },
         audio_base64=None,
         audio_format=None,

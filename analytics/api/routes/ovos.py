@@ -277,7 +277,8 @@ async def get_top_consumers(
     metric: str = Query("energy", description="Metric to rank by: energy, cost, power, anomalies"),
     start_time: Optional[datetime] = Query(None, description="Start of time range (ISO 8601) - defaults to today 00:00"),
     end_time: Optional[datetime] = Query(None, description="End of time range (ISO 8601) - defaults to now"),
-    limit: int = Query(5, description="Number of top consumers to return", ge=1, le=20)
+    limit: int = Query(5, description="Number of top consumers to return", ge=1, le=20),
+    factory_name: Optional[str] = Query(None, description="Optional case-insensitive factory-name filter")
 ) -> Dict[str, Any]:
     """
     Get top machines ranked by consumption metric.
@@ -319,6 +320,17 @@ async def get_top_consumers(
     """
     
     try:
+        if not isinstance(metric, str):
+            metric = "energy"
+        if not isinstance(limit, int):
+            limit = 5
+        if not isinstance(start_time, datetime):
+            start_time = None
+        if not isinstance(end_time, datetime):
+            end_time = None
+        if not isinstance(factory_name, str):
+            factory_name = None
+
         # Set defaults for time range if not provided
         if start_time is None:
             start_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -336,6 +348,12 @@ async def get_top_consumers(
         # Get all active machines
         machines = await get_machines()
         active_machines = [m for m in machines if m.get('is_active', True)]
+        if factory_name:
+            factory_filter = factory_name.lower()
+            active_machines = [
+                m for m in active_machines
+                if factory_filter in str(m.get('factory_name', '')).lower()
+            ]
         
         if not active_machines:
             return {
@@ -344,10 +362,11 @@ async def get_top_consumers(
                     "start": start_time.isoformat(),
                     "end": end_time.isoformat()
                 },
+                "factory_filter": factory_name,
                 "total_value": 0.0,
                 "unit": "",
                 "ranking": [],
-                "message": "No active machines found"
+                "message": "No active machines found" + (f" for factory '{factory_name}'" if factory_name else "")
             }
         
         machine_ids = [m['id'] for m in active_machines]
@@ -383,6 +402,7 @@ async def get_top_consumers(
                         "start": start_time.isoformat(),
                         "end": end_time.isoformat()
                     },
+                    "factory_filter": factory_name,
                     "total_value": 0.0,
                     "unit": "kWh" if metric == "energy" else ("USD" if metric == "cost" else "kW"),
                     "ranking": [],
@@ -450,6 +470,7 @@ async def get_top_consumers(
                     "end": end_time.isoformat(),
                     "duration_hours": round((end_time - start_time).total_seconds() / 3600, 2)
                 },
+                "factory_filter": factory_name,
                 "total_value": round(total_value, 2),
                 "unit": unit,
                 "machines_analyzed": len(results),
@@ -487,6 +508,7 @@ async def get_top_consumers(
                         "start": start_time.isoformat(),
                         "end": end_time.isoformat()
                     },
+                    "factory_filter": factory_name,
                     "total_value": 0,
                     "unit": "anomalies",
                     "ranking": [],
@@ -525,6 +547,7 @@ async def get_top_consumers(
                     "end": end_time.isoformat(),
                     "duration_hours": round((end_time - start_time).total_seconds() / 3600, 2)
                 },
+                "factory_filter": factory_name,
                 "total_value": total_anomalies,
                 "unit": "anomalies",
                 "machines_analyzed": len(results),
@@ -978,5 +1001,3 @@ async def get_tomorrow_forecast(
     except Exception as e:
         logger.error(f"Error generating forecast: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating forecast: {str(e)}")
-
-
