@@ -254,19 +254,16 @@
         <div class="col-xl-3 col-lg-3 col-md-6 mb-3">
             <label for="machine-filter" class="form-label">Machine</label>
             <select class="form-select" id="machine-filter">
-                <option value="">All Machines</option>
-                <option value="c0000000-0000-0000-0000-000000000001">Compressor-1</option>
-                <option value="h0000000-0000-0000-0000-000000000001">HVAC-1</option>
-                <option value="m0000000-0000-0000-0000-000000000001">Conveyor-1</option>
+                <option value="">Loading partner meter groups...</option>
             </select>
         </div>
         <div class="col-xl-3 col-lg-3 col-md-6 mb-3">
             <label for="time-filter" class="form-label">Time Range</label>
             <select class="form-select" id="time-filter">
-                <option value="24">Last 24 Hours</option>
-                <option value="48">Last 48 Hours</option>
-                <option value="168">Last 7 Days</option>
-                <option value="720">Last 30 Days</option>
+                <option value="partner" selected>Partner Dataset Period</option>
+                <option value="720">Last 30 Days of Dataset</option>
+                <option value="168">Last 7 Days of Dataset</option>
+                <option value="24">Last 24 Hours of Dataset</option>
             </select>
         </div>
         <div class="col-xl-3 col-lg-3 col-md-6 mb-3">
@@ -389,9 +386,11 @@
     let currentAnomalies = [];
     let currentPage = 1;
     let itemsPerPage = 25;
+    let partnerProfile = null;
     
     // Load anomalies on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initializePartnerAnomalyFilters();
         loadAnomalies();
         
         // Items per page change handler
@@ -401,6 +400,38 @@
             displayAnomalies(currentAnomalies);
         });
     });
+
+    async function initializePartnerAnomalyFilters() {
+        try {
+            partnerProfile = await PartnerPilot.loadProfile();
+            PartnerPilot.populateAssetSelect(document.getElementById('machine-filter'), partnerProfile, {
+                allLabel: 'All Partner Meter Groups',
+                includeMeterGroups: true,
+                includePresses: false
+            });
+            const title = document.querySelector('h1');
+            const subtitle = document.querySelector('.page-header p, p.text-muted');
+            if (title) title.textContent = 'ASSA ABLOY Partner Press Shop Anomalies';
+            if (subtitle) subtitle.textContent = 'Anomaly review scoped to imported Bret, Raster, and Dimeco meter-group energy.';
+        } catch (error) {
+            console.warn('Partner anomaly profile unavailable', error);
+            document.getElementById('machine-filter').innerHTML = '<option value="">Unable to load partner meter groups</option>';
+        }
+    }
+
+    function anomalyDateRange() {
+        const value = document.getElementById('time-filter').value;
+        if (partnerProfile) {
+            if (value === 'partner') {
+                return PartnerPilot.period(partnerProfile);
+            }
+            return PartnerPilot.dateRange(partnerProfile, Number(value) / 24);
+        }
+        const hours = parseInt(value === 'partner' ? '720' : value);
+        const end = new Date();
+        const start = new Date(end.getTime() - (hours * 60 * 60 * 1000));
+        return { start: start.toISOString(), end: end.toISOString() };
+    }
     
     // Apply filters
     document.getElementById('apply-filters').addEventListener('click', () => {
@@ -420,13 +451,14 @@
         document.getElementById('detection-progress').style.display = 'block';
         
         try {
-            const now = new Date();
-            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            const range = partnerProfile
+                ? PartnerPilot.dateRange(partnerProfile, 30)
+                : anomalyDateRange();
             
             const response = await axios.post(`${API_BASE}/anomaly/detect`, {
                 machine_id: machineId,
-                start_date: yesterday.toISOString(),
-                end_date: now.toISOString()
+                start: range.start,
+                end: range.end
             });
             
             showToast(`Detection complete! Found ${response.data.anomalies_detected} anomalies.`, 'success');
@@ -444,19 +476,16 @@
         container.innerHTML = '<div class="loading-state"><div class="spinner-lg"></div></div>';
         
         try {
-            const hours = parseInt(document.getElementById('time-filter').value);
             const machineId = document.getElementById('machine-filter').value;
             const severity = document.getElementById('severity-filter').value;
             const status = document.getElementById('status-filter').value;
             
-            // Calculate time window based on selected hours
-            const endTime = new Date();
-            const startTime = new Date(endTime.getTime() - (hours * 60 * 60 * 1000));
+            const range = anomalyDateRange();
             
             const params = { 
                 limit: 200,
-                start_time: startTime.toISOString(),
-                end_time: endTime.toISOString()
+                start_time: range.start,
+                end_time: range.end
             };
             if (machineId) params.machine_id = machineId;
             if (severity) params.severity = severity;
@@ -476,6 +505,10 @@
             let anomalies = response.data.anomalies || response.data;
             if (!Array.isArray(anomalies)) {
                 anomalies = [];
+            }
+            if (partnerProfile) {
+                const partnerIds = new Set((partnerProfile.meter_groups || []).map(asset => asset.id));
+                anomalies = anomalies.filter(item => partnerIds.has(item.machine_id));
             }
             
             // Apply filters

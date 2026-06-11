@@ -12,8 +12,8 @@
     </div>
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h1 style="font-size: var(--text-4xl); font-weight: var(--font-bold); color: var(--color-text-primary); margin-bottom: var(--space-2); letter-spacing: -0.02em;">Analytics Dashboard</h1>
-            <p style="color: var(--text-secondary); font-size: var(--text-lg);">ML-powered insights for industrial energy management</p>
+            <h1 id="dashboard-title" style="font-size: var(--text-4xl); font-weight: var(--font-bold); color: var(--color-text-primary); margin-bottom: var(--space-2); letter-spacing: -0.02em;">Analytics Dashboard</h1>
+            <p id="dashboard-subtitle" style="color: var(--text-secondary); font-size: var(--text-lg);">ML-powered insights for industrial energy management</p>
         </div>
         <div style="display: flex; align-items: center; gap: var(--space-3);">
             <div style="text-align: right;">
@@ -35,7 +35,7 @@
                 </svg>
             </div>
             <div class="stat-card-value" style="color: var(--color-primary);" id="active-machines-count">-</div>
-            <div class="stat-card-label">Active Machines</div>
+            <div class="stat-card-label" id="active-machines-label">Active Machines</div>
         </div>
     </div>
     <div class="industrial-card" style="background: linear-gradient(135deg, rgba(0, 168, 232, 0.03) 0%, rgba(0, 168, 232, 0.08) 100%);">
@@ -58,7 +58,7 @@
                 </svg>
             </div>
             <div class="stat-card-value" style="color: var(--color-accent);" id="anomalies-24h-count">-</div>
-            <div class="stat-card-label">Anomalies (24h)</div>
+            <div class="stat-card-label" id="anomalies-window-label">Anomalies</div>
         </div>
     </div>
     <div class="industrial-card" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.03) 0%, rgba(46, 204, 113, 0.08) 100%);">
@@ -441,27 +441,63 @@
             // Load service health
             const healthResponse = await axios.get(`${API_BASE}/health`);
             displayServiceInfo(healthResponse.data);
+
+            let partnerProfile = null;
+            try {
+                partnerProfile = await PartnerPilot.loadProfile();
+                PartnerPilot.setPartnerHeading(
+                    '#dashboard-title',
+                    '#dashboard-subtitle',
+                    'Analytics Dashboard',
+                    'Imported partner press-shop energy, production, baselines, and pilot status'
+                );
+                document.getElementById('active-machines-label').textContent = 'Partner Assets';
+                document.getElementById('anomalies-window-label').textContent = 'Partner Anomalies';
+            } catch (partnerError) {
+                console.warn('[Dashboard] Partner profile unavailable, using generic dashboard scope', partnerError);
+            }
             
-            // Load recent anomalies (24-hour window)
-            const endTime = new Date();
-            const startTime = new Date(endTime.getTime() - (24 * 60 * 60 * 1000));
+            // Load recent anomalies in the partner period when available.
+            const range = partnerProfile
+                ? PartnerPilot.dateRange(partnerProfile, 30)
+                : {
+                    end: new Date().toISOString(),
+                    start: new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString()
+                };
             const anomaliesResponse = await axios.get(`${API_BASE}/anomaly/recent`, {
                 params: {
-                    start_time: startTime.toISOString(),
-                    end_time: endTime.toISOString(),
+                    start_time: range.start,
+                    end_time: range.end,
                     limit: 100
                 }
             });
             
             // Fix: API returns {anomalies: [...], total_count: N}
-            const anomaliesData = anomaliesResponse.data.anomalies || [];
+            let anomaliesData = anomaliesResponse.data.anomalies || [];
+            if (partnerProfile) {
+                const partnerIds = new Set((partnerProfile.meter_groups || []).map(asset => asset.id));
+                anomaliesData = anomaliesData.filter(item => partnerIds.has(item.machine_id));
+            }
             displayRecentAnomalies(anomaliesData);
             
             // Update stats with total count from API
-            document.getElementById('anomalies-24h-count').textContent = anomaliesResponse.data.total_count || anomaliesData.length;
+            document.getElementById('anomalies-24h-count').textContent = anomaliesData.length;
             
-            // Load active machines count
-            try {
+            if (partnerProfile) {
+                document.getElementById('active-machines-count').textContent =
+                    (partnerProfile.meter_groups || []).length + (partnerProfile.presses || []).length;
+
+                try {
+                    const readinessResponse = await axios.get(`${API_BASE}/partner-press/ml-readiness`);
+                    const readiness = readinessResponse.data.meter_groups || [];
+                    document.getElementById('baseline-models-count').textContent =
+                        readiness.filter(item => item.baseline_trained).length;
+                } catch (readinessError) {
+                    console.warn('[Dashboard] Partner ML readiness unavailable', readinessError);
+                    document.getElementById('baseline-models-count').textContent = '?';
+                }
+            } else {
+                // Load active machines count
                 const machinesResponse = await axios.get(`${API_BASE}/machines`, {
                     params: { is_active: true }
                 });
@@ -486,11 +522,6 @@
                 }
                 console.log('[Dashboard] Total baseline models:', totalModels);
                 document.getElementById('baseline-models-count').textContent = totalModels;
-                
-            } catch (e) {
-                console.error('Error loading counts:', e);
-                document.getElementById('active-machines-count').textContent = '?';
-                document.getElementById('baseline-models-count').textContent = '?';
             }
             
         } catch (error) {
@@ -614,24 +645,35 @@
     // Load Recent Anomalies (can be called independently for real-time updates)
     async function loadRecentAnomalies() {
         try {
-            // Calculate 24-hour time window
-            const endTime = new Date();
-            const startTime = new Date(endTime.getTime() - (24 * 60 * 60 * 1000));
+            let partnerProfile = null;
+            try {
+                partnerProfile = await PartnerPilot.loadProfile();
+            } catch (_) {}
+            const range = partnerProfile
+                ? PartnerPilot.dateRange(partnerProfile, 30)
+                : {
+                    end: new Date().toISOString(),
+                    start: new Date(Date.now() - (24 * 60 * 60 * 1000)).toISOString()
+                };
             
             const anomaliesResponse = await axios.get(`${API_BASE}/anomaly/recent`, {
                 params: {
-                    start_time: startTime.toISOString(),
-                    end_time: endTime.toISOString(),
+                    start_time: range.start,
+                    end_time: range.end,
                     limit: 100
                 }
             });
             
             // Fix: API returns {anomalies: [...], total_count: N}
-            const anomaliesData = anomaliesResponse.data.anomalies || [];
+            let anomaliesData = anomaliesResponse.data.anomalies || [];
+            if (partnerProfile) {
+                const partnerIds = new Set((partnerProfile.meter_groups || []).map(asset => asset.id));
+                anomaliesData = anomaliesData.filter(item => partnerIds.has(item.machine_id));
+            }
             displayRecentAnomalies(anomaliesData);
             
             // Update stats with total count from API
-            document.getElementById('anomalies-24h-count').textContent = anomaliesResponse.data.total_count || anomaliesData.length;
+            document.getElementById('anomalies-24h-count').textContent = anomaliesData.length;
             
         } catch (error) {
             console.error('Error loading recent anomalies:', error);

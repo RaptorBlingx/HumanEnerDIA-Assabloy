@@ -318,10 +318,10 @@
 <div class="container-fluid">
     <!-- Page Header -->
     <div style="padding: var(--space-6) var(--space-8) var(--space-4);">
-        <h1 style="font-size: var(--text-3xl); font-weight: var(--font-bold); color: var(--text-primary); margin-bottom: var(--space-2);">
+        <h1 id="baseline-title" style="font-size: var(--text-3xl); font-weight: var(--font-bold); color: var(--text-primary); margin-bottom: var(--space-2);">
             Energy Baseline Training
         </h1>
-        <p style="font-size: var(--text-base); color: var(--text-secondary); font-weight: var(--font-normal);">
+        <p id="baseline-subtitle" style="font-size: var(--text-base); color: var(--text-secondary); font-weight: var(--font-normal);">
             ISO 50001-compliant baseline regression with driver selection
         </p>
     </div>
@@ -520,6 +520,8 @@
             if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
                 window.partnerPilot = true;
                 window.partnerProfile = profile;
+                document.getElementById('baseline-title').textContent = `${profile.display_name} Baseline Training`;
+                document.getElementById('baseline-subtitle').textContent = 'Baseline regression for imported Bret, Raster, and Dimeco group-meter energy assets.';
                 const select = document.getElementById('machine-select');
                 select.innerHTML = '<option value="">Select a meter group...</option>';
                 profile.meter_groups.forEach(asset => {

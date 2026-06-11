@@ -67,9 +67,9 @@
 <div class="pilot-page-title">
     <div>
         <h1 class="display-6 mb-1">ISO 50001 EnPI Report</h1>
-        <p class="text-muted mb-0">Readable EnPI status for the simulated pilot. This replaces raw API JSON in the manual recording path.</p>
+        <p class="text-muted mb-0">Partner EnPI status from imported group-meter electricity and SQDC production data.</p>
     </div>
-    <span class="pilot-status-pill">2026-Q1 pilot period</span>
+    <span class="pilot-status-pill">ASSA ABLOY partner dataset</span>
 </div>
 
 <div class="card mb-4">
@@ -78,22 +78,19 @@
             <div class="col-md-5">
                 <label for="factory-id" class="form-label">Factory</label>
                 <select id="factory-id" class="form-select">
-                    <option value="11111111-1111-1111-1111-111111111111" selected>Simulated Romanian Pilot Factory</option>
-                    <option value="22222222-2222-2222-2222-222222222222">Romanian Auxiliary Production Facility</option>
+                    <option value="" selected>Loading partner factory...</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="period" class="form-label">Period</label>
                 <select id="period" class="form-select">
-                    <option value="2026-Q1" selected>2026-Q1</option>
-                    <option value="2026-Q2">2026-Q2</option>
-                    <option value="2026-Q3">2026-Q3</option>
-                    <option value="2026-Q4">2026-Q4</option>
+                    <option value="partner" selected>Partner Dataset Period</option>
+                    <option value="imported_meter">Imported Meter Period</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="baseline-year" class="form-label">Baseline Year</label>
-                <input id="baseline-year" class="form-control" type="number" value="2026" min="2020" max="2030">
+                <label for="baseline-year" class="form-label">Baseline Source</label>
+                <input id="baseline-year" class="form-control" type="text" value="Active partner models" readonly>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">Load</button>
@@ -161,8 +158,6 @@
 
 {% block extra_js %}
 <script>
-    const PILOT_FACTORY_ID = '11111111-1111-1111-1111-111111111111';
-
     function formatKwh(value) {
         return `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} kWh`;
     }
@@ -174,6 +169,58 @@
     function showStatus(message, type = 'info') {
         document.getElementById('status').innerHTML = `
             <div class="alert alert-${type}" role="alert">${message}</div>
+        `;
+    }
+
+    function renderPartnerReport(summary, readiness) {
+        const models = Object.fromEntries((readiness.meter_groups || []).map(item => [item.group, item]));
+        const totalEnergy = Number(summary.total_energy_kwh || 0);
+        const totalProduction = Number(summary.total_production_units || 0);
+        const sec = totalProduction > 0 ? totalEnergy / totalProduction : null;
+        const trained = (readiness.meter_groups || []).filter(item => item.baseline_trained).length;
+
+        document.getElementById('summary-grid').style.display = 'grid';
+        document.getElementById('summary-callout').style.display = 'block';
+        document.getElementById('summary-callout').innerHTML = `
+            <h5 class="mb-2">Partner EnPI summary</h5>
+            <p class="mb-0">
+                For ${summary.period.label}, ${summary.display_name} used <strong>${formatKwh(totalEnergy)}</strong>
+                across Bret, Raster, and Dimeco meter groups and produced <strong>${totalProduction.toLocaleString()} units</strong>.
+                Weighted SEC is <strong>${sec === null ? 'unavailable' : sec.toFixed(6) + ' kWh/unit'}</strong>.
+                Energy is group-meter data only; no press-level energy allocation is used.
+            </p>
+        `;
+
+        document.getElementById('iso-status').textContent = trained === (readiness.meter_groups || []).length ? 'baseline ready' : 'baseline partial';
+        document.getElementById('seus-analyzed').textContent = (summary.kpis || []).length;
+        document.getElementById('deviation-percent').textContent = sec === null ? '-' : sec.toFixed(6);
+        document.getElementById('performance-gap').textContent = `${trained}/${(readiness.meter_groups || []).length} models`;
+
+        document.querySelector('[for="baseline-year"]').textContent = 'Baseline Source';
+        document.querySelectorAll('.pilot-metric-label')[0].textContent = 'EnPI Status';
+        document.querySelectorAll('.pilot-metric-label')[1].textContent = 'Meter Groups';
+        document.querySelectorAll('.pilot-metric-label')[2].textContent = 'Weighted SEC';
+        document.querySelectorAll('.pilot-metric-label')[3].textContent = 'Baselines';
+
+        const rows = (summary.kpis || []).map(item => {
+            const model = models[item.group] || {};
+            const r2 = model.baseline?.r_squared;
+            return `
+                <tr>
+                    <td><strong>${item.asset_name}</strong></td>
+                    <td>electricity</td>
+                    <td>${formatKwh(item.energy_kwh)}</td>
+                    <td>${item.production_units.toLocaleString()} units</td>
+                    <td>${item.sec_kwh_per_unit === null ? '-' : item.sec_kwh_per_unit.toFixed(6)} kWh/unit</td>
+                    <td><span class="pilot-status-pill">${model.baseline_trained ? `R2 ${Number(r2 || 0).toFixed(3)}` : 'needs baseline'}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        document.getElementById('seu-table').innerHTML = rows || '<tr><td colspan="6" class="text-muted">No partner EnPI data available.</td></tr>';
+        document.getElementById('action-plan-status').innerHTML = `
+            <p class="mb-2"><strong>Partner action basis:</strong> Prioritize groups with higher SEC and active baseline deviations.</p>
+            <p class="text-muted mb-0">This page uses imported partner energy and production data. Simulator factories are intentionally not included in this pilot view.</p>
         `;
     }
 
@@ -244,21 +291,33 @@
             event.preventDefault();
         }
 
-        const factoryId = document.getElementById('factory-id').value || PILOT_FACTORY_ID;
-        const period = document.getElementById('period').value || '2026-Q1';
-        const baselineYear = document.getElementById('baseline-year').value || '2026';
-
         showStatus('Loading EnPI report...', 'info');
         try {
-            const response = await fetch(`${API_BASE}/iso50001/enpi-report?factory_id=${encodeURIComponent(factoryId)}&period=${encodeURIComponent(period)}&baseline_year=${encodeURIComponent(baselineYear)}`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const report = await response.json();
-            showStatus(`Loaded ISO 50001 EnPI report for ${report.report_period}.`, 'success');
-            renderReport(report);
+            const profile = await PartnerPilot.loadProfile();
+            const factorySelect = document.getElementById('factory-id');
+            factorySelect.innerHTML = '';
+            factorySelect.appendChild(new Option(profile.display_name, profile.factory.id));
+
+            const range = document.getElementById('period').value === 'imported_meter'
+                ? { start: '2026-03-13T00:00:00', end: profile.period.end }
+                : PartnerPilot.period(profile);
+            const params = {
+                question_type: 'kpis',
+                start_time: range.start,
+                end_time: range.end
+            };
+            const [summaryResponse, readinessResponse] = await Promise.all([
+                fetch(`${API_BASE}/partner-press/summary?${new URLSearchParams(params).toString()}`),
+                fetch(`${API_BASE}/partner-press/ml-readiness`)
+            ]);
+            if (!summaryResponse.ok) throw new Error(`summary HTTP ${summaryResponse.status}`);
+            if (!readinessResponse.ok) throw new Error(`readiness HTTP ${readinessResponse.status}`);
+            const summary = await summaryResponse.json();
+            const readiness = await readinessResponse.json();
+            showStatus(`Loaded partner EnPI report for ${summary.period.label}.`, 'success');
+            renderPartnerReport(summary, readiness);
         } catch (error) {
-            showStatus(`Could not load EnPI report: ${error.message}`, 'danger');
+            showStatus(`Could not load partner EnPI report: ${error.message}`, 'danger');
         }
     }
 

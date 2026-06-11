@@ -59,7 +59,6 @@
                         <select class="form-select" id="time-period">
                             <option value="partner" selected>Partner Dataset Period</option>
                             <option value="partner_import">Imported Meter Period</option>
-                            <option value="2026q1">2026-Q1 Pilot Period</option>
                             <option value="24h">Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                             <option value="30d">Last 30 Days</option>
@@ -203,10 +202,12 @@
     let currentKpiData = null;
     let partnerPilot = false;
     let partnerProfile = null;
-    const PILOT_FACTORY_ID = '11111111-1111-1111-1111-111111111111';
-    const PILOT_FACTORY_LABEL = 'Factory - Simulated Romanian Pilot Factory';
-    const PILOT_ENPI_PERIOD = '2026-Q1';
-    const PILOT_BASELINE_YEAR = '2026';
+    function enpiPeriodFromDate(value) {
+        const date = new Date(value);
+        const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+        const quarter = Math.floor(validDate.getUTCMonth() / 3) + 1;
+        return `${validDate.getUTCFullYear()}-Q${quarter}`;
+    }
     
     // Load machines
     async function loadMachines() {
@@ -237,10 +238,6 @@
                 });
 
                 document.getElementById('time-period').value = 'partner';
-                const legacyPeriod = document.querySelector('#time-period option[value="2026q1"]');
-                if (legacyPeriod) {
-                    legacyPeriod.remove();
-                }
                 document.querySelector('h1.display-6').textContent = `${profile.display_name} KPI Dashboard`;
                 document.querySelector('p.text-muted').textContent = 'Partner press-shop KPIs from imported meter-group energy and SQDC production data';
 
@@ -271,20 +268,21 @@
                 select.remove(1);
             }
 
-            const factoryOption = document.createElement('option');
-            factoryOption.value = `factory:${PILOT_FACTORY_ID}`;
-            factoryOption.textContent = PILOT_FACTORY_LABEL;
-            select.appendChild(factoryOption);
-            
-            machines.forEach(machine => {
+            machines
+                .filter(machine => machine.energy_scope !== 'no_direct_energy_meter')
+                .forEach(machine => {
                 const option = document.createElement('option');
                 option.value = machine.id;
                 option.textContent = `${machine.name} (${machine.type})`;
                 select.appendChild(option);
             });
             
-            select.value = `factory:${PILOT_FACTORY_ID}`;
-            loadKPIData();
+            if (select.options.length > 1) {
+                select.selectedIndex = 1;
+                loadKPIData();
+            } else {
+                showError('No energy assets are available. Partner profile could not be loaded.');
+            }
         } catch (error) {
             console.error('Error loading machines:', error);
             showError('Failed to load machines: ' + (error.response?.data?.detail || error.message));
@@ -357,13 +355,6 @@
                     end: '2026-06-01T00:00:00',
                     interval: '1day',
                     partnerPeriod: true
-                };
-            case '2026q1':
-                return {
-                    start: '2026-01-01T00:00:00.000Z',
-                    end: '2026-03-31T23:59:59.000Z',
-                    interval: '1day',
-                    enpiPeriod: PILOT_ENPI_PERIOD
                 };
             case '24h':
                 startTime = new Date(endTime - 24 * 60 * 60 * 1000);
@@ -480,7 +471,8 @@
     }
 
     async function loadFactoryKPIData(factoryId, dateRange) {
-        const enpiPeriod = dateRange.enpiPeriod || PILOT_ENPI_PERIOD;
+        const enpiPeriod = dateRange.enpiPeriod || enpiPeriodFromDate(dateRange.start);
+        const baselineYear = String(new Date(dateRange.start).getUTCFullYear());
         const [factoryResponse, enpiResponse] = await Promise.all([
             axios.get(`${API_BASE}/kpi/factory/${factoryId}`, {
                 params: {
@@ -492,7 +484,7 @@
                 params: {
                     factory_id: factoryId,
                     period: enpiPeriod,
-                    baseline_year: PILOT_BASELINE_YEAR
+                    baseline_year: baselineYear
                 }
             })
         ]);
@@ -1646,7 +1638,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `factory_kpis_${PILOT_ENPI_PERIOD}.csv`;
+            a.download = `factory_kpis_${enpiPeriodFromDate(new Date().toISOString())}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
             return;

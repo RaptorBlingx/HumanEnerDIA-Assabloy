@@ -114,6 +114,7 @@ async def get_sankey_data(
             
             if factory_id_list:
                 factory_query += " AND f.id = ANY($3::uuid[])"
+                factory_query += " GROUP BY f.id, f.name ORDER BY total_energy_kwh DESC"
                 factory_rows = await conn.fetch(factory_query, start_date, end_date, factory_id_list)
             else:
                 factory_query += " GROUP BY f.id, f.name ORDER BY total_energy_kwh DESC"

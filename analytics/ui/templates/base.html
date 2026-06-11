@@ -407,7 +407,9 @@
         // API configuration
         // When accessed through nginx proxy, use /api/analytics
         // When accessed directly, use /api/v1
-        const API_BASE = window.location.port === '8001' ? '/api/v1' : '/api/analytics/api/v1';        // Common error handler
+        const API_BASE = window.location.port === '8001' ? '/api/v1' : '/api/analytics/api/v1';
+        window.API_BASE = API_BASE;
+        // Common error handler
         function handleError(error, elementId) {
             console.error('Error:', error);
             const element = document.getElementById(elementId);
@@ -444,6 +446,9 @@
     
     <!-- Sidebar Script -->
     <script src="/js/sidebar.js?v=2026051301"></script>
+
+    <!-- Partner pilot profile helpers -->
+    <script src="/api/analytics/ui/static/js/partner-pilot.js?v=2026061101"></script>
     
     <!-- EnMS Chatbot Widget (Rasa) -->
     <script src="/js/chatbot-widget.js"></script>

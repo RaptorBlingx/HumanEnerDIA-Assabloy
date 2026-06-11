@@ -493,6 +493,11 @@
     </div>
 
     <div class="main-container">
+        <div class="mb-4">
+            <h1 id="model-performance-title" class="display-6 mb-1">Model Performance Tracking</h1>
+            <p id="model-performance-subtitle" class="text-muted mb-0">Monitor model quality and drift for energy analytics assets.</p>
+        </div>
+
         <!-- Controls Panel -->
         <div class="controls-panel">
             <div class="row g-3">
@@ -602,6 +607,7 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/api/analytics/ui/static/js/partner-pilot.js?v=2026061101"></script>
     
     <script>
         // ====================================================================
@@ -609,10 +615,12 @@
         // ====================================================================
         
         const API_BASE = window.location.port === '8001' ? '/api/v1' : '/api/analytics/api/v1';
+        window.API_BASE = API_BASE;
         const API_BASE_URL = `${API_BASE}/model-performance`;
         const COMPARISON_API_URL = `${API_BASE}/comparison`;
         
         let charts = {};
+        let partnerProfile = null;
         
         // ====================================================================
         // DEBUG LOGGING
@@ -690,14 +698,29 @@
         
         async function loadMachines() {
             try {
-                const url = `${COMPARISON_API_URL}/available`;
-                console.log('[loadMachines] Fetching:', url);
-                console.log('[loadMachines] Full URL:', window.location.origin + url);
-                
-                const response = await fetch(url);
-                console.log('[loadMachines] Response status:', response.status);
-                
-                const machines = await response.json();
+                let machines;
+                try {
+                    partnerProfile = await PartnerPilot.loadProfile();
+                    machines = (partnerProfile.meter_groups || []).map(asset => ({
+                        id: asset.id,
+                        name: `${asset.name} (meter group)`
+                    }));
+                    const title = document.getElementById('model-performance-title');
+                    const subtitle = document.getElementById('model-performance-subtitle');
+                    if (title) title.textContent = 'ASSA ABLOY Partner Model Performance';
+                    if (subtitle) subtitle.textContent = 'Baseline and forecast model status for Bret, Raster, and Dimeco group-meter assets.';
+                } catch (partnerError) {
+                    console.warn('[loadMachines] Partner profile unavailable, using generic machine list', partnerError);
+                    const url = `${COMPARISON_API_URL}/available`;
+                    console.log('[loadMachines] Fetching:', url);
+                    console.log('[loadMachines] Full URL:', window.location.origin + url);
+                    const response = await fetch(url);
+                    console.log('[loadMachines] Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    machines = await response.json();
+                }
                 console.log('[loadMachines] Machines loaded:', machines.length);
                 
                 const select = document.getElementById('machine-select');

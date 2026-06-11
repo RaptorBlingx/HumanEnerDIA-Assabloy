@@ -5,8 +5,8 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h1 class="display-6">Energy Forecasting</h1>
-        <p class="text-muted">Predict future energy demand using ARIMA and Prophet models</p>
+        <h1 id="forecast-title" class="display-6">Energy Forecasting</h1>
+        <p id="forecast-subtitle" class="text-muted">Predict future energy demand using ARIMA and Prophet models</p>
     </div>
 </div>
 
@@ -225,6 +225,7 @@
 <script>
     let forecastChart = null;
     window.partnerPilot = false;
+    window.partnerProfile = null;
     
     // Load machines
     async function loadMachines() {
@@ -233,6 +234,9 @@
             const profile = profileResponse.data;
             if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
                 window.partnerPilot = true;
+                window.partnerProfile = profile;
+                document.getElementById('forecast-title').textContent = `${profile.display_name} Forecasting`;
+                document.getElementById('forecast-subtitle').textContent = 'Short-term forecasts for imported Bret, Raster, and Dimeco group-meter energy assets.';
                 const machineSelects = [
                     'train-machine-select',
                     'forecast-machine-select',
@@ -254,6 +258,10 @@
                     [...horizonSelect.options].forEach(option => {
                         option.disabled = option.value !== 'short';
                     });
+                }
+                const scheduleDate = document.getElementById('schedule-date');
+                if (scheduleDate && window.PartnerPilot) {
+                    scheduleDate.value = PartnerPilot.endDateForInput(profile);
                 }
                 loadModelStatus(profile.meter_groups.map(asset => ({
                     id: asset.id,
@@ -675,7 +683,7 @@
         }
     });
     
-    // Set default date to today
+    // Default to today in generic mode; partner mode overrides this after profile load.
     document.getElementById('schedule-date').valueAsDate = new Date();
     
     // Initialize Bootstrap tooltips
