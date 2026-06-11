@@ -716,33 +716,57 @@
         }
 
         // ============================================================================
-        // ANIMATED NUMBER COUNTER - WOW Effect!
+        // ANIMATED NUMBER COUNTER
         // ============================================================================
+        const activeNumberAnimations = new Map();
+
+        function formatAnimatedValue(value, formatter) {
+            const numericValue = Number.isFinite(value) ? Math.floor(value) : 0;
+            return formatter ? formatter(numericValue) : numericValue.toLocaleString();
+        }
+
+        function stopNumberAnimation(element) {
+            const activeTimer = activeNumberAnimations.get(element);
+            if (activeTimer) {
+                clearInterval(activeTimer);
+                activeNumberAnimations.delete(element);
+            }
+            element.style.transform = 'scale(1)';
+        }
+
         function animateNumber(element, start, end, duration = 2000, suffix = '', formatter = null) {
-            const range = end - start;
+            if (!element) {
+                return null;
+            }
+
+            stopNumberAnimation(element);
+
+            const safeStart = Number(start);
+            const safeEnd = Number(end);
+            const range = safeEnd - safeStart;
+
+            if (!Number.isFinite(range) || range === 0 || document.hidden) {
+                element.textContent = formatAnimatedValue(safeEnd, formatter) + suffix;
+                return null;
+            }
+
             const increment = range / (duration / 16); // 60fps
-            let current = start;
+            let current = safeStart;
+            element.style.transform = 'scale(1.03)';
             
             const timer = setInterval(() => {
                 current += increment;
-                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-                    current = end;
+                if ((increment > 0 && current >= safeEnd) || (increment < 0 && current <= safeEnd)) {
+                    current = safeEnd;
                     clearInterval(timer);
-                }
-                
-                let displayValue = Math.floor(current);
-                if (formatter) {
-                    displayValue = formatter(displayValue);
-                }
-                element.textContent = displayValue + suffix;
-                
-                // Add pulse effect when counting
-                element.style.transform = 'scale(1.05)';
-                setTimeout(() => {
+                    activeNumberAnimations.delete(element);
                     element.style.transform = 'scale(1)';
-                }, 100);
+                }
+                
+                element.textContent = formatAnimatedValue(current, formatter) + suffix;
             }, 16);
             
+            activeNumberAnimations.set(element, timer);
             return timer;
         }
 
@@ -838,9 +862,16 @@
         // ============================================================================
         let ws = null;
         let wsReconnectAttempts = 0;
+        let wsReconnectTimer = null;
+        let systemDataPollTimer = null;
+        let loadSystemDataInFlight = null;
         const maxReconnectAttempts = 5;
 
         function connectWebSocket() {
+            if (document.hidden || (ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.readyState))) {
+                return;
+            }
+
             // Try to connect to WebSocket for real-time updates
             const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             // Connect directly to analytics service WebSocket
@@ -852,6 +883,10 @@
                 ws.onopen = () => {
                     console.log('✅ WebSocket connected - Real-time updates active!');
                     wsReconnectAttempts = 0;
+                    if (wsReconnectTimer) {
+                        clearTimeout(wsReconnectTimer);
+                        wsReconnectTimer = null;
+                    }
                     
                     // Update status indicators
                     const statsStatus = document.getElementById('stats-status');
@@ -889,17 +924,19 @@
                 
                 ws.onclose = () => {
                     console.log('🔌 WebSocket disconnected');
+                    ws = null;
                     const statsStatus = document.getElementById('stats-status');
                     if (statsStatus) {
                         statsStatus.className = 'enms-status-dot warning';
                     }
                     
                     // Try to reconnect with exponential backoff
-                    if (wsReconnectAttempts < maxReconnectAttempts) {
+                    if (!document.hidden && wsReconnectAttempts < maxReconnectAttempts) {
                         wsReconnectAttempts++;
                         const delay = Math.min(30000, 3000 * Math.pow(2, wsReconnectAttempts - 1));
                         console.log(`Reconnecting WebSocket in ${delay/1000}s (attempt ${wsReconnectAttempts}/${maxReconnectAttempts})...`);
-                        setTimeout(() => {
+                        wsReconnectTimer = setTimeout(() => {
+                            wsReconnectTimer = null;
                             connectWebSocket();
                         }, delay);
                     } else {
@@ -911,10 +948,47 @@
             }
         }
 
+        function disconnectWebSocket() {
+            if (wsReconnectTimer) {
+                clearTimeout(wsReconnectTimer);
+                wsReconnectTimer = null;
+            }
+
+            if (ws) {
+                ws.onopen = null;
+                ws.onmessage = null;
+                ws.onerror = null;
+                ws.onclose = null;
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function startSystemDataPolling() {
+            if (systemDataPollTimer) {
+                return;
+            }
+
+            systemDataPollTimer = setInterval(() => {
+                if (!document.hidden) {
+                    loadSystemData(false);
+                }
+            }, 30000);
+        }
+
         // ============================================================================
         // FETCH SYSTEM DATA AND STATISTICS
         // ============================================================================
         async function loadSystemData(skipStatsAnimation = false) {
+            if (document.hidden && !skipStatsAnimation) {
+                return null;
+            }
+
+            if (loadSystemDataInFlight) {
+                return loadSystemDataInFlight;
+            }
+
+            loadSystemDataInFlight = (async () => {
             try {
                 // Fetch Analytics health data
                 const analyticsResponse = await fetch('/api/analytics/api/v1/health');
@@ -931,7 +1005,12 @@
             } catch (error) {
                 console.error('Error loading system data:', error);
                 showOfflineStatus();
+            } finally {
+                loadSystemDataInFlight = null;
             }
+            })();
+
+            return loadSystemDataInFlight;
         }
 
         // Load REAL statistics from database
@@ -1256,7 +1335,40 @@
             }, 1000);
             
             // Fallback: Refresh via polling every 30 seconds if WebSocket fails
-            setInterval(() => loadSystemData(false), 30000);
+            startSystemDataPolling();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                activeNumberAnimations.forEach((timer, element) => {
+                    clearInterval(timer);
+                    element.style.transform = 'scale(1)';
+                });
+                activeNumberAnimations.clear();
+                disconnectWebSocket();
+                return;
+            }
+
+            loadSystemData(true);
+            connectWebSocket();
+        });
+
+        window.addEventListener('pagehide', () => {
+            disconnectWebSocket();
+            if (systemDataPollTimer) {
+                clearInterval(systemDataPollTimer);
+                systemDataPollTimer = null;
+            }
+            activeNumberAnimations.forEach(timer => clearInterval(timer));
+            activeNumberAnimations.clear();
+        });
+
+        window.addEventListener('pageshow', () => {
+            startSystemDataPolling();
+            if (!document.hidden) {
+                loadSystemData(true);
+                connectWebSocket();
+            }
         });
 
         // Add smooth scroll behavior for internal links
@@ -1324,6 +1436,6 @@
     </script>
     
     <!-- OVOS Voice Assistant Widget -->
-    <script src="/js/ovos-voice-widget.js?v=20260610-partner"></script>
+    <script src="/js/ovos-voice-widget.js?v=20260611-memory"></script>
 </body>
 </html>

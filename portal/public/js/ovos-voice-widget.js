@@ -88,6 +88,8 @@
     let abortController = null;  // Track current request for cancellation
     let activeMessageAnimation = null;
     let activeInsightsAnimation = null;
+    const MAX_CHAT_MESSAGES = 80;
+    const DEBUG_OVOS_WIDGET = localStorage.getItem('humanenerdia_debug_ovos_widget') === 'true';
 
     const ENABLE_RESPONSE_STREAMING = false;
     const STREAMING_MIN_DELAY_MS = 22;
@@ -108,6 +110,8 @@
     // WebSocket for proactive warnings (WASABI Phase 1)
     let ws = null;
     let reconnectAttempts = 0;
+    let wsReconnectTimer = null;
+    let websocketDisposed = false;
     const MAX_RECONNECT_DELAY = 30000; // 30 seconds
     const WS_URL = '/api/analytics/ws/anomalies'; // Relative path through nginx
 
@@ -115,6 +119,12 @@
     let notifications = JSON.parse(localStorage.getItem('ovos_notifications') || '[]');
     let unreadCount = 0;
     let isTriggeringDevWarning = false;
+
+    function debugLog(...args) {
+        if (DEBUG_OVOS_WIDGET) {
+            console.log(...args);
+        }
+    }
 
     function normalizeNotifications(notificationList) {
         return notificationList
@@ -573,19 +583,27 @@
 
     // WebSocket Functions (WASABI Phase 1: Proactive Warnings)
     function connectWebSocket() {
+        if (websocketDisposed || document.hidden || (ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.readyState))) {
+            return;
+        }
+
         // Build WebSocket URL based on current page protocol
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = window.location.host; // Includes port if present
         const wsFullUrl = `${wsProtocol}//${wsHost}${WS_URL}`;
         
-        console.log('[OVOS Widget] Connecting to WebSocket:', wsFullUrl);
+        debugLog('[OVOS Widget] Connecting to WebSocket:', wsFullUrl);
         
         try {
             ws = new WebSocket(wsFullUrl);
             
             ws.onopen = () => {
-                console.log('[OVOS Widget] ✅ WebSocket connected');
+                debugLog('[OVOS Widget] WebSocket connected');
                 reconnectAttempts = 0; // Reset on successful connection
+                if (wsReconnectTimer) {
+                    clearTimeout(wsReconnectTimer);
+                    wsReconnectTimer = null;
+                }
                 updateStatus('Connected', 'green');
             };
             
@@ -596,7 +614,8 @@
             };
             
             ws.onclose = (event) => {
-                console.log('[OVOS Widget] WebSocket closed:', event.code, event.reason);
+                debugLog('[OVOS Widget] WebSocket closed:', event.code, event.reason);
+                ws = null;
                 updateStatus('Reconnecting...', 'orange');
                 reconnectWebSocket();
             };
@@ -607,27 +626,25 @@
     }
 
     function handleWebSocketMessage(event) {
-        console.log('[OVOS Widget] WebSocket message received:', event.data);
+        debugLog('[OVOS Widget] WebSocket message received');
         
         try {
             const message = JSON.parse(event.data);
-            console.log('[OVOS Widget] Parsed message:', message);
-            console.log('[OVOS Widget] Message type:', message.type);
-            console.log('[OVOS Widget] Message data:', message.data);
+            debugLog('[OVOS Widget] Message type:', message.type);
             
             // Handle different message types
             if (message.type === 'welcome') {
-                console.log('[OVOS Widget] Connected to channel:', message.data?.channel);
+                debugLog('[OVOS Widget] Connected to channel:', message.data?.channel);
             } else if (message.type === 'anomaly_detected' || message.type === 'anomaly') {
                 // Handle double-nested data structure from event subscriber
                 const eventData = message.data?.data || message.data;
-                console.log('[OVOS Widget] Calling showProactiveWarning with data:', eventData);
+                debugLog('[OVOS Widget] Calling showProactiveWarning');
                 showProactiveWarning(eventData);
             } else if (message.type === 'system_alert' || message.type === 'alert') {
                 const eventData = message.data?.data || message.data;
                 showProactiveWarning(eventData);
             } else {
-                console.log('[OVOS Widget] Unhandled message type:', message.type);
+                debugLog('[OVOS Widget] Unhandled message type:', message.type);
             }
         } catch (error) {
             console.error('[OVOS Widget] Failed to parse WebSocket message:', error);
@@ -635,17 +652,40 @@
     }
 
     function reconnectWebSocket() {
+        if (websocketDisposed || document.hidden || wsReconnectTimer) {
+            return;
+        }
+
         if (reconnectAttempts >= 10) {
-            console.log('[OVOS Widget] Max reconnect attempts reached, stopping');
+            debugLog('[OVOS Widget] Max reconnect attempts reached, stopping');
             updateStatus('Disconnected', 'red');
             return;
         }
         
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
         reconnectAttempts++;
-        console.log(`[OVOS Widget] Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/10)`);
+        debugLog(`[OVOS Widget] Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/10)`);
         
-        setTimeout(connectWebSocket, delay);
+        wsReconnectTimer = setTimeout(() => {
+            wsReconnectTimer = null;
+            connectWebSocket();
+        }, delay);
+    }
+
+    function disconnectWebSocket() {
+        if (wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
+        }
+
+        if (ws) {
+            ws.onopen = null;
+            ws.onmessage = null;
+            ws.onerror = null;
+            ws.onclose = null;
+            ws.close();
+            ws = null;
+        }
     }
 
     function updateStatus(text, color) {
@@ -657,7 +697,7 @@
     }
 
     function showProactiveWarning(data) {
-        console.log('[OVOS Widget] Showing proactive warning:', data);
+        debugLog('[OVOS Widget] Showing proactive warning');
         
         // Create warning message from event data
         const machine = data.machine_name || data.machine || data.machine_id || 'Unknown Machine';
@@ -747,6 +787,14 @@
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
+
+            oscillator.onended = () => {
+                oscillator.disconnect();
+                gainNode.disconnect();
+                if (typeof audioContext.close === 'function') {
+                    audioContext.close().catch(() => {});
+                }
+            };
             
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
@@ -761,14 +809,25 @@
         }
     }
 
+    function pruneMessages(container) {
+        const messages = Array.from(container.querySelectorAll('.ovos-message'));
+        while (messages.length > MAX_CHAT_MESSAGES) {
+            messages.shift().remove();
+        }
+    }
+
     function addBotMessage(text, className) {
         const messagesDiv = document.getElementById('ovos-messages');
         if (!messagesDiv) return;
         
         const messageDiv = document.createElement('div');
         messageDiv.className = 'ovos-message ovos-bot' + (className ? ' ovos-' + className : '');
-        messageDiv.innerHTML = `<div class="ovos-bubble">${text}</div>`;
+        const bubble = document.createElement('div');
+        bubble.className = 'ovos-bubble';
+        bubble.textContent = text;
+        messageDiv.appendChild(bubble);
         messagesDiv.appendChild(messageDiv);
+        pruneMessages(messagesDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
@@ -1745,6 +1804,7 @@
         bubble.className = `ovos-bubble ${isError ? 'ovos-error' : ''}`;
         msgDiv.appendChild(bubble);
         container.appendChild(msgDiv);
+        pruneMessages(container);
 
         if (stream) {
             await streamMessageText(bubble, text, container);
@@ -3139,6 +3199,55 @@
             }
         }
     }
+
+    function cleanupWidgetRuntime(options = {}) {
+        const { final = false } = options;
+
+        if (final) {
+            websocketDisposed = true;
+        }
+
+        disconnectWebSocket();
+        stopActivePlayback();
+        finishActiveMessageAnimation();
+        stopActiveInsightsAnimation();
+
+        if (recognition) {
+            try {
+                recognition.abort();
+            } catch (error) {
+                try {
+                    recognition.stop();
+                } catch (stopError) {}
+            }
+        }
+
+        if (wakeWordEnabled || wakeWordRecognition) {
+            stopWakeWord();
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            cleanupWidgetRuntime();
+            updateStatus('Paused', 'orange');
+            return;
+        }
+
+        websocketDisposed = false;
+        connectWebSocket();
+        if (wakeWordEnabled && voicePermissionGranted && !wakeWordRecognition) {
+            initWakeWord();
+        }
+    });
+
+    window.addEventListener('pagehide', () => cleanupWidgetRuntime({ final: true }));
+    window.addEventListener('pageshow', () => {
+        websocketDisposed = false;
+        if (!document.hidden) {
+            connectWebSocket();
+        }
+    });
 
     function init() {
         createStyles();
