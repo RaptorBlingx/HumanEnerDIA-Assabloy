@@ -442,6 +442,7 @@ async def get_partner_press_summary(
         description=(
             "summary, top_energy, total_energy, group_energy, compare_groups, "
             "group_production, press_production, press_energy, kpis, group_kpis, "
+            "sec_explanation, anomalies, machines, seus, baseline_status, period, "
             "current_data, unknown_press"
         ),
     ),
@@ -572,6 +573,26 @@ async def get_partner_press_summary(
                 meter_group_ids,
                 all_partner_ids,
             )
+            anomaly_rows = await conn.fetch(
+                """
+                SELECT
+                    COALESCE(m.metadata->>'group', 'unknown') AS group_key,
+                    m.name AS asset_name,
+                    a.severity,
+                    COUNT(*) AS anomaly_count,
+                    MAX(a.detected_at) AS latest_detected_at
+                FROM anomalies a
+                JOIN machines m ON m.id = a.machine_id
+                WHERE a.machine_id = ANY($1::uuid[])
+                  AND a.detected_at >= $2
+                  AND a.detected_at < $3
+                GROUP BY COALESCE(m.metadata->>'group', 'unknown'), m.name, a.severity
+                ORDER BY anomaly_count DESC, latest_detected_at DESC
+                """,
+                all_partner_ids,
+                start,
+                end,
+            )
 
     energy_by_group = [
         {
@@ -619,6 +640,28 @@ async def get_partner_press_summary(
 
     total_energy = round(sum(item["energy_kwh"] for item in energy_by_group), 2)
     total_production = sum(item["production_units"] for item in production_by_group)
+    anomalies = [
+        {
+            "group": row["group_key"],
+            "asset_name": row["asset_name"],
+            "severity": row["severity"],
+            "count": int(row["anomaly_count"] or 0),
+            "latest_detected_at": (
+                row["latest_detected_at"].isoformat()
+                if row["latest_detected_at"]
+                else None
+            ),
+        }
+        for row in anomaly_rows
+    ]
+    anomaly_summary = {
+        "total_count": sum(item["count"] for item in anomalies),
+        "by_severity": {
+            severity: sum(item["count"] for item in anomalies if item["severity"] == severity)
+            for severity in sorted({item["severity"] for item in anomalies if item["severity"]})
+        },
+        "by_asset": anomalies,
+    }
     response = _build_response(
         question_type=question_type,
         group=selected_group,
@@ -627,6 +670,7 @@ async def get_partner_press_summary(
         production_by_group=production_by_group,
         kpis=kpis,
         production_by_press=production_by_press,
+        anomaly_summary=anomaly_summary,
         total_energy=total_energy,
         total_production=total_production,
         period=_period_label(start, end),
@@ -654,6 +698,7 @@ async def get_partner_press_summary(
         "production_by_group": production_by_group,
         "production_by_press": production_by_press,
         "kpis": kpis,
+        "anomalies": anomaly_summary,
         "data_range": {
             "energy_start": data_range["energy_start"].isoformat() if data_range and data_range["energy_start"] else None,
             "energy_end": data_range["energy_end"].isoformat() if data_range and data_range["energy_end"] else None,
@@ -674,6 +719,7 @@ def _build_response(
     production_by_group: list[dict],
     kpis: list[dict],
     production_by_press: list[dict],
+    anomaly_summary: dict,
     total_energy: float,
     total_production: int,
     period: str,
@@ -689,6 +735,42 @@ def _build_response(
             f"The configured pilot period is {period}, and the latest imported readings end on "
             "2026-05-31. I will not substitute simulator or today's demo data for this partner answer."
         )
+
+    if question == "period":
+        return (
+            f"The configured ASSA ABLOY partner pilot period is {period}. "
+            "Imported energy and production readings currently run from 2026-03-13 through "
+            "2026-05-31. Questions without an explicit date use the partner pilot period, "
+            "not today's simulator data."
+        )
+
+    if question == "machines":
+        meter_groups = [item["asset_name"] for item in energy_by_group]
+        presses = [item["press_name"] for item in production_by_press]
+        return (
+            f"The partner press-shop instance has {len(meter_groups)} energy meter groups "
+            f"and {len(presses)} presses. Energy meter groups: {', '.join(meter_groups)}. "
+            f"Presses: {', '.join(presses)}."
+        )
+
+    if question in {"seus", "baseline_status"}:
+        seu_names = [
+            "Bret Presses Electricity",
+            "Dimeco Presses Electricity",
+            "Raster Presses Electricity",
+        ]
+        base = (
+            f"The partner press-shop SEUs are {', '.join(seu_names)}. "
+            "These are group-level electricity uses tied to the Bret, Dimeco, and Raster "
+            "meter groups; individual presses are production assets, not separate energy SEUs."
+        )
+        if question == "baseline_status":
+            return (
+                base
+                + " The SEU registry currently marks 0 of these 3 partner SEUs as having "
+                "trained EnPI baselines, so all 3 still need linked baseline status for OVOS."
+            )
+        return base
 
     if question == "unknown_press":
         return (
@@ -759,6 +841,28 @@ def _build_response(
         ]
         return f"For {period}, energy by press-meter group was: " + "; ".join(parts) + "."
 
+    if question == "anomalies":
+        total = anomaly_summary.get("total_count", 0)
+        if not total:
+            return (
+                f"No anomalies are recorded for the {PARTNER_DISPLAY_NAME} dataset in {period}. "
+                "This answer is based on the imported partner meter groups and press assets only."
+            )
+        by_severity = anomaly_summary.get("by_severity") or {}
+        severity_text = ", ".join(
+            f"{count} {severity}" for severity, count in sorted(by_severity.items())
+        )
+        asset_parts = [
+            f"{item['asset_name']} {item['count']} {item['severity']}"
+            for item in anomaly_summary.get("by_asset", [])[:3]
+        ]
+        asset_text = "; ".join(asset_parts)
+        return (
+            f"For {period}, the {PARTNER_DISPLAY_NAME} dataset has {total} recorded anomalies"
+            f" ({severity_text}). Top affected assets: {asset_text}. "
+            "No simulator anomalies are included."
+        )
+
     if question == "kpis":
         parts = []
         for item in kpis:
@@ -771,6 +875,20 @@ def _build_response(
         return (
             f"Partner press-shop KPIs for {period}: total energy {total_energy:,.2f} kWh "
             f"and total production {total_production:,} units. " + "; ".join(parts) + "."
+        )
+
+    if question == "sec_explanation":
+        parts = []
+        for item in kpis:
+            sec = item["sec_kwh_per_unit"]
+            if sec is not None:
+                parts.append(f"{GROUP_LABELS[item['group']]} {sec:.6f} kWh/unit")
+        return (
+            "SEC means specific energy consumption: energy used per produced unit. "
+            "Lower SEC is better when product mix is comparable. "
+            f"For {period}, partner press-shop SEC by meter group is: "
+            + "; ".join(parts)
+            + "."
         )
 
     ranked = energy_by_group[:3]
