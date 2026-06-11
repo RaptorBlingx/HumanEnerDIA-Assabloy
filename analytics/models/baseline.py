@@ -416,7 +416,8 @@ class BaselineModel:
             'mae': self.mae,
             'training_samples': self.training_samples,
             'training_start_date': self.training_start_date.isoformat() if self.training_start_date else None,
-            'training_end_date': self.training_end_date.isoformat() if self.training_end_date else None
+            'training_end_date': self.training_end_date.isoformat() if self.training_end_date else None,
+            'feature_ranges': self.feature_ranges
         }
         
         joblib.dump(model_state, filepath)
@@ -459,6 +460,7 @@ class BaselineModel:
         instance.training_samples = model_state['training_samples']
         instance.training_start_date = pd.to_datetime(model_state['training_start_date']) if model_state['training_start_date'] else None
         instance.training_end_date = pd.to_datetime(model_state['training_end_date']) if model_state['training_end_date'] else None
+        instance.feature_ranges = model_state.get('feature_ranges', {})
         instance.is_trained = True
         
         logger.info(f"✓ Model loaded from: {filepath}")

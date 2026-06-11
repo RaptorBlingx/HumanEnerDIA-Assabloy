@@ -9,6 +9,7 @@ Phase: 3 - Analytics & ML
 
 import asyncpg
 import json
+import re
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
@@ -17,6 +18,12 @@ from uuid import UUID
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def slugify_feature_name(value: str) -> str:
+    """Convert asset names into stable feature keys used by analytics models."""
+    slug = re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+    return re.sub(r"_+", "_", slug)
 
 
 class Database:
@@ -355,6 +362,8 @@ async def get_machine_data_combined(
             EXTRACT(HOUR FROM er.bucket) as hour_of_day,
             EXTRACT(DOW FROM er.bucket) as day_of_week,
             CASE WHEN EXTRACT(DOW FROM er.bucket) IN (0, 6) THEN 1 ELSE 0 END as is_weekend,
+            CASE WHEN EXTRACT(ISODOW FROM er.bucket) BETWEEN 1 AND 5 THEN 1 ELSE 0 END as is_working_day,
+            CASE WHEN EXTRACT(ISODOW FROM er.bucket) = 6 THEN 1 ELSE 0 END as is_saturday,
             GREATEST(0, ed.avg_outdoor_temp_c - 18) as cooling_degree_hours,
             GREATEST(0, 18 - ed.avg_outdoor_temp_c) as heating_degree_hours,
             ABS(ed.avg_outdoor_temp_c - ed.avg_indoor_temp_c) as temp_difference,
@@ -393,7 +402,108 @@ async def get_machine_data_combined(
     
     async with db.pool.acquire() as conn:
         rows = await conn.fetch(query, machine_id, start_time, end_time)
-        return [dict(row) for row in rows]
+        records = [dict(row) for row in rows]
+        if records:
+            await _add_partner_press_mix_features(
+                conn=conn,
+                records=records,
+                meter_group_id=machine_id,
+                start_time=start_time,
+                end_time=end_time,
+                production_view=views["production"],
+            )
+        return records
+
+
+async def _add_partner_press_mix_features(
+    conn: asyncpg.Connection,
+    records: List[Dict[str, Any]],
+    meter_group_id: UUID,
+    start_time: datetime,
+    end_time: datetime,
+    production_view: str,
+) -> None:
+    """
+    Add per-press production drivers to imported partner meter-group rows.
+
+    Partner energy is only available at Bret/Raster/Dimeco meter-group level.
+    These drivers preserve that boundary while allowing the group baseline to
+    account for production mix inside each shared meter group.
+    """
+    machine = await conn.fetchrow(
+        """
+        SELECT factory_id, metadata->>'asset_level' AS asset_level, metadata->>'group' AS group_key
+        FROM machines
+        WHERE id = $1
+        """,
+        meter_group_id,
+    )
+    if not machine or machine["asset_level"] != "meter_group" or not machine["group_key"]:
+        return
+
+    presses = await conn.fetch(
+        """
+        SELECT id, name
+        FROM machines
+        WHERE factory_id = $1
+          AND metadata->>'asset_level' = 'press'
+          AND metadata->>'group' = $2
+        ORDER BY name
+        """,
+        machine["factory_id"],
+        machine["group_key"],
+    )
+    if not presses:
+        return
+
+    feature_by_press_id = {
+        press["id"]: f"press_production_{slugify_feature_name(press['name'])}"
+        for press in presses
+    }
+    active_feature_by_press_id = {
+        press_id: feature_name.replace("press_production_", "press_active_", 1)
+        for press_id, feature_name in feature_by_press_id.items()
+    }
+
+    for record in records:
+        for feature_name in feature_by_press_id.values():
+            record[feature_name] = 0.0
+        for feature_name in active_feature_by_press_id.values():
+            record[feature_name] = 0.0
+        record["active_press_count"] = 0.0
+
+    production_rows = await conn.fetch(
+        f"""
+        SELECT machine_id, bucket, total_production_count
+        FROM {production_view}
+        WHERE machine_id = ANY($1::uuid[])
+          AND bucket >= $2
+          AND bucket <= $3
+        ORDER BY bucket
+        """,
+        list(feature_by_press_id.keys()),
+        start_time,
+        end_time,
+    )
+
+    records_by_time = {record["time"]: record for record in records}
+    for row in production_rows:
+        record = records_by_time.get(row["bucket"])
+        if record is None:
+            continue
+        feature_name = feature_by_press_id.get(row["machine_id"])
+        if feature_name:
+            quantity = float(row["total_production_count"] or 0.0)
+            record[feature_name] = quantity
+            active_feature_name = active_feature_by_press_id.get(row["machine_id"])
+            if active_feature_name and quantity > 0:
+                record[active_feature_name] = 1.0
+
+    for record in records:
+        record["active_press_count"] = sum(
+            float(record.get(feature_name, 0.0) or 0.0)
+            for feature_name in active_feature_by_press_id.values()
+        )
 
 
 async def save_baseline_model(model_data: Dict[str, Any]) -> UUID:

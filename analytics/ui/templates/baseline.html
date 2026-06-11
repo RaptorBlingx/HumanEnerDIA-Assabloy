@@ -510,6 +510,7 @@
 <script>
     let comparisonChart = null;
     window.partnerPilot = false;
+    window.partnerProfile = null;
     
     // Load machines on page load
     async function loadMachines() {
@@ -518,6 +519,7 @@
             const profile = profileResponse.data;
             if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
                 window.partnerPilot = true;
+                window.partnerProfile = profile;
                 const select = document.getElementById('machine-select');
                 select.innerHTML = '<option value="">Select a meter group...</option>';
                 profile.meter_groups.forEach(asset => {
@@ -526,6 +528,7 @@
                     option.textContent = `${asset.name} (meter group)`;
                     option.dataset.energySource = 'electricity';
                     option.dataset.assetLevel = asset.asset_level || 'meter_group';
+                    option.dataset.group = asset.group || '';
                     select.appendChild(option);
                 });
                 document.getElementById('start-date').value = profile.period.start.substring(0, 10);
@@ -566,8 +569,16 @@
         }
     }
     
+    function featureSlug(value) {
+        return (value || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .replace(/_+/g, '_');
+    }
+
     // Load available features/drivers for selected machine
-    async function loadDriversForMachine(machineId, energySource = 'electricity', machineType = null) {
+    async function loadDriversForMachine(machineId, energySource = 'electricity', machineType = null, groupKey = null) {
         const container = document.getElementById('drivers-container');
         const smartBtn = document.getElementById('smart-select-btn');
         
@@ -575,6 +586,7 @@
         window.currentMachineId = machineId;
         window.currentEnergySource = energySource;
         window.currentMachineType = machineType;
+        window.currentGroupKey = groupKey;
         
         try {
             // Show loading state
@@ -587,16 +599,40 @@
             
             const features = response.data.features || [];
             if (window.partnerPilot) {
+                const pressFeatures = (window.partnerProfile?.presses || [])
+                    .filter(press => !groupKey || press.group === groupKey)
+                    .flatMap(press => {
+                        const slug = featureSlug(press.name);
+                        return [
+                            {
+                                feature_name: `press_production_${slug}`,
+                                column_name: `press_production_${slug}`,
+                                description: `${press.name} daily production quantity for the selected meter group`
+                            },
+                            {
+                                feature_name: `press_active_${slug}`,
+                                column_name: `press_active_${slug}`,
+                                description: `${press.name} production-active flag for the selected meter group`
+                            }
+                        ];
+                    });
+
+                features.unshift(...pressFeatures);
                 features.push(
                     {
-                        feature_name: 'hour_of_day',
-                        column_name: 'hour_of_day',
-                        description: 'Hour of day from imported meter timestamp'
+                        feature_name: 'active_press_count',
+                        column_name: 'active_press_count',
+                        description: 'Number of presses with production in the selected meter group'
                     },
                     {
-                        feature_name: 'day_of_week',
-                        column_name: 'day_of_week',
-                        description: 'Day of week from imported meter timestamp'
+                        feature_name: 'is_working_day',
+                        column_name: 'is_working_day',
+                        description: 'Weekday production calendar flag from imported partner period'
+                    },
+                    {
+                        feature_name: 'is_saturday',
+                        column_name: 'is_saturday',
+                        description: 'Saturday shift calendar flag from imported partner period'
                     }
                 );
             }
@@ -618,7 +654,9 @@
             smartBtn.style.display = 'inline-block';
             
             // Recommended features (pre-selected by default)
-            const recommendedFeatures = [
+            const recommendedFeatures = window.partnerPilot ? [
+                'press_production_', 'press_active_', 'active_press_count', 'is_working_day', 'is_saturday'
+            ] : [
                 'total_production', 'production_count', 'good_units_count',
                 'outdoor_temp_c', 'pressure_bar', 'avg_throughput',
                 'machine_temp_c', 'operating_hours', 'hour_of_day', 'day_of_week'
@@ -630,7 +668,7 @@
                 const featureName = feature.feature_name;
                 const columnName = feature.column_name; // Actual DB column name
                 const isRecommended = recommendedFeatures.some(rf => featureName.includes(rf));
-                const checked = isRecommended && index < 6 ? 'checked' : ''; // Pre-select recommended drivers
+                const checked = isRecommended && (window.partnerPilot || index < 6) ? 'checked' : ''; // Pre-select recommended drivers
                 
                 // Format description
                 let description = feature.description || '';
@@ -681,6 +719,46 @@
         
         const machineType = window.currentMachineType.toLowerCase();
         const features = window.availableFeatures;
+
+        if (window.partnerPilot && machineType === 'meter group') {
+            document.querySelectorAll('.driver-input').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            const selectedNames = [];
+            features.forEach(feature => {
+                const featureName = feature.feature_name;
+                const checkbox = document.getElementById(`driver-${featureName}`);
+                if (
+                    checkbox &&
+                    (
+                        featureName.startsWith('press_production_') ||
+                        featureName.startsWith('press_active_') ||
+                        featureName === 'active_press_count' ||
+                        featureName === 'is_working_day' ||
+                        featureName === 'is_saturday'
+                    )
+                ) {
+                    checkbox.checked = true;
+                    selectedNames.push(formatFeatureName(featureName));
+                }
+            });
+
+            validateDrivers();
+
+            const feedback = document.getElementById('smart-select-feedback');
+            const countElem = document.getElementById('smart-select-count');
+            const detailsElem = document.getElementById('smart-select-details');
+
+            countElem.textContent = `${selectedNames.length} partner press-shop drivers selected`;
+            detailsElem.textContent = 'Using group-meter energy with per-press production mix and working-day calendar flags.';
+            feedback.style.display = 'block';
+
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 8000);
+            return;
+        }
         
         // Machine-type specific driver selection rules
         // Optimized based on energy physics and ISO 50001 best practices
@@ -862,7 +940,7 @@
         const machineType = machineTypeMatch ? machineTypeMatch[1] : null;
         
         // Load drivers for this machine
-        await loadDriversForMachine(machineId, energySource, machineType);
+        await loadDriversForMachine(machineId, energySource, machineType, selectedOption.dataset.group || null);
         
         // Load existing models
         try {

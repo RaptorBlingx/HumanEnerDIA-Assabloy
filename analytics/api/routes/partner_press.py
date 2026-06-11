@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Query
 
-from database import db
+from database import db, slugify_feature_name
 from services.baseline_service import baseline_service
 from services.forecast_service import ForecastService
 
@@ -159,6 +159,33 @@ async def _partner_meter_groups(conn) -> list[dict]:
         PARTNER_SOURCE_DATASET,
     )
     return [dict(row) for row in rows]
+
+
+async def _partner_baseline_drivers(conn, group_key: str) -> list[str]:
+    rows = await conn.fetch(
+        """
+        SELECT m.name
+        FROM machines m
+        JOIN factories f ON f.id = m.factory_id
+        WHERE f.name = $1
+          AND m.metadata->>'source_dataset' = $2
+          AND m.metadata->>'asset_level' = 'press'
+          AND m.metadata->>'group' = $3
+        ORDER BY m.name
+        """,
+        PARTNER_FACTORY_NAME,
+        PARTNER_SOURCE_DATASET,
+        group_key,
+    )
+    production_drivers = [
+        f"press_production_{slugify_feature_name(row['name'])}"
+        for row in rows
+    ]
+    active_drivers = [
+        f"press_active_{slugify_feature_name(row['name'])}"
+        for row in rows
+    ]
+    return production_drivers + active_drivers + ["active_press_count", "is_working_day", "is_saturday"]
 
 
 @router.get("/profile")
@@ -334,7 +361,6 @@ async def train_partner_press_ml(
 ) -> Dict[str, Any]:
     start = _parse_dt(PARTNER_START)
     end = _parse_dt(PARTNER_END)
-    baseline_drivers = ["total_production_count", "hour_of_day", "day_of_week"]
 
     async with db.pool.acquire() as conn:
         meter_groups = await _partner_meter_groups(conn)
@@ -354,6 +380,8 @@ async def train_partner_press_ml(
 
         if train_baselines:
             try:
+                async with db.pool.acquire() as conn:
+                    baseline_drivers = await _partner_baseline_drivers(conn, group["group_key"])
                 item["baseline"] = await baseline_service.train_baseline(
                     machine_id=machine_id,
                     start_date=start,
@@ -398,7 +426,10 @@ async def train_partner_press_ml(
             "label": _period_label(start, end),
         },
         "trained_assets": len(results),
-        "baseline_drivers": baseline_drivers,
+        "baseline_drivers": (
+            "per meter group: press_production_*, press_active_*, active_press_count, "
+            "is_working_day, and is_saturday"
+        ),
         "scope_note": "Training targets meter-group energy assets only; no per-press energy models are created.",
         "results": results,
     }

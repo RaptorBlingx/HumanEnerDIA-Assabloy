@@ -216,23 +216,28 @@ async def list_features_for_energy_source(
                     # Default: use feature_name as-is
                     return feature.feature_name
             
+            response_features = []
+            for f in features:
+                column_name = get_column_name(f)
+                if column_name is None:
+                    continue
+                if regression_only and column_name in {"total_energy_kwh", "avg_power_kw", "max_power_kw"}:
+                    continue
+                response_features.append({
+                    "feature_name": f.feature_name,
+                    "column_name": column_name,  # NEW: Actual column in aggregated data
+                    "source_table": f.source_table,
+                    "source_column": f.source_column,
+                    "aggregation_function": f.aggregation_function,
+                    "description": f.description
+                })
+
             return {
                 "energy_source": es_row["name"],
                 "energy_source_id": str(energy_source_id),
                 "unit": es_row["unit"],
-                "total_features": len(features),
-                "features": [
-                    {
-                        "feature_name": f.feature_name,
-                        "column_name": get_column_name(f),  # NEW: Actual column in aggregated data
-                        "source_table": f.source_table,
-                        "source_column": f.source_column,
-                        "aggregation_function": f.aggregation_function,
-                        "description": f.description
-                    }
-                    for f in features
-                    if get_column_name(f) is not None  # Filter out unavailable features
-                ]
+                "total_features": len(response_features),
+                "features": response_features
             }
     except HTTPException:
         raise
