@@ -800,11 +800,13 @@
             }[modelType] || modelType;
             
             const pageLink = {
-                'baseline': '/ui/baseline',
-                'anomaly': '/ui/anomaly',
-                'forecast_arima': '/ui/forecast',
-                'forecast_prophet': '/ui/forecast'
-            }[modelType] || '/ui/baseline';
+                'baseline': '/api/analytics/ui/baseline',
+                'anomaly': '/api/analytics/ui/anomaly',
+                'forecast_arima': '/api/analytics/ui/forecast',
+                'forecast_prophet': '/api/analytics/ui/forecast'
+            }[modelType] || '/api/analytics/ui/baseline';
+            const actionText = modelType === 'anomaly' ? 'Run Detection' : 'Train Model';
+            const firstActionText = modelType === 'anomaly' ? 'Run anomaly detection' : 'Train your first model';
             
             // Update stats to show no model
             document.getElementById('current-r2').textContent = 'N/A';
@@ -825,7 +827,7 @@
                             <p class="mb-0 mt-1">${message || 'No model has been trained for this machine yet.'}</p>
                         </div>
                         <a href="${pageLink}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-plus-circle"></i> Train Model
+                            <i class="bi bi-plus-circle"></i> ${actionText}
                         </a>
                     </div>
                 </div>
@@ -833,7 +835,7 @@
             
             // Clear versions list
             document.getElementById('model-versions-list').innerHTML = 
-                '<p class="text-muted">No models trained yet. <a href="' + pageLink + '">Train your first model →</a></p>';
+                '<p class="text-muted">No model record is available. <a href="' + pageLink + '">' + firstActionText + ' →</a></p>';
         }
         
         function updateStatsFromSummary(data) {
@@ -1320,13 +1322,13 @@
             
             // Map model types to their training pages
             const pageMap = {
-                'baseline': '/ui/baseline',
-                'anomaly': '/ui/anomaly',
-                'forecast_arima': '/ui/forecast',
-                'forecast_prophet': '/ui/forecast'
+                'baseline': '/api/analytics/ui/baseline',
+                'anomaly': '/api/analytics/ui/anomaly',
+                'forecast_arima': '/api/analytics/ui/forecast',
+                'forecast_prophet': '/api/analytics/ui/forecast'
             };
             
-            const targetPage = pageMap[modelType] || '/ui/baseline';
+            const targetPage = pageMap[modelType] || '/api/analytics/ui/baseline';
             
             // Build URL with machine pre-selected if possible
             let url = targetPage;

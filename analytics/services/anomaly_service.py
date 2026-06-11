@@ -60,13 +60,19 @@ class AnomalyService:
         machine = await get_machine_by_id(machine_id)
         if not machine:
             raise ValueError(f"Machine not found: {machine_id}")
+
+        is_partner_meter_group = (
+            machine.get("asset_level") == "meter_group"
+            and machine.get("source_dataset") == "partner_press_shop_2026_06_10"
+        )
+        include_machine_status = not is_partner_meter_group
         
         # Fetch data
         data = await get_machine_data_combined(
             machine_id=machine_id,
             start_time=start_time,
             end_time=end_time,
-            include_machine_status=True,
+            include_machine_status=include_machine_status,
             aggregate_interval='15min'  # Use finer granularity for recent detection
         )
         
@@ -79,7 +85,7 @@ class AnomalyService:
             machine_id=machine_id,
             start_time=start_time - timedelta(hours=24),
             end_time=start_time,
-            include_machine_status=True,
+            include_machine_status=include_machine_status,
             aggregate_interval='15min'
         )
         

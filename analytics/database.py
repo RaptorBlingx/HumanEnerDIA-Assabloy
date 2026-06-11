@@ -152,6 +152,10 @@ async def get_machine_by_id(machine_id: UUID) -> Optional[Dict[str, Any]]:
             m.type, 
             m.rated_power_kw,
             m.is_active,
+            m.metadata,
+            m.metadata->>'asset_level' AS asset_level,
+            m.metadata->>'energy_scope' AS energy_scope,
+            m.metadata->>'source_dataset' AS source_dataset,
             f.name as factory_name,
             f.location as factory_location
         FROM machines m
@@ -350,7 +354,11 @@ async def get_machine_data_combined(
             pd.avg_throughput as avg_throughput_units_per_hour,
             pd.total_production_good,
             pd.total_production_bad,
-            pd.quality_percent,
+            CASE
+                WHEN pd.total_production_count > 0
+                THEN (pd.total_production_good::numeric / pd.total_production_count::numeric) * 100
+                ELSE NULL
+            END AS quality_percent,
             pd.avg_speed_percent,
             ed.avg_outdoor_temp_c,
             ed.avg_indoor_temp_c,
@@ -585,6 +593,31 @@ async def save_anomaly(anomaly_data: Dict[str, Any]) -> UUID:
         metadata_json = json.dumps(metadata)
     
     async with db.pool.acquire() as conn:
+        existing_id = await conn.fetchval(
+            """
+            SELECT id
+            FROM anomalies
+            WHERE machine_id = $1
+              AND detected_at = $2
+              AND anomaly_type = $3
+              AND metric_name IS NOT DISTINCT FROM $4
+            LIMIT 1
+            """,
+            anomaly_data['machine_id'],
+            anomaly_data['detected_at'],
+            anomaly_data['anomaly_type'],
+            anomaly_data.get('metric_name'),
+        )
+        if existing_id:
+            logger.info(
+                "Anomaly already exists for %s at %s (%s); reusing %s",
+                anomaly_data['machine_id'],
+                anomaly_data['detected_at'],
+                anomaly_data['anomaly_type'],
+                existing_id,
+            )
+            return existing_id
+
         anomaly_id = await conn.fetchval(
             query,
             anomaly_data['machine_id'],

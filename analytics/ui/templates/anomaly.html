@@ -194,8 +194,8 @@
     <h1 style="font-size: var(--text-4xl); font-weight: var(--font-bold); color: var(--text-primary); margin-bottom: var(--space-2);">
         Anomaly Detection
     </h1>
-    <p style="font-size: var(--text-base); color: var(--text-secondary); margin: 0;">
-        Real-time energy consumption anomaly monitoring and alerting
+    <p id="anomaly-subtitle" style="font-size: var(--text-base); color: var(--text-secondary); margin: 0;">
+        Historical partner meter-group anomaly review and on-demand detection
     </p>
 </div>
 
@@ -412,6 +412,8 @@
             const title = document.querySelector('h1');
             const subtitle = document.querySelector('.page-header p, p.text-muted');
             if (title) title.textContent = 'ASSA ABLOY Partner Press Shop Anomalies';
+            const partnerSubtitle = document.getElementById('anomaly-subtitle');
+            if (partnerSubtitle) partnerSubtitle.textContent = 'No simulator assets are included. Use Detect New Anomalies to run on-demand detection over the imported partner period.';
             if (subtitle) subtitle.textContent = 'Anomaly review scoped to imported Bret, Raster, and Dimeco meter-group energy.';
         } catch (error) {
             console.warn('Partner anomaly profile unavailable', error);
@@ -553,7 +555,7 @@
                         <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                     </svg>
                     <p style="font-size: var(--text-base); color: var(--text-secondary); margin: 0;">
-                        No anomalies found with the selected filters.
+                        No partner anomaly records were found for the selected scope and period. This is normal until on-demand detection creates anomalies, or if the imported data stays within expected baseline behavior.
                     </p>
                 </div>
             `;
