@@ -57,7 +57,9 @@
                     <div class="col-md-3">
                         <label for="time-period" class="form-label">Time Period</label>
                         <select class="form-select" id="time-period">
-                            <option value="2026q1" selected>2026-Q1 Pilot Period</option>
+                            <option value="partner" selected>Partner Dataset Period</option>
+                            <option value="partner_import">Imported Meter Period</option>
+                            <option value="2026q1">2026-Q1 Pilot Period</option>
                             <option value="24h">Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                             <option value="30d">Last 30 Days</option>
@@ -199,6 +201,8 @@
     let secChart = null;
     let radarChart = null;
     let currentKpiData = null;
+    let partnerPilot = false;
+    let partnerProfile = null;
     const PILOT_FACTORY_ID = '11111111-1111-1111-1111-111111111111';
     const PILOT_FACTORY_LABEL = 'Factory - Simulated Romanian Pilot Factory';
     const PILOT_ENPI_PERIOD = '2026-Q1';
@@ -206,6 +210,48 @@
     
     // Load machines
     async function loadMachines() {
+        try {
+            const profileResponse = await axios.get(`${API_BASE}/partner-press/profile`);
+            const profile = profileResponse.data;
+            if (profile && Array.isArray(profile.meter_groups) && profile.meter_groups.length) {
+                partnerPilot = true;
+                partnerProfile = profile;
+
+                const select = document.getElementById('machine-select');
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+
+                const factoryOption = document.createElement('option');
+                factoryOption.value = `partner-factory:${profile.factory.id}`;
+                factoryOption.textContent = profile.display_name;
+                select.appendChild(factoryOption);
+
+                profile.meter_groups.forEach(asset => {
+                    const option = document.createElement('option');
+                    option.value = `partner-group:${asset.group}`;
+                    option.textContent = `${asset.name} (group KPI)`;
+                    option.dataset.assetId = asset.id;
+                    option.dataset.group = asset.group;
+                    select.appendChild(option);
+                });
+
+                document.getElementById('time-period').value = 'partner';
+                const legacyPeriod = document.querySelector('#time-period option[value="2026q1"]');
+                if (legacyPeriod) {
+                    legacyPeriod.remove();
+                }
+                document.querySelector('h1.display-6').textContent = `${profile.display_name} KPI Dashboard`;
+                document.querySelector('p.text-muted').textContent = 'Partner press-shop KPIs from imported meter-group energy and SQDC production data';
+
+                select.value = `partner-factory:${profile.factory.id}`;
+                loadKPIData();
+                return;
+            }
+        } catch (partnerError) {
+            console.warn('Partner KPI profile unavailable, using generic machine list', partnerError);
+        }
+
         try {
             const response = await axios.get(`${API_BASE}/machines`, {
                 params: { is_active: true }
@@ -269,7 +315,9 @@
     // Calculate date range
     function getDateRange() {
         const period = document.getElementById('time-period').value;
-        const endTime = new Date();
+        const endTime = partnerPilot && partnerProfile?.period?.end
+            ? new Date(partnerProfile.period.end)
+            : new Date();
         let startTime;
         
         if (period === 'custom') {
@@ -288,6 +336,28 @@
         }
         
         switch(period) {
+            case 'partner':
+                if (partnerProfile?.period) {
+                    return {
+                        start: partnerProfile.period.start,
+                        end: partnerProfile.period.end,
+                        interval: '1day',
+                        partnerPeriod: true
+                    };
+                }
+                return {
+                    start: '2025-05-01T00:00:00',
+                    end: '2026-06-01T00:00:00',
+                    interval: '1day',
+                    partnerPeriod: true
+                };
+            case 'partner_import':
+                return {
+                    start: '2026-03-13T00:00:00',
+                    end: '2026-06-01T00:00:00',
+                    interval: '1day',
+                    partnerPeriod: true
+                };
             case '2026q1':
                 return {
                     start: '2026-01-01T00:00:00.000Z',
@@ -321,6 +391,16 @@
         spinner.classList.remove('d-none');
         
         try {
+            if (scopeId.startsWith('partner-factory:')) {
+                await loadPartnerKPIData(null, dateRange);
+                return;
+            }
+
+            if (scopeId.startsWith('partner-group:')) {
+                await loadPartnerKPIData(scopeId.replace('partner-group:', ''), dateRange);
+                return;
+            }
+
             if (scopeId.startsWith('factory:')) {
                 await loadFactoryKPIData(scopeId.replace('factory:', ''), dateRange);
                 return;
@@ -426,6 +506,270 @@
         renderFactoryKPIView(factoryResponse.data, enpiResponse.data);
         renderFactoryCharts(factoryResponse.data, enpiResponse.data);
         document.getElementById('export-kpis-btn').disabled = false;
+    }
+
+    async function loadPartnerKPIData(groupKey, dateRange) {
+        const params = {
+            question_type: groupKey ? 'group_kpis' : 'kpis',
+            start: dateRange.start,
+            end: dateRange.end
+        };
+        if (groupKey) {
+            params.group = groupKey;
+        }
+
+        const response = await axios.get(`${API_BASE}/partner-press/summary`, { params });
+        const data = response.data;
+        const selectedGroup = groupKey || null;
+
+        currentKpiData = {
+            scope: selectedGroup ? 'partner-group' : 'partner-factory',
+            partner: data,
+            selectedGroup
+        };
+
+        renderPartnerKPIView(data, selectedGroup);
+        renderPartnerCharts(data, selectedGroup);
+        document.getElementById('export-kpis-btn').disabled = false;
+    }
+
+    function partnerGroups(data, selectedGroup = null) {
+        const groups = data.kpis || [];
+        return selectedGroup ? groups.filter(item => item.group === selectedGroup) : groups;
+    }
+
+    function partnerProductionLookup(data) {
+        return Object.fromEntries((data.production_by_group || []).map(item => [item.group, item]));
+    }
+
+    function renderPartnerKPIView(data, selectedGroup = null) {
+        const groups = partnerGroups(data, selectedGroup);
+        const productionLookup = partnerProductionLookup(data);
+        const totalEnergy = groups.reduce((sum, item) => sum + Number(item.energy_kwh || 0), 0);
+        const totalProduction = groups.reduce((sum, item) => sum + Number(item.production_units || 0), 0);
+        const weightedSec = totalProduction > 0 ? totalEnergy / totalProduction : null;
+        const peakPower = Math.max(...groups.map(item => {
+            const energyItem = (data.energy_by_group || []).find(row => row.group === item.group) || {};
+            return Number(energyItem.peak_power_kw || 0);
+        }), 0);
+        const scopeLabel = selectedGroup
+            ? `${groups[0]?.asset_name || selectedGroup} KPI summary`
+            : `${data.display_name} KPI summary`;
+        const bestSec = [...groups]
+            .filter(item => item.sec_kwh_per_unit !== null && item.sec_kwh_per_unit !== undefined)
+            .sort((a, b) => Number(a.sec_kwh_per_unit) - Number(b.sec_kwh_per_unit))[0];
+
+        const cardsHtml = `
+            <div class="col-12">
+                <div class="factory-enpi-summary mb-3">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-2">
+                        <div>
+                            <strong>${scopeLabel}</strong>
+                            <div class="text-muted small mt-1">
+                                ${data.period.label}. Energy is imported group-meter data only; press-level energy is not allocated.
+                            </div>
+                        </div>
+                        <div class="text-lg-end">
+                            <span class="badge bg-info text-dark">Partner dataset</span>
+                            <div class="text-muted small mt-1">${groups.length} meter group${groups.length === 1 ? '' : 's'} shown</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #0A2463; --card-gradient-to: #1E3A8A; --card-value-color: #0A2463;">
+                    <div class="kpi-icon"><i class="bi bi-lightning-charge"></i></div>
+                    <div class="kpi-value">${formatKwh(totalEnergy)}</div>
+                    <div class="kpi-label">ENERGY KWH</div>
+                    <div class="kpi-description">Meter-group electricity</div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #2ECC71; --card-gradient-to: #27AE60; --card-value-color: #2ECC71;">
+                    <div class="kpi-icon"><i class="bi bi-box-seam"></i></div>
+                    <div class="kpi-value">${Number(totalProduction || 0).toLocaleString()}</div>
+                    <div class="kpi-label">PRODUCTION UNITS</div>
+                    <div class="kpi-description">SQDC production summed to group</div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #FF6B35; --card-gradient-to: #D94D1A; --card-value-color: #FF6B35;">
+                    <div class="kpi-icon"><i class="bi bi-speedometer2"></i></div>
+                    <div class="kpi-value">${weightedSec === null ? '-' : weightedSec.toFixed(6)}</div>
+                    <div class="kpi-label">SEC KWH/UNIT</div>
+                    <div class="kpi-description">Specific energy consumption</div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #00A8E8; --card-gradient-to: #007BA7; --card-value-color: #00A8E8;">
+                    <div class="kpi-icon"><i class="bi bi-activity"></i></div>
+                    <div class="kpi-value">${peakPower.toFixed(2)}</div>
+                    <div class="kpi-label">PEAK KW</div>
+                    <div class="kpi-description">Highest imported group demand</div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #3498DB; --card-gradient-to: #2980B9; --card-value-color: #3498DB;">
+                    <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
+                    <div class="kpi-value">${groups.length}</div>
+                    <div class="kpi-label">METER GROUPS</div>
+                    <div class="kpi-description">Bret, Raster, Dimeco scope</div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="kpi-card-premium factory-kpi-card" style="--card-gradient-from: #8E44AD; --card-gradient-to: #6C3483; --card-value-color: #8E44AD;">
+                    <div class="kpi-icon"><i class="bi bi-award"></i></div>
+                    <div class="kpi-value">${bestSec ? bestSec.group.toUpperCase() : '-'}</div>
+                    <div class="kpi-label">BEST SEC</div>
+                    <div class="kpi-description">${bestSec ? `${bestSec.sec_kwh_per_unit.toFixed(6)} kWh/unit` : 'Unavailable'}</div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('kpi-cards').innerHTML = cardsHtml;
+        updatePartnerKPITable(data, selectedGroup, productionLookup);
+    }
+
+    function updatePartnerKPITable(data, selectedGroup = null, productionLookup = null) {
+        const groups = partnerGroups(data, selectedGroup);
+        const energyLookup = Object.fromEntries((data.energy_by_group || []).map(item => [item.group, item]));
+        const prodLookup = productionLookup || partnerProductionLookup(data);
+        const rows = [];
+
+        groups.forEach(item => {
+            const energy = energyLookup[item.group] || {};
+            const production = prodLookup[item.group] || {};
+            rows.push(
+                { name: `${item.asset_name} Energy`, value: item.energy_kwh, unit: 'kWh', desc: 'Imported group-level meter energy' },
+                { name: `${item.asset_name} Production`, value: item.production_units, unit: 'units', desc: 'SQDC press production summed to meter group' },
+                { name: `${item.asset_name} SEC`, value: item.sec_kwh_per_unit, unit: 'kWh/unit', desc: 'Group energy divided by group production' },
+                { name: `${item.asset_name} Peak Demand`, value: energy.peak_power_kw, unit: 'kW', desc: 'Peak demand from imported meter readings' },
+                { name: `${item.asset_name} Quality`, value: production.production_units ? (Number(production.good_units || 0) / Number(production.production_units) * 100) : null, unit: '%', desc: 'SQDC good units share where provided' }
+            );
+        });
+
+        document.getElementById('kpi-tbody').innerHTML = rows.map(row => `
+            <tr>
+                <td><strong>${row.name}</strong></td>
+                <td>${typeof row.value === 'number' ? row.value.toLocaleString(undefined, { maximumFractionDigits: row.unit === 'kWh/unit' ? 6 : 2 }) : (row.value ?? '-')}</td>
+                <td>${row.unit || '-'}</td>
+                <td>${row.desc || '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderPartnerCharts(data, selectedGroup = null) {
+        const groups = partnerGroups(data, selectedGroup);
+        const energyLookup = Object.fromEntries((data.energy_by_group || []).map(item => [item.group, item]));
+        const productionLookup = partnerProductionLookup(data);
+
+        destroyCharts();
+        setChartTitles({
+            'energy-chart-title': 'Partner Energy by Meter Group',
+            'power-chart-title': 'Partner Power Demand by Meter Group',
+            'sec-chart-title': 'Partner SEC by Meter Group',
+            'radar-chart-title': 'Partner Production by Group'
+        });
+
+        showChartCanvas('energy-chart-loading', 'energy-chart');
+        energyChart = new Chart(document.getElementById('energy-chart'), {
+            type: 'bar',
+            data: {
+                labels: groups.map(item => item.asset_name),
+                datasets: [{
+                    label: 'Energy (kWh)',
+                    data: groups.map(item => Number(item.energy_kwh || 0)),
+                    backgroundColor: 'rgba(0, 168, 232, 0.65)',
+                    borderColor: '#007BA7',
+                    borderWidth: 1
+                }]
+            },
+            options: partnerBarOptions('Energy (kWh)', `Energy by meter group - ${data.period.label}`)
+        });
+
+        showChartCanvas('power-chart-loading', 'power-chart');
+        powerChart = new Chart(document.getElementById('power-chart'), {
+            type: 'bar',
+            data: {
+                labels: groups.map(item => item.asset_name),
+                datasets: [
+                    {
+                        label: 'Average kW',
+                        data: groups.map(item => Number((energyLookup[item.group] || {}).avg_power_kw || 0)),
+                        backgroundColor: 'rgba(52, 152, 219, 0.65)',
+                        borderColor: '#2980B9',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Peak kW',
+                        data: groups.map(item => Number((energyLookup[item.group] || {}).peak_power_kw || 0)),
+                        backgroundColor: 'rgba(231, 76, 60, 0.65)',
+                        borderColor: '#C0392B',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: partnerBarOptions('Power (kW)', `Demand by meter group - ${data.period.label}`)
+        });
+
+        showChartCanvas('sec-chart-loading', 'sec-chart');
+        secChart = new Chart(document.getElementById('sec-chart'), {
+            type: 'bar',
+            data: {
+                labels: groups.map(item => item.asset_name),
+                datasets: [{
+                    label: 'SEC (kWh/unit)',
+                    data: groups.map(item => Number(item.sec_kwh_per_unit || 0)),
+                    backgroundColor: 'rgba(255, 107, 53, 0.65)',
+                    borderColor: '#D94D1A',
+                    borderWidth: 1
+                }]
+            },
+            options: partnerBarOptions('SEC (kWh/unit)', `Specific energy consumption - ${data.period.label}`, 6)
+        });
+
+        radarChart = new Chart(document.getElementById('radar-chart'), {
+            type: 'bar',
+            data: {
+                labels: groups.map(item => item.asset_name),
+                datasets: [{
+                    label: 'Production units',
+                    data: groups.map(item => Number((productionLookup[item.group] || {}).production_units || 0)),
+                    backgroundColor: 'rgba(46, 204, 113, 0.65)',
+                    borderColor: '#27AE60',
+                    borderWidth: 1
+                }]
+            },
+            options: partnerBarOptions('Production units', `Production by meter group - ${data.period.label}`)
+        });
+    }
+
+    function partnerBarOptions(yTitle, title, decimals = 1) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: { display: true, text: title, font: { size: 14, weight: 'bold' } },
+                tooltip: {
+                    callbacks: {
+                        label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString(undefined, { maximumFractionDigits: decimals })}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: yTitle, font: { size: 12, weight: 'bold' } },
+                    ticks: {
+                        callback: value => Number(value).toLocaleString(undefined, { maximumFractionDigits: decimals })
+                    }
+                },
+                x: {
+                    ticks: { maxRotation: 35, minRotation: 20 }
+                }
+            }
+        };
     }
 
     function renderFactoryKPIView(factory, enpiReport) {
@@ -1244,6 +1588,38 @@
     // Export to CSV
     document.getElementById('export-kpis-btn').addEventListener('click', () => {
         if (!currentKpiData) return;
+
+        if (currentKpiData.scope === 'partner-factory' || currentKpiData.scope === 'partner-group') {
+            const data = currentKpiData.partner || {};
+            const groups = partnerGroups(data, currentKpiData.selectedGroup);
+            const energyLookup = Object.fromEntries((data.energy_by_group || []).map(item => [item.group, item]));
+            const rows = [
+                ['Scope', currentKpiData.scope === 'partner-group' ? currentKpiData.selectedGroup : data.display_name, ''],
+                ['Period', data.period?.label, ''],
+                ['KPI', 'Value', 'Unit']
+            ];
+
+            groups.forEach(item => {
+                const energy = energyLookup[item.group] || {};
+                rows.push(
+                    [`${item.asset_name} Energy`, item.energy_kwh, 'kWh'],
+                    [`${item.asset_name} Production`, item.production_units, 'units'],
+                    [`${item.asset_name} SEC`, item.sec_kwh_per_unit, 'kWh/unit'],
+                    [`${item.asset_name} Average Power`, energy.avg_power_kw, 'kW'],
+                    [`${item.asset_name} Peak Power`, energy.peak_power_kw, 'kW']
+                );
+            });
+
+            const csv = rows.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `partner_press_shop_kpis_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            return;
+        }
 
         if (currentKpiData.scope === 'factory') {
             const factory = currentKpiData.factory || {};
