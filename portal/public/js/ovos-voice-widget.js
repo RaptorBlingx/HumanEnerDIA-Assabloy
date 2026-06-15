@@ -66,7 +66,7 @@
         createAnomalyUrl: window.location.port === '8001'
             ? 'http://' + window.location.hostname + ':8001/api/v1/anomaly/create'
             : '/api/analytics/api/v1/anomaly/create',
-        welcomeMessage: 'Hello! I\'m your ASSA ABLOY partner press-shop assistant. Ask about Bret, Raster, Dimeco, production quantities, group energy, or press-shop KPIs. Say "Jarvis" to activate hands-free!',
+        welcomeMessage: 'Hello! I\'m your ASSA ABLOY partner press-shop assistant. For voice, use group one for Bret, group two for Raster, and group three for Dimeco. Ask about production, group energy, or press-shop KPIs. Say "Jarvis" to activate hands-free!',
         placeholder: 'Ask about the partner press shop...',
         title: 'ASSA ABLOY Press-Shop Assistant',
         subtitle: 'Energy Management',
@@ -880,7 +880,7 @@
                             <!-- Quick Reply Buttons in Chat -->
                             <div class="ovos-quick-replies">
                                 <button class="ovos-quick-btn" data-query="Show KPIs for the partner press shop">KPIs</button>
-                                <button class="ovos-quick-btn" data-query="Compare Bret, Raster, and Dimeco energy consumption">Compare Groups</button>
+                                <button class="ovos-quick-btn" data-query="Compare group one, group two, and group three energy consumption">Compare Groups</button>
                                 <button class="ovos-quick-btn" data-query="What are the top energy consumers in the ASSA ABLOY press shop?">Top Consumers</button>
                             </div>
                         </div>
@@ -2364,6 +2364,10 @@
             [/\bthe breakfast club\b/ig, 'the Bret press group'],
             [/\bbreakfast club\b/ig, 'Bret press group'],
             [/\bbreakfast group\b/ig, 'Bret press group'],
+            [/\bbreakfast press(?:es)?(?: group)?\b/ig, 'Bret press group'],
+            [/\bfor breakfast\b/ig, 'for Bret press group'],
+            [/\bgreat businesses\b/ig, 'Bret presses'],
+            [/\bfor the purposes\b/ig, 'for Bret presses'],
             [/\bbread press(?:es)?\b/ig, 'Bret presses'],
             [/\bbrett press(?:es)?\b/ig, 'Bret presses'],
             [/\bbrett\b/ig, 'Bret'],
@@ -2375,6 +2379,7 @@
             [/\bdynamo\b/ig, 'Dimeco'],
             [/\bdy meco\b/ig, 'Dimeco'],
             [/\bdie meco\b/ig, 'Dimeco'],
+            [/\bdinoco\b/ig, 'Dimeco'],
             [/\brasta\b/ig, 'Raster'],
             [/\brastor\b/ig, 'Raster'],
             [/\bflexy\b/ig, 'Flexi'],
@@ -2385,13 +2390,66 @@
             [/\brast one sixty\b/ig, 'Rast160'],
             [/\bbret one twenty five\b/ig, 'Bret125'],
             [/\bbret one sixty\b/ig, 'Bret160'],
-            [/\bbret two fifty\b/ig, 'Bret250']
+            [/\bbret two fifty\b/ig, 'Bret250'],
+            [/\b(?:press\s+)?group (?:one|won|1)\b/ig, 'Bret press group'],
+            [/\b(?:press\s+)?group (?:two|2|to|too)\b/ig, 'Raster press group'],
+            [/\b(?:press\s+)?group (?:three|tree|3)\b/ig, 'Dimeco press group'],
+            [/\b(?:first|left) (?:press\s+)?group\b/ig, 'Bret press group'],
+            [/\b(?:second|middle|center|centre) (?:press\s+)?group\b/ig, 'Raster press group'],
+            [/\b(?:third|right) (?:press\s+)?group\b/ig, 'Dimeco press group'],
+            [/\boption (?:one|1)\b/ig, 'Bret press group'],
+            [/\boption (?:two|2|to|too)\b/ig, 'Raster press group'],
+            [/\boption (?:three|3)\b/ig, 'Dimeco press group']
         ];
 
         replacements.forEach(([pattern, replacement]) => {
             normalized = normalized.replace(pattern, replacement);
         });
         return normalized.trim().replace(/\s+/g, ' ');
+    }
+
+    function scorePartnerSpeechCandidate(transcript, confidence = 0) {
+        const normalized = normalizePartnerSpeechTranscript(transcript);
+        const lower = normalized.toLowerCase();
+        let score = Number.isFinite(confidence) ? confidence * 10 : 0;
+
+        if (/\b(bret|raster|dimeco) press group\b/.test(lower)) score += 100;
+        if (/\b(bret|raster|dimeco)\b/.test(lower)) score += 40;
+        if (/\b(group|press|energy|consumption|production|kpi|sec|compare)\b/.test(lower)) score += 10;
+        if (/\b(group one|group two|group three|first group|second group|third group)\b/.test((transcript || '').toLowerCase())) {
+            score += 60;
+        }
+
+        return { transcript: normalized, score };
+    }
+
+    function selectPartnerSpeechAlternative(result) {
+        const candidates = [];
+        for (let index = 0; index < result.length; index++) {
+            candidates.push(scorePartnerSpeechCandidate(
+                result[index].transcript,
+                result[index].confidence
+            ));
+        }
+        candidates.sort((left, right) => right.score - left.score);
+        return candidates[0]?.transcript || '';
+    }
+
+    function needsPartnerGroupClarification(transcript) {
+        const lower = normalizePartnerSpeechTranscript(transcript).toLowerCase();
+        const hasKnownGroup = /\b(bret|raster|dimeco)\b/.test(lower);
+        const mentionsGroupTarget = /\b(group|press|presses|meter)\b/.test(lower);
+        const asksGroupMetric = /\b(energy|consumption|production|produce|output|kpi|sec|compare)\b/.test(lower);
+        const explicitlyAsksTotal = /\b(total|overall|all groups|whole shop|press shop)\b/.test(lower);
+        return mentionsGroupTarget && asksGroupMetric && !hasKnownGroup && !explicitlyAsksTotal;
+    }
+
+    function askForPartnerGroupClarification() {
+        const prompt = 'I could not safely identify the press group. Please say group one for Bret, group two for Raster, or group three for Dimeco.';
+        addMessage(prompt, false, false);
+        if (audioEnabled && window.speechSynthesis) {
+            speakText(prompt, { pilot: PILOT_VOICE_TIMING_ENABLED });
+        }
     }
 
     async function sendMessage(text) {
@@ -2886,6 +2944,7 @@
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
+        recognition.maxAlternatives = 5;
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
@@ -2929,7 +2988,7 @@
             let interimTranscript = '';
 
             for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
+                const transcript = selectPartnerSpeechAlternative(event.results[i]);
                 if (event.results[i].isFinal) {
                     finalTranscript += transcript;
                 } else {
@@ -2945,6 +3004,11 @@
             // Auto-send when final result received
             if (finalTranscript) {
                 const normalizedTranscript = normalizePartnerSpeechTranscript(finalTranscript);
+                if (needsPartnerGroupClarification(normalizedTranscript)) {
+                    input.value = '';
+                    askForPartnerGroupClarification();
+                    return;
+                }
                 setTimeout(() => {
                     sendMessage(normalizedTranscript);
                 }, 300);

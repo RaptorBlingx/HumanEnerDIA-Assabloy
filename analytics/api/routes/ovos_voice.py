@@ -24,7 +24,6 @@ import logging
 import re
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 from database import db
 from services.energy_performance_engine import get_performance_engine
@@ -121,6 +120,10 @@ def _normalize_partner_speech_text(text: str) -> str:
         (r"\bthe breakfast club\b", "the Bret press group"),
         (r"\bbreakfast club\b", "Bret press group"),
         (r"\bbreakfast group\b", "Bret press group"),
+        (r"\bbreakfast press(?:es)?(?: group)?\b", "Bret press group"),
+        (r"\bfor breakfast\b", "for Bret press group"),
+        (r"\bgreat businesses\b", "Bret presses"),
+        (r"\bfor the purposes\b", "for Bret presses"),
         (r"\bbread press(?:es)?\b", "Bret presses"),
         (r"\bbrett press(?:es)?\b", "Bret presses"),
         (r"\bbrett\b", "Bret"),
@@ -132,6 +135,7 @@ def _normalize_partner_speech_text(text: str) -> str:
         (r"\bdynamo\b", "Dimeco"),
         (r"\bdy meco\b", "Dimeco"),
         (r"\bdie meco\b", "Dimeco"),
+        (r"\bdinoco\b", "Dimeco"),
         (r"\brasta\b", "Raster"),
         (r"\brastor\b", "Raster"),
         (r"\braster presses?\b", "Raster presses"),
@@ -144,6 +148,15 @@ def _normalize_partner_speech_text(text: str) -> str:
         (r"\bbret one twenty five\b", "Bret125"),
         (r"\bbret one sixty\b", "Bret160"),
         (r"\bbret two fifty\b", "Bret250"),
+        (r"\b(?:press\s+)?group (?:one|won|1)\b", "Bret press group"),
+        (r"\b(?:press\s+)?group (?:two|2|to|too)\b", "Raster press group"),
+        (r"\b(?:press\s+)?group (?:three|tree|3)\b", "Dimeco press group"),
+        (r"\b(?:first|left) (?:press\s+)?group\b", "Bret press group"),
+        (r"\b(?:second|middle|center|centre) (?:press\s+)?group\b", "Raster press group"),
+        (r"\b(?:third|right) (?:press\s+)?group\b", "Dimeco press group"),
+        (r"\boption (?:one|1)\b", "Bret press group"),
+        (r"\boption (?:two|2|to|too)\b", "Raster press group"),
+        (r"\boption (?:three|3)\b", "Dimeco press group"),
     ]
     for pattern, replacement in replacements:
         normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
@@ -207,6 +220,15 @@ def _is_partner_press_query(text: str) -> bool:
         "rasta",
         "rastor",
         "flexy",
+        "group one",
+        "group two",
+        "group three",
+        "press group one",
+        "press group two",
+        "press group three",
+        "first group",
+        "second group",
+        "third group",
         "sqdc",
     ]
     return any(term in normalized for term in terms)

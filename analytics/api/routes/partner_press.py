@@ -99,6 +99,10 @@ SPEECH_REPLACEMENTS = [
     (r"\bthe breakfast club\b", "bret press group"),
     (r"\bbreakfast club\b", "bret press group"),
     (r"\bbreakfast group\b", "bret press group"),
+    (r"\bbreakfast press(?:es)?(?: group)?\b", "bret press group"),
+    (r"\bfor breakfast\b", "for bret press group"),
+    (r"\bgreat businesses\b", "bret presses"),
+    (r"\bfor the purposes\b", "for bret presses"),
     (r"\bbread press(?:es)?\b", "bret presses"),
     (r"\bbrett\b", "bret"),
     (r"\bbrent\b", "bret"),
@@ -108,6 +112,7 @@ SPEECH_REPLACEMENTS = [
     (r"\bdynamo\b", "dimeco"),
     (r"\bdy meco\b", "dimeco"),
     (r"\bdie meco\b", "dimeco"),
+    (r"\bdinoco\b", "dimeco"),
     (r"\brasta\b", "raster"),
     (r"\brastor\b", "raster"),
     (r"\bflexy\b", "flexi"),
@@ -119,6 +124,15 @@ SPEECH_REPLACEMENTS = [
     (r"\bbret one twenty five\b", "bret125"),
     (r"\bbret one sixty\b", "bret160"),
     (r"\bbret two fifty\b", "bret250"),
+    (r"\b(?:press\s+)?group (?:one|won|1)\b", "bret press group"),
+    (r"\b(?:press\s+)?group (?:two|2|to|too)\b", "raster press group"),
+    (r"\b(?:press\s+)?group (?:three|tree|3)\b", "dimeco press group"),
+    (r"\b(?:first|left) (?:press\s+)?group\b", "bret press group"),
+    (r"\b(?:second|middle|center|centre) (?:press\s+)?group\b", "raster press group"),
+    (r"\b(?:third|right) (?:press\s+)?group\b", "dimeco press group"),
+    (r"\boption (?:one|1)\b", "bret press group"),
+    (r"\boption (?:two|2|to|too)\b", "raster press group"),
+    (r"\boption (?:three|3)\b", "dimeco press group"),
 ]
 
 
@@ -492,7 +506,7 @@ async def get_partner_press_summary(
             "summary, top_energy, total_energy, group_energy, compare_groups, "
             "group_production, press_production, press_energy, kpis, group_kpis, "
             "sec_explanation, anomalies, machines, seus, baseline_status, period, "
-            "current_data, data_inventory, reference_meter, unknown_press"
+            "current_data, data_inventory, reference_meter, unknown_press, unknown_group"
         ),
     ),
     group: Optional[str] = Query(None, description="Optional group: bret, raster, dimeco"),
@@ -974,6 +988,12 @@ def _build_response(
             "Rast125-1, Rast250-1, Rast250-2, Dimeco80-1, Dimeco80-2, Flexi-1, "
             "Schu80-1, and Rast125-2. Energy is only available at Bret, Raster, "
             "and Dimeco meter-group level."
+        )
+
+    if question == "unknown_group":
+        return (
+            "I could not safely identify the press group. Please say group one for Bret, "
+            "group two for Raster, or group three for Dimeco."
         )
 
     if question == "total_energy":
