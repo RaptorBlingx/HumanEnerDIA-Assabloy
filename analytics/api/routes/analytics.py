@@ -67,7 +67,10 @@ async def get_top_energy_consumers(
             )
         
         machines = await get_machines()
-        active_machines = [m for m in machines if m.get('is_active', True)]
+        active_machines = [
+            m for m in machines
+            if m.get('is_active', True) and m.get("asset_level") != "auxiliary_meter"
+        ]
         
         if not active_machines:
             return {

@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 class ReportDataFetcher:
     """Fetches data from TimescaleDB for report generation."""
+
+    ENERGY_ASSET_FILTER = "COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'"
     
     def __init__(self, db: Database):
         """Initialize data fetcher with database connection."""
@@ -62,6 +64,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 """,
@@ -89,6 +92,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 GROUP BY m.type
@@ -118,6 +122,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1day er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 GROUP BY DATE(er.bucket)
@@ -147,6 +152,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 GROUP BY day_of_week, hour
@@ -175,6 +181,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 ORDER BY er.max_power_kw DESC
@@ -212,6 +219,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 GROUP BY m.id, m.name, m.type, m.rated_power_kw
@@ -518,6 +526,7 @@ class ReportDataFetcher:
                 FROM energy_readings_1hour er
                 JOIN machines m ON er.machine_id = m.id
                 WHERE m.factory_id = $1
+                AND COALESCE(m.metadata->>'asset_level', '') <> 'auxiliary_meter'
                 AND er.bucket >= $2
                 AND er.bucket < $3
                 """,
@@ -529,7 +538,12 @@ class ReportDataFetcher:
             if row:
                 # Divide by number of machines to get average hours
                 machines_count = await conn.fetchval(
-                    "SELECT COUNT(*) FROM machines WHERE factory_id = $1",
+                    """
+                    SELECT COUNT(*)
+                    FROM machines
+                    WHERE factory_id = $1
+                      AND COALESCE(metadata->>'asset_level', '') <> 'auxiliary_meter'
+                    """,
                     factory_id
                 )
                 if machines_count and machines_count > 0:

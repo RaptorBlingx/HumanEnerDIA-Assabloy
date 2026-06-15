@@ -457,8 +457,8 @@
                                 </svg>
                             </div>
                             <div class="enms-stat-number" style="font-size: 38px; font-weight: 700; color: #2ECC71; margin-bottom: 8px; line-height: 1;" id="estimated-cost" data-target="0">$0</div>
-                            <div style="font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 8px;">TOTAL COST</div>
-                            <div style="font-size: 12px; color: #00A8E8; font-weight: 500;" id="cost-per-day">$0/day</div>
+                            <div style="font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 8px;">EST. COST (EUR)</div>
+                            <div style="font-size: 12px; color: #00A8E8; font-weight: 500;" id="cost-per-day">Assumes €0.15/kWh</div>
                         </div>
                         
                         <div style="text-align: center; padding: 24px; background: linear-gradient(135deg, #fef3f2 0%, #ffffff 100%); border-radius: 16px; border: 1px solid #fee2e2;">
@@ -468,8 +468,8 @@
                                 </svg>
                             </div>
                             <div class="enms-stat-number" style="font-size: 38px; font-weight: 700; color: #E74C3C; margin-bottom: 8px; line-height: 1;" id="carbon-footprint" data-target="0">0</div>
-                            <div style="font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 8px;">CARBON (kg CO₂)</div>
-                            <div style="font-size: 12px; color: #F39C12; font-weight: 500;" id="carbon-per-day">0 kg/day</div>
+                            <div style="font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 8px;">EST. CARBON (kg CO₂)</div>
+                            <div style="font-size: 12px; color: #F39C12; font-weight: 500;" id="carbon-per-day">Assumes 0.45 kg/kWh</div>
                         </div>
                     </div>
                 </div>
@@ -804,8 +804,11 @@
         function updatePartnerPilotOverview(profile, summary, readiness, anomalies) {
             const meterGroups = profile.meter_groups || [];
             const presses = profile.presses || [];
+            const auxiliaryMeters = profile.auxiliary_meters || [];
             const partnerMachineIds = new Set(meterGroups.map(item => item.id));
-            const partnerAnomalies = anomalies.filter(item => partnerMachineIds.has(item.machine_id));
+            const partnerAnomalies = anomalies.filter(
+                item => partnerMachineIds.has(item.machine_id) && item.severity !== 'normal'
+            );
             const trainedBaselines = (readiness.meter_groups || []).filter(item => item.baseline_trained).length;
             const totalModels = readiness.meter_groups || [];
             const energyRows = Number(summary.data_range?.energy_rows || 0);
@@ -826,8 +829,9 @@
             const estimatedCost = energy * 0.15;
             const carbonKg = energy * 0.45;
 
-            document.getElementById('active-machines').textContent = meterGroups.length + presses.length;
-            document.getElementById('machines-change').textContent = `${meterGroups.length} meter groups + ${presses.length} presses`;
+            document.getElementById('active-machines').textContent = meterGroups.length + presses.length + auxiliaryMeters.length;
+            document.getElementById('machines-change').textContent =
+                `${meterGroups.length} meter groups + ${presses.length} presses + ${auxiliaryMeters.length} reference meter`;
             document.getElementById('baseline-models').textContent = trainedBaselines;
             document.getElementById('models-change').textContent = `${trainedBaselines}/${totalModels.length} partner baselines trained`;
             document.getElementById('anomalies-24h').textContent = partnerAnomalies.length;
@@ -851,7 +855,7 @@
                 carbon_per_day: carbonKg / periodDays
             });
 
-            document.getElementById('readings-rate').textContent = 'imported meter rows';
+            document.getElementById('readings-rate').textContent = 'all imported meter rows';
             document.getElementById('energy-rate').textContent = summary.period?.label || profile.period.label;
             document.getElementById('data-rate-trend').textContent = 'SQDC production rows';
             document.getElementById('uptime-percent').textContent = profile.period.label;
@@ -1110,15 +1114,15 @@
         // UTILITY FORMATTERS
         // ============================================================================
         
-        // Currency formatter - formats large numbers with K/M suffix and $ symbol
+        // Currency formatter for the Romania pilot estimate.
         function formatCurrency(num) {
             if (num >= 1000000) {
-                return '$' + (num / 1000000).toFixed(1) + 'M';
+                return '€' + (num / 1000000).toFixed(1) + 'M';
             }
             if (num >= 1000) {
-                return '$' + (num / 1000).toFixed(1) + 'K';
+                return '€' + (num / 1000).toFixed(1) + 'K';
             }
-            return '$' + num.toFixed(2);
+            return '€' + num.toFixed(2);
         }
 
         // Carbon footprint formatter - formats with K/M suffix and kg unit
@@ -1230,7 +1234,7 @@
                 // Update cost per day sub-metric
                 const costPerDayEl = document.getElementById('cost-per-day');
                 if (costPerDayEl && stats.cost_per_day) {
-                    costPerDayEl.textContent = `$${stats.cost_per_day.toFixed(2)}/day`;
+                    costPerDayEl.textContent = `€${stats.cost_per_day.toFixed(2)}/day at €0.15/kWh`;
                 }
             }
             
@@ -1244,7 +1248,7 @@
                 // Update carbon per day sub-metric
                 const carbonPerDayEl = document.getElementById('carbon-per-day');
                 if (carbonPerDayEl && stats.carbon_per_day) {
-                    carbonPerDayEl.textContent = `${Math.round(stats.carbon_per_day)} kg/day`;
+                    carbonPerDayEl.textContent = `${Math.round(stats.carbon_per_day)} kg/day at 0.45 kg/kWh`;
                 }
             }
 

@@ -7,8 +7,9 @@ press production remains available per press and as derived group totals.
 """
 
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import os
+import re
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Query
@@ -51,9 +52,11 @@ PRESS_ALIASES = {
     "dimeco802": "Dimeco80-2",
     "dimeco80-2": "Dimeco80-2",
     "dimeco 80 2": "Dimeco80-2",
+    "flexi": "Flexi-1",
     "flexi1": "Flexi-1",
     "flexi-1": "Flexi-1",
     "flexi 1": "Flexi-1",
+    "flexi one": "Flexi-1",
     "rast1251": "Rast125-1",
     "rast125-1": "Rast125-1",
     "rast 125 1": "Rast125-1",
@@ -82,9 +85,41 @@ PRESS_ALIASES = {
     "raster2502": "Rast250-2",
     "raster 250 2": "Rast250-2",
     "schu801": "Schu80-1",
+    "schu80": "Schu80-1",
     "schu80-1": "Schu80-1",
     "schu 80 1": "Schu80-1",
+    "shoe80": "Schu80-1",
+    "shoe801": "Schu80-1",
+    "shoe 80": "Schu80-1",
+    "shoe 80 1": "Schu80-1",
+    "schu eighty": "Schu80-1",
 }
+
+SPEECH_REPLACEMENTS = [
+    (r"\bthe breakfast club\b", "bret press group"),
+    (r"\bbreakfast club\b", "bret press group"),
+    (r"\bbreakfast group\b", "bret press group"),
+    (r"\bbread press(?:es)?\b", "bret presses"),
+    (r"\bbrett\b", "bret"),
+    (r"\bbrent\b", "bret"),
+    (r"\bbrat\b", "bret"),
+    (r"\bdime echo\b", "dimeco"),
+    (r"\bdim echo\b", "dimeco"),
+    (r"\bdynamo\b", "dimeco"),
+    (r"\bdy meco\b", "dimeco"),
+    (r"\bdie meco\b", "dimeco"),
+    (r"\brasta\b", "raster"),
+    (r"\brastor\b", "raster"),
+    (r"\bflexy\b", "flexi"),
+    (r"\bshoe eighty\b", "schu80"),
+    (r"\bshoe 80\b", "schu80"),
+    (r"\bschu eighty\b", "schu80"),
+    (r"\braster one sixty\b", "rast160"),
+    (r"\brast one sixty\b", "rast160"),
+    (r"\bbret one twenty five\b", "bret125"),
+    (r"\bbret one sixty\b", "bret160"),
+    (r"\bbret two fifty\b", "bret250"),
+]
 
 
 def _parse_dt(value: str) -> datetime:
@@ -94,25 +129,34 @@ def _parse_dt(value: str) -> datetime:
 def _number(value: Any, digits: int = 2) -> float:
     if value is None:
         return 0.0
-    if isinstance(value, Decimal):
-        value = float(value)
-    return round(float(value), digits)
+    decimal_value = value if isinstance(value, Decimal) else Decimal(str(value))
+    quantum = Decimal("1").scaleb(-digits)
+    return float(decimal_value.quantize(quantum, rounding=ROUND_HALF_UP))
 
 
 def _group_key(value: Optional[str]) -> Optional[str]:
     if not value:
         return None
-    normalized = value.lower()
+    normalized = _normalize_speech_aliases(value).lower()
     for key in GROUP_LABELS:
         if key in normalized:
             return key
+    if "flexi" in normalized or "schu" in normalized:
+        return "dimeco"
     return None
+
+
+def _normalize_speech_aliases(value: str) -> str:
+    normalized = f" {value or ''} "
+    for pattern, replacement in SPEECH_REPLACEMENTS:
+        normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+    return " ".join(normalized.split())
 
 
 def _normalize_press(value: Optional[str]) -> Optional[str]:
     if not value:
         return None
-    normalized = " ".join(value.lower().replace("_", " ").split())
+    normalized = " ".join(_normalize_speech_aliases(value).lower().replace("_", " ").split())
     compact = normalized.replace("-", "").replace(" ", "")
     candidates = {normalized, compact, normalized.replace(" ", "-")}
     for candidate in candidates:
@@ -215,6 +259,7 @@ async def get_partner_press_profile() -> Dict[str, Any]:
 
     meter_groups = []
     presses = []
+    auxiliary_meters = []
     for row in assets:
         item = {
             "id": str(row["id"]),
@@ -225,6 +270,8 @@ async def get_partner_press_profile() -> Dict[str, Any]:
         }
         if row["asset_level"] == "meter_group":
             meter_groups.append(item)
+        elif row["asset_level"] == "auxiliary_meter":
+            auxiliary_meters.append(item)
         else:
             presses.append(item)
 
@@ -243,9 +290,11 @@ async def get_partner_press_profile() -> Dict[str, Any]:
         },
         "meter_groups": meter_groups,
         "presses": presses,
+        "auxiliary_meters": auxiliary_meters,
         "modeling_note": (
             "Energy is represented honestly at the three imported meter-group assets. "
-            "No per-press energy is allocated or invented."
+            "The separate Bret transformer series is retained as a reference meter and "
+            "excluded from press-group totals. No per-press energy is allocated or invented."
         ),
     }
 
@@ -443,7 +492,7 @@ async def get_partner_press_summary(
             "summary, top_energy, total_energy, group_energy, compare_groups, "
             "group_production, press_production, press_energy, kpis, group_kpis, "
             "sec_explanation, anomalies, machines, seus, baseline_status, period, "
-            "current_data, unknown_press"
+            "current_data, data_inventory, reference_meter, unknown_press"
         ),
     ),
     group: Optional[str] = Query(None, description="Optional group: bret, raster, dimeco"),
@@ -487,7 +536,13 @@ async def get_partner_press_summary(
                 for row in assets
                 if row["asset_level"] == "press"
             ]
-            all_partner_ids = meter_group_ids + press_ids
+            auxiliary_meter_ids = [
+                row["id"]
+                for row in assets
+                if row["asset_level"] == "auxiliary_meter"
+            ]
+            all_energy_ids = meter_group_ids + auxiliary_meter_ids
+            all_partner_ids = all_energy_ids + press_ids
 
             energy_rows = await conn.fetch(
                 """
@@ -552,26 +607,59 @@ async def get_partner_press_summary(
             data_range = await conn.fetchrow(
                 """
                 WITH energy_range AS (
-                    SELECT MIN(time) AS start_time, MAX(time) AS end_time, COUNT(*) AS row_count
-                    FROM energy_readings
-                    WHERE machine_id = ANY($1::uuid[])
+                    SELECT
+                        MIN(er.time) AS start_time,
+                        MAX(er.time) AS end_time,
+                        COUNT(*) AS row_count,
+                        COUNT(*) FILTER (
+                            WHERE m.metadata->>'asset_level' = 'meter_group'
+                        ) AS group_row_count,
+                        COUNT(*) FILTER (
+                            WHERE m.metadata->>'asset_level' = 'auxiliary_meter'
+                        ) AS auxiliary_row_count
+                    FROM energy_readings er
+                    JOIN machines m ON m.id = er.machine_id
+                    WHERE er.machine_id = ANY($1::uuid[])
                 ),
-                production_range AS (
-                    SELECT MIN(time) AS start_time, MAX(time) AS end_time, COUNT(*) AS row_count
-                    FROM production_data
-                    WHERE machine_id = ANY($2::uuid[])
+            production_range AS (
+                    SELECT
+                        MIN(pd.time) AS start_time,
+                        MAX(pd.time) AS end_time,
+                        COUNT(*) AS row_count,
+                        COUNT(*) FILTER (
+                            WHERE m.metadata->>'asset_level' = 'meter_group'
+                        ) AS group_row_count,
+                        COUNT(*) FILTER (
+                            WHERE m.metadata->>'asset_level' = 'press'
+                        ) AS press_row_count
+                    FROM production_data pd
+                    JOIN machines m ON m.id = pd.machine_id
+                    WHERE pd.machine_id = ANY($2::uuid[])
                 )
                 SELECT
                   energy_range.start_time AS energy_start,
                   energy_range.end_time AS energy_end,
                   energy_range.row_count AS energy_rows,
+                  energy_range.group_row_count AS group_energy_rows,
+                  energy_range.auxiliary_row_count AS auxiliary_energy_rows,
                   production_range.start_time AS production_start,
                   production_range.end_time AS production_end,
-                  production_range.row_count AS production_rows
+                  production_range.row_count AS production_rows,
+                  production_range.group_row_count AS group_production_rows,
+                  production_range.press_row_count AS press_production_rows
                 FROM energy_range, production_range
                 """,
-                meter_group_ids,
+                all_energy_ids,
                 all_partner_ids,
+            )
+            trained_baselines = await conn.fetchval(
+                """
+                SELECT COUNT(DISTINCT machine_id)
+                FROM energy_baselines
+                WHERE machine_id = ANY($1::uuid[])
+                  AND is_active = TRUE
+                """,
+                meter_group_ids,
             )
             anomaly_rows = await conn.fetch(
                 """
@@ -586,10 +674,31 @@ async def get_partner_press_summary(
                 WHERE a.machine_id = ANY($1::uuid[])
                   AND a.detected_at >= $2
                   AND a.detected_at < $3
+                  AND a.severity <> 'normal'
                 GROUP BY COALESCE(m.metadata->>'group', 'unknown'), m.name, a.severity
                 ORDER BY anomaly_count DESC, latest_detected_at DESC
                 """,
                 all_partner_ids,
+                start,
+                end,
+            )
+            auxiliary_energy_rows = await conn.fetch(
+                """
+                SELECT
+                    m.name AS asset_name,
+                    SUM(er.energy_kwh) AS energy_kwh,
+                    COUNT(*) AS readings,
+                    MIN(er.time) AS start_time,
+                    MAX(er.time) AS end_time
+                FROM energy_readings er
+                JOIN machines m ON m.id = er.machine_id
+                WHERE er.machine_id = ANY($1::uuid[])
+                  AND er.time >= $2
+                  AND er.time < $3
+                GROUP BY m.name
+                ORDER BY m.name
+                """,
+                auxiliary_meter_ids,
                 start,
                 end,
             )
@@ -598,7 +707,7 @@ async def get_partner_press_summary(
         {
             "group": row["group_key"],
             "asset_name": row["asset_name"],
-            "energy_kwh": _number(row["energy_kwh"]),
+            "energy_kwh": _number(row["energy_kwh"], 3),
             "avg_power_kw": _number(row["avg_power_kw"]),
             "peak_power_kw": _number(row["peak_power_kw"]),
             "readings": int(row["readings"] or 0),
@@ -610,8 +719,8 @@ async def get_partner_press_summary(
             "group": row["group_key"],
             "asset_name": row["asset_name"],
             "production_units": int(row["production_units"] or 0),
-            "good_units": int(row["good_units"] or 0),
-            "bad_units": int(row["bad_units"] or 0),
+            "good_units": int(row["good_units"]) if row["good_units"] is not None else None,
+            "bad_units": int(row["bad_units"]) if row["bad_units"] is not None else None,
             "rows": int(row["rows"] or 0),
         }
         for row in production_group_rows
@@ -638,7 +747,10 @@ async def get_partner_press_summary(
             "sec_kwh_per_unit": round(sec, 6) if sec is not None else None,
         })
 
-    total_energy = round(sum(item["energy_kwh"] for item in energy_by_group), 2)
+    total_energy = _number(
+        sum((Decimal(str(item["energy_kwh"])) for item in energy_by_group), Decimal("0")),
+        2,
+    )
     total_production = sum(item["production_units"] for item in production_by_group)
     anomalies = [
         {
@@ -662,6 +774,16 @@ async def get_partner_press_summary(
         },
         "by_asset": anomalies,
     }
+    auxiliary_energy = [
+        {
+            "asset_name": row["asset_name"],
+            "energy_kwh": _number(row["energy_kwh"], 3),
+            "readings": int(row["readings"] or 0),
+            "start": row["start_time"],
+            "end": row["end_time"],
+        }
+        for row in auxiliary_energy_rows
+    ]
     response = _build_response(
         question_type=question_type,
         group=selected_group,
@@ -674,6 +796,14 @@ async def get_partner_press_summary(
         total_energy=total_energy,
         total_production=total_production,
         period=_period_label(start, end),
+        auxiliary_meters=[
+            row["name"]
+            for row in assets
+            if row["asset_level"] == "auxiliary_meter"
+        ],
+        auxiliary_energy=auxiliary_energy,
+        trained_baselines=int(trained_baselines or 0),
+        data_range=dict(data_range) if data_range else {},
     )
 
     return {
@@ -688,7 +818,11 @@ async def get_partner_press_summary(
             "end": end.isoformat(),
             "label": _period_label(start, end),
         },
-        "scope_note": "Energy is group-level meter data only; press-level energy is not allocated.",
+        "scope_note": (
+            "KPI energy uses the three group-level meters only. The Bret transformer "
+            "reference series is retained separately and is not added to group totals; "
+            "press-level energy is not allocated."
+        ),
         "question_type": question_type,
         "selected_group": selected_group,
         "selected_press": selected_press,
@@ -699,13 +833,25 @@ async def get_partner_press_summary(
         "production_by_press": production_by_press,
         "kpis": kpis,
         "anomalies": anomaly_summary,
+        "auxiliary_energy": [
+            {
+                **item,
+                "start": item["start"].isoformat() if item["start"] else None,
+                "end": item["end"].isoformat() if item["end"] else None,
+            }
+            for item in auxiliary_energy
+        ],
         "data_range": {
             "energy_start": data_range["energy_start"].isoformat() if data_range and data_range["energy_start"] else None,
             "energy_end": data_range["energy_end"].isoformat() if data_range and data_range["energy_end"] else None,
             "energy_rows": int(data_range["energy_rows"] or 0) if data_range else 0,
+            "group_energy_rows": int(data_range["group_energy_rows"] or 0) if data_range else 0,
+            "auxiliary_energy_rows": int(data_range["auxiliary_energy_rows"] or 0) if data_range else 0,
             "production_start": data_range["production_start"].isoformat() if data_range and data_range["production_start"] else None,
             "production_end": data_range["production_end"].isoformat() if data_range and data_range["production_end"] else None,
             "production_rows": int(data_range["production_rows"] or 0) if data_range else 0,
+            "group_production_rows": int(data_range["group_production_rows"] or 0) if data_range else 0,
+            "press_production_rows": int(data_range["press_production_rows"] or 0) if data_range else 0,
         },
         "response": response,
     }
@@ -723,34 +869,82 @@ def _build_response(
     total_energy: float,
     total_production: int,
     period: str,
+    auxiliary_meters: list[str],
+    auxiliary_energy: list[dict],
+    trained_baselines: int,
+    data_range: dict,
 ) -> str:
     question = (question_type or "summary").lower()
     group_energy = {item["group"]: item for item in energy_by_group}
     group_production = {item["group"]: item for item in production_by_group}
     press_production = {item["press_name"]: item for item in production_by_press}
+    latest_energy = data_range.get("energy_end")
+    latest_production = data_range.get("production_end")
+    energy_start = data_range.get("energy_start")
+    production_start = data_range.get("production_start")
+
+    def date_text(value: Any) -> str:
+        if not value:
+            return "unavailable"
+        return value.date().isoformat() if hasattr(value, "date") else str(value)[:10]
 
     if question == "current_data":
         return (
             "The ASSA ABLOY partner press-shop package has historical data, not live data. "
-            f"The configured pilot period is {period}, and the latest imported readings end on "
-            "2026-05-31. I will not substitute simulator or today's demo data for this partner answer."
+            f"The configured KPI period is {period}. The latest imported energy date is "
+            f"{date_text(latest_energy)}, and the latest SQDC production date is "
+            f"{date_text(latest_production)}. I will not substitute simulator or today's "
+            "demo data for this partner answer."
         )
 
     if question == "period":
         return (
-            f"The configured ASSA ABLOY partner pilot period is {period}. "
-            "Imported energy and production readings currently run from 2026-03-13 through "
-            "2026-05-31. Questions without an explicit date use the partner pilot period, "
-            "not today's simulator data."
+            f"The configured ASSA ABLOY KPI period is {period}. Imported energy runs from "
+            f"{date_text(energy_start)} through {date_text(latest_energy)}, while SQDC "
+            f"production runs from {date_text(production_start)} through "
+            f"{date_text(latest_production)}. Questions without an explicit date use the "
+            "configured KPI period, not today's simulator data."
+        )
+
+    if question == "data_inventory":
+        return (
+            "The ASSA ABLOY import contains "
+            f"{int(data_range.get('energy_rows') or 0):,} energy readings: "
+            f"{int(data_range.get('group_energy_rows') or 0):,} press-group meter rows "
+            f"and {int(data_range.get('auxiliary_energy_rows') or 0):,} Bret transformer "
+            "reference rows. It also contains "
+            f"{int(data_range.get('production_rows') or 0):,} materialized production rows: "
+            f"{int(data_range.get('press_production_rows') or 0):,} per-press SQDC rows and "
+            f"{int(data_range.get('group_production_rows') or 0):,} derived group rows. "
+            "The derived group rows support SEC calculations and are not additional source production."
+        )
+
+    if question == "reference_meter":
+        if not auxiliary_energy:
+            return (
+                f"No Bret transformer reference readings were found for {period}. "
+                "The transformer is never substituted into press-group KPI totals."
+            )
+        item = auxiliary_energy[0]
+        return (
+            f"For {period}, {item['asset_name']} has {item['readings']:,} hourly readings "
+            f"from {date_text(item['start'])} through {date_text(item['end'])}, totaling "
+            f"{item['energy_kwh']:,.2f} kWh. It is an upstream reference series and is "
+            "excluded from Bret press-group energy, total press-shop energy, and SEC."
         )
 
     if question == "machines":
         meter_groups = [item["asset_name"] for item in energy_by_group]
         presses = [item["press_name"] for item in production_by_press]
+        auxiliary_text = (
+            f" One separate reference meter is also retained: {', '.join(auxiliary_meters)}; "
+            "it is excluded from press-group KPI totals."
+            if auxiliary_meters else ""
+        )
         return (
             f"The partner press-shop instance has {len(meter_groups)} energy meter groups "
             f"and {len(presses)} presses. Energy meter groups: {', '.join(meter_groups)}. "
-            f"Presses: {', '.join(presses)}."
+            f"Presses: {', '.join(presses)}.{auxiliary_text}"
         )
 
     if question in {"seus", "baseline_status"}:
@@ -765,10 +959,11 @@ def _build_response(
             "meter groups; individual presses are production assets, not separate energy SEUs."
         )
         if question == "baseline_status":
+            remaining = max(0, 3 - trained_baselines)
             return (
                 base
-                + " The SEU registry currently marks 0 of these 3 partner SEUs as having "
-                "trained EnPI baselines, so all 3 still need linked baseline status for OVOS."
+                + f" The system currently has active EnPI baselines for {trained_baselines} "
+                f"of the 3 partner meter groups; {remaining} remain untrained."
             )
         return base
 

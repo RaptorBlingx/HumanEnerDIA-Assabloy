@@ -2358,7 +2358,44 @@
         }
     }
 
+    function normalizePartnerSpeechTranscript(text) {
+        let normalized = ` ${text || ''} `;
+        const replacements = [
+            [/\bthe breakfast club\b/ig, 'the Bret press group'],
+            [/\bbreakfast club\b/ig, 'Bret press group'],
+            [/\bbreakfast group\b/ig, 'Bret press group'],
+            [/\bbread press(?:es)?\b/ig, 'Bret presses'],
+            [/\bbrett press(?:es)?\b/ig, 'Bret presses'],
+            [/\bbrett\b/ig, 'Bret'],
+            [/\bbrent\b/ig, 'Bret'],
+            [/\bbrat\b/ig, 'Bret'],
+            [/\bbreath press(?:es)?\b/ig, 'Bret presses'],
+            [/\bdime echo\b/ig, 'Dimeco'],
+            [/\bdim echo\b/ig, 'Dimeco'],
+            [/\bdynamo\b/ig, 'Dimeco'],
+            [/\bdy meco\b/ig, 'Dimeco'],
+            [/\bdie meco\b/ig, 'Dimeco'],
+            [/\brasta\b/ig, 'Raster'],
+            [/\brastor\b/ig, 'Raster'],
+            [/\bflexy\b/ig, 'Flexi'],
+            [/\bshoe eighty\b/ig, 'Schu80'],
+            [/\bshoe 80\b/ig, 'Schu80'],
+            [/\bschu eighty\b/ig, 'Schu80'],
+            [/\braster one sixty\b/ig, 'Rast160'],
+            [/\brast one sixty\b/ig, 'Rast160'],
+            [/\bbret one twenty five\b/ig, 'Bret125'],
+            [/\bbret one sixty\b/ig, 'Bret160'],
+            [/\bbret two fifty\b/ig, 'Bret250']
+        ];
+
+        replacements.forEach(([pattern, replacement]) => {
+            normalized = normalized.replace(pattern, replacement);
+        });
+        return normalized.trim().replace(/\s+/g, ' ');
+    }
+
     async function sendMessage(text) {
+        text = normalizePartnerSpeechTranscript(text);
         if (!text.trim()) return;
 
         window.dispatchEvent(new CustomEvent('humanenerdia:pilot:assistant-query-start', {
@@ -2513,12 +2550,42 @@
         if (data.pdf_download && data.pdf_download.ready) {
             console.log('📄 PDF download available:', data.pdf_download.filename);
             console.log('📄 Calling downloadPDFFromURL...');
-            downloadPDFFromURL(data.pdf_download.download_url, data.pdf_download.filename);
+            const proxiedUrl = getProxiedAnalyticsUrl(data.pdf_download.download_url);
+            downloadPDFFromURL(proxiedUrl, data.pdf_download.filename);
             addMessage(`📄 Downloading: ${data.pdf_download.filename} (${data.pdf_download.file_size_kb.toFixed(1)} KB)`, false, false);
+            addDownloadLinkMessage(proxiedUrl, data.pdf_download.filename);
         } else if (data.pdf_base64 && data.pdf_filename) {
             console.log('📄 Triggering PDF download (base64):', data.pdf_filename);
             downloadPDF(data.pdf_base64, data.pdf_filename);
         }
+    }
+
+    function addDownloadLinkMessage(downloadUrl, filename) {
+        const container = document.getElementById('ovos-messages');
+        if (!container) return;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'ovos-message ovos-bot';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'ovos-bubble';
+
+        const label = document.createElement('span');
+        label.textContent = 'If the download does not start, ';
+        bubble.appendChild(label);
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename || '';
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'click here to download the PDF';
+        bubble.appendChild(link);
+
+        msgDiv.appendChild(bubble);
+        container.appendChild(msgDiv);
+        pruneMessages(container);
+        container.scrollTop = container.scrollHeight;
     }
 
     function playAudio(base64Data, format) {
@@ -2726,6 +2793,27 @@
      * @param {string} downloadUrl - Full URL to PDF download endpoint
      * @param {string} filename - Name for downloaded file
      */
+    function getProxiedAnalyticsUrl(downloadUrl) {
+        if (!downloadUrl) {
+            return downloadUrl;
+        }
+
+        if (downloadUrl.startsWith('/api/v1/')) {
+            return '/api/analytics' + downloadUrl;
+        }
+
+        if (downloadUrl.includes(':8001') || downloadUrl.includes('enms-analytics')) {
+            try {
+                const urlObj = new URL(downloadUrl);
+                return '/api/analytics' + urlObj.pathname;
+            } catch (e) {
+                console.warn(`⚠️ Could not parse URL, using as-is: ${downloadUrl}`);
+            }
+        }
+
+        return downloadUrl;
+    }
+
     async function downloadPDFFromURL(downloadUrl, filename) {
         try {
             console.log(`📄 Original PDF URL: ${downloadUrl}`);
@@ -2736,23 +2824,8 @@
             // 1. Relative path: /api/v1/reports/... → /api/analytics/api/v1/reports/...
             // 2. Absolute with :8001: http://host:8001/api/v1/... → /api/analytics/api/v1/...
             // 3. Docker service name: http://enms-analytics:8001/... → /api/analytics/...
-            let proxiedUrl = downloadUrl;
-            
-            if (downloadUrl.startsWith('/api/v1/')) {
-                // Relative path from API
-                proxiedUrl = '/api/analytics' + downloadUrl;
-                console.log(`📄 Rewritten relative path to nginx proxy: ${proxiedUrl}`);
-            } else if (downloadUrl.includes(':8001') || downloadUrl.includes('enms-analytics')) {
-                // Absolute URL or Docker service name
-                try {
-                    const urlObj = new URL(downloadUrl);
-                    proxiedUrl = '/api/analytics' + urlObj.pathname;
-                    console.log(`📄 Rewritten absolute URL to nginx proxy: ${proxiedUrl}`);
-                } catch (e) {
-                    // If URL parsing fails, try direct fetch (fallback)
-                    console.warn(`⚠️ Could not parse URL, using as-is: ${downloadUrl}`);
-                }
-            }
+            const proxiedUrl = getProxiedAnalyticsUrl(downloadUrl);
+            console.log(`📄 Using PDF URL: ${proxiedUrl}`);
             
             const response = await fetch(proxiedUrl);
             
@@ -2865,12 +2938,15 @@
             }
 
             // Show interim results in input
-            input.value = finalTranscript || interimTranscript;
+            input.value = finalTranscript
+                ? normalizePartnerSpeechTranscript(finalTranscript)
+                : interimTranscript;
 
             // Auto-send when final result received
             if (finalTranscript) {
+                const normalizedTranscript = normalizePartnerSpeechTranscript(finalTranscript);
                 setTimeout(() => {
-                    sendMessage(finalTranscript);
+                    sendMessage(normalizedTranscript);
                 }, 300);
             }
         };

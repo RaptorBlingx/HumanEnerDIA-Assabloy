@@ -354,6 +354,11 @@ async def get_top_consumers(
                 m for m in active_machines
                 if factory_filter in str(m.get('factory_name', '')).lower()
             ]
+            if "partner press" in factory_filter:
+                active_machines = [
+                    m for m in active_machines
+                    if m.get("asset_level") != "auxiliary_meter"
+                ]
         
         if not active_machines:
             return {

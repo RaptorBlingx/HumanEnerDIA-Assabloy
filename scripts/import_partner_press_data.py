@@ -34,6 +34,7 @@ DEFAULT_FACTORY_NAME = "Partner Press Shop"
 DEFAULT_FACTORY_ID = uuid.UUID("52f9e235-4ef2-5a1b-a302-5db5a06420fc")
 DATASET_SOURCE = "partner_press_shop_2026_06_10"
 NAMESPACE = uuid.UUID("0f720db0-7c42-5b1b-9b0b-93ba9e79e7c2")
+RAW_RETENTION_INTERVAL = "5 years"
 
 XLSX_NS = {
     "a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -80,6 +81,7 @@ class Machine:
     kind: str
     group_key: str | None
     is_meter_group: bool
+    is_auxiliary_meter: bool
     rated_power_kw: Decimal
 
 
@@ -117,7 +119,8 @@ class Dataset:
 
 
 def excel_datetime(value: str | int | float | Decimal) -> datetime:
-    return datetime(1899, 12, 30, tzinfo=timezone.utc) + timedelta(days=float(value))
+    seconds = round(float(value) * 86400)
+    return datetime(1899, 12, 30, tzinfo=timezone.utc) + timedelta(seconds=seconds)
 
 
 def normalize_decimal(value: str | int | float | Decimal | None) -> Decimal:
@@ -197,6 +200,7 @@ def machine_catalog() -> dict[str, Machine]:
             kind="other",
             group_key=group_key,
             is_meter_group=True,
+            is_auxiliary_meter=False,
             rated_power_kw=cfg["rated_power_kw"],
         )
         for press in GROUP_PRESS_NAMES[group_key]:
@@ -206,8 +210,18 @@ def machine_catalog() -> dict[str, Machine]:
                 kind="other",
                 group_key=group_key,
                 is_meter_group=False,
+                is_auxiliary_meter=False,
                 rated_power_kw=Decimal("0"),
             )
+    catalog["aux:bret_transformer"] = Machine(
+        id=machine_id("aux:bret_transformer"),
+        name="Bret Transformer Meter (TRAFO 3)",
+        kind="other",
+        group_key="bret",
+        is_meter_group=False,
+        is_auxiliary_meter=True,
+        rated_power_kw=Decimal("0"),
+    )
     return catalog
 
 
@@ -300,7 +314,6 @@ def parse_energy(
 
     for group_key, cfg in GROUPS.items():
         nested = zipfile.ZipFile(io.BytesIO(package.read(cfg["zip_name"])))
-        group_machine = catalog[f"group:{group_key}"]
         for name in sorted(nested.namelist()):
             if not name.lower().endswith(".xlsx"):
                 continue
@@ -331,14 +344,21 @@ def parse_energy(
 
             resolution = "hourly" if "_hours_" in name else "daily"
             interval_hours = Decimal("1") if resolution == "hourly" else Decimal("24")
+            target_machine = (
+                catalog["aux:bret_transformer"]
+                if is_bret_transformer
+                else catalog[f"group:{group_key}"]
+            )
             for row in rows[4:]:
                 if len(row) < 2 or row[0] in (None, "") or row[1] in (None, ""):
                     continue
                 energy_kwh = normalize_decimal(row[1])
+                # The source files do not declare a timezone. Preserve their wall-clock
+                # timestamps exactly instead of inventing a conversion at DST boundaries.
                 timestamp = excel_datetime(row[0])
                 energy_rows.append(
                     EnergyRow(
-                        machine_id=group_machine.id,
+                        machine_id=target_machine.id,
                         timestamp=timestamp,
                         energy_kwh=energy_kwh,
                         power_kw=(energy_kwh / interval_hours).quantize(Decimal("0.001")),
@@ -352,7 +372,7 @@ def parse_energy(
     return energy_rows, skipped
 
 
-def load_dataset(package_path: Path, include_bret_transformer: bool = False) -> Dataset:
+def load_dataset(package_path: Path, include_bret_transformer: bool = True) -> Dataset:
     catalog = machine_catalog()
     with zipfile.ZipFile(package_path) as package:
         required = {"SQDC.mai2025-mai2026.xlsx"} | {cfg["zip_name"] for cfg in GROUPS.values()}
@@ -361,7 +381,19 @@ def load_dataset(package_path: Path, include_bret_transformer: bool = False) -> 
             raise FileNotFoundError(f"Partner package is missing: {', '.join(sorted(missing))}")
         production_rows, warnings = parse_production(package, catalog)
         energy_rows, skipped = parse_energy(package, catalog, include_bret_transformer)
-    return Dataset(catalog, energy_rows, production_rows, skipped, warnings)
+    dataset = Dataset(catalog, energy_rows, production_rows, skipped, warnings)
+    validate_dataset(dataset)
+    return dataset
+
+
+def validate_dataset(dataset: Dataset) -> None:
+    energy_keys = [(row.machine_id, row.timestamp) for row in dataset.energy_rows]
+    if len(energy_keys) != len(set(energy_keys)):
+        raise ValueError("Partner energy source contains duplicate machine/timestamp keys")
+
+    production_keys = [(row.machine_id, row.timestamp) for row in dataset.production_rows]
+    if len(production_keys) != len(set(production_keys)):
+        raise ValueError("Partner production source contains duplicate machine/timestamp keys")
 
 
 def sql_literal(value: object) -> str:
@@ -392,10 +424,40 @@ def chunked(items: list[object], size: int) -> Iterable[list[object]]:
         yield items[idx: idx + size]
 
 
-def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refresh_aggregates: bool) -> str:
-    lines: list[str] = [
-        "\\set ON_ERROR_STOP on",
+def build_sql(
+    dataset: Dataset,
+    factory_name: str,
+    factory_id: uuid.UUID,
+    refresh_aggregates: bool,
+    preserve_historical_data: bool,
+) -> str:
+    lines: list[str] = ["\\set ON_ERROR_STOP on"]
+    if preserve_historical_data:
+        lines += [
+            "-- The partner package is older than the platform's default 90-day raw-data window.",
+            "-- Extend raw retention so a later policy run cannot silently delete pilot history.",
+            "SELECT remove_retention_policy('energy_readings', if_exists => TRUE);",
+            f"SELECT add_retention_policy('energy_readings', INTERVAL '{RAW_RETENTION_INTERVAL}', if_not_exists => TRUE);",
+            "SELECT remove_retention_policy('production_data', if_exists => TRUE);",
+            f"SELECT add_retention_policy('production_data', INTERVAL '{RAW_RETENTION_INTERVAL}', if_not_exists => TRUE);",
+            "",
+            "-- Existing recent chunks may already be compressed; make the exact-source reimport writable.",
+            "SELECT decompress_chunk(format('%I.%I', chunk_schema, chunk_name)::regclass, if_compressed => TRUE)",
+            "FROM timescaledb_information.chunks",
+            "WHERE hypertable_name IN ('energy_readings', 'production_data')",
+            "  AND is_compressed",
+            "  AND range_start < TIMESTAMPTZ '2026-06-01T00:00:00+00'",
+            "  AND range_end > TIMESTAMPTZ '2025-03-01T00:00:00+00';",
+            "",
+        ]
+
+    lines += [
         "BEGIN;",
+        "",
+        "-- Replace this source dataset exactly, so removed or corrected source rows cannot linger.",
+        f"DELETE FROM anomalies WHERE machine_id IN (SELECT id FROM machines WHERE metadata->>'source_dataset' = {sql_literal(DATASET_SOURCE)});",
+        f"DELETE FROM energy_readings WHERE source = 'partner_import' OR metadata->>'source_dataset' = {sql_literal(DATASET_SOURCE)};",
+        f"DELETE FROM production_data WHERE metadata->>'source_dataset' = {sql_literal(DATASET_SOURCE)};",
         "",
         "INSERT INTO factories (id, name, location, timezone, is_active, metadata)",
         "VALUES (",
@@ -418,17 +480,29 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
 
     machine_rows = []
     for machine in sorted(dataset.machines.values(), key=lambda item: item.name):
+        if machine.is_meter_group:
+            asset_level = "meter_group"
+            energy_scope = "group_meter_only"
+            asset_description = "meter group"
+        elif machine.is_auxiliary_meter:
+            asset_level = "auxiliary_meter"
+            energy_scope = "upstream_reference_not_in_group_totals"
+            asset_description = "auxiliary reference meter"
+        else:
+            asset_level = "press"
+            energy_scope = "no_direct_energy_meter"
+            asset_description = "press"
         metadata = {
             "source_dataset": DATASET_SOURCE,
-            "asset_level": "meter_group" if machine.is_meter_group else "press",
+            "asset_level": asset_level,
             "group": machine.group_key,
-            "energy_scope": "group_meter_only" if machine.is_meter_group else "no_direct_energy_meter",
+            "energy_scope": energy_scope,
         }
         machine_rows.append((
             machine.id,
             factory_id,
             machine.name,
-            f"Partner press-shop {'meter group' if machine.is_meter_group else 'press'} imported from {DATASET_SOURCE}",
+            f"Partner press-shop {asset_description} imported from {DATASET_SOURCE}",
             machine.kind,
             "Partner",
             "Foreign partner source data",
@@ -440,7 +514,7 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
             86400,
             f"factory/partner-press-shop/{machine.name.lower().replace(' ', '-').replace('/', '-')}",
             True,
-            machine.is_meter_group,
+            machine.is_meter_group or machine.is_auxiliary_meter,
             json.dumps(metadata, sort_keys=True, separators=(",", ":")),
         ))
 
@@ -520,6 +594,7 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
                         "source_dataset": DATASET_SOURCE,
                         "source_file": row.source_file,
                         "source_component": row.source_component,
+                        "source_timezone": "unspecified_source_wall_time",
                         "group": row.group_key,
                         "resolution": row.resolution,
                     }, sort_keys=True, separators=(",", ":")),
@@ -549,15 +624,17 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
                     row.timestamp,
                     row.machine_id,
                     row.production_count,
-                    row.production_count,
-                    0,
+                    None,
+                    None,
                     "running" if row.production_count > 0 else "idle",
                     "press-shop-production",
-                    Decimal("100.00"),
+                    None,
                     json.dumps({
                         "source_dataset": DATASET_SOURCE,
                         "source_kind": row.source_kind,
                         "source_column": row.source_column,
+                        "quantity_semantics": "net_quantity_including_negative_corrections",
+                        "is_negative_adjustment": row.production_count < 0,
                         "group": row.group_key,
                         "press_name": row.press_name,
                         "source_rows": row.source_rows,
@@ -647,7 +724,7 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
     lines += [
         "SELECT",
         "  (SELECT COUNT(*) FROM machines WHERE metadata->>'source_dataset' = 'partner_press_shop_2026_06_10') AS partner_machines,",
-        "  (SELECT COUNT(*) FROM energy_readings WHERE source = 'partner_import') AS partner_energy_rows,",
+        "  (SELECT COUNT(*) FROM energy_readings WHERE metadata->>'source_dataset' = 'partner_press_shop_2026_06_10') AS partner_energy_rows,",
         "  (SELECT COUNT(*) FROM production_data WHERE metadata->>'source_dataset' = 'partner_press_shop_2026_06_10') AS partner_production_rows;",
     ]
     return "\n".join(lines)
@@ -656,7 +733,8 @@ def build_sql(dataset: Dataset, factory_name: str, factory_id: uuid.UUID, refres
 def profile(dataset: Dataset) -> dict[str, object]:
     energy_by_group: dict[str, dict[str, object]] = {}
     for group_key in GROUPS:
-        rows = [row for row in dataset.energy_rows if row.group_key == group_key]
+        group_machine_id = dataset.machines[f"group:{group_key}"].id
+        rows = [row for row in dataset.energy_rows if row.machine_id == group_machine_id]
         if rows:
             energy_by_group[group_key] = {
                 "rows": len(rows),
@@ -680,11 +758,38 @@ def profile(dataset: Dataset) -> dict[str, object]:
         stats["start"] = row_date if current_start is None else min(str(current_start), row_date)
         stats["end"] = row_date if current_end is None else max(str(current_end), row_date)
 
+    auxiliary_rows = [
+        row
+        for row in dataset.energy_rows
+        if dataset.machines["aux:bret_transformer"].id == row.machine_id
+    ]
+    negative_production_rows = [
+        row for row in dataset.production_rows if row.production_count < 0
+    ]
+
     return {
         "dataset": DATASET_SOURCE,
         "machines": len(dataset.machines),
         "energy": energy_by_group,
+        "auxiliary_energy": {
+            "bret_transformer": {
+                "rows": len(auxiliary_rows),
+                "total_kwh": float(sum((row.energy_kwh for row in auxiliary_rows), Decimal("0"))),
+                "start": min((row.timestamp for row in auxiliary_rows), default=None).isoformat()
+                if auxiliary_rows else None,
+                "end": max((row.timestamp for row in auxiliary_rows), default=None).isoformat()
+                if auxiliary_rows else None,
+                "included_in_group_totals": False,
+            }
+        },
         "production": prod_by_machine,
+        "production_adjustments": {
+            "negative_daily_rows": len(negative_production_rows),
+            "note": (
+                "Negative LIBRE1 corrections are preserved in net production_count. "
+                "Good/bad quality counts are not present in the source and remain null."
+            ),
+        },
         "skipped_energy_files": dataset.skipped_energy_files,
         "warnings": dataset.warnings,
     }
@@ -737,9 +842,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--package", type=Path, default=DEFAULT_PACKAGE, help="Path to the partner attachment zip.")
     parser.add_argument("--factory-name", default=DEFAULT_FACTORY_NAME)
     parser.add_argument("--factory-id", type=uuid.UUID, default=DEFAULT_FACTORY_ID)
-    parser.add_argument("--include-bret-transformer", action="store_true", help="Also import the separate Bret transformer hourly file.")
+    parser.add_argument(
+        "--exclude-bret-transformer",
+        action="store_true",
+        help="Exclude the separate Bret transformer reference meter. It is imported by default.",
+    )
     parser.add_argument("--apply", action="store_true", help="Apply the import to the configured PostgreSQL database.")
     parser.add_argument("--no-refresh-aggregates", action="store_true", help="Skip continuous aggregate refresh calls.")
+    parser.add_argument(
+        "--keep-default-retention",
+        action="store_true",
+        help="Keep the platform's default raw-data retention policy. This will delete older partner history.",
+    )
     parser.add_argument("--env-file", type=Path, default=Path(".env"), help="Environment file for DB credentials.")
     parser.add_argument("--write-sql", type=Path, help="Write generated SQL to this path.")
     parser.add_argument("--json", action="store_true", help="Print profile as JSON.")
@@ -748,7 +862,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    dataset = load_dataset(args.package, include_bret_transformer=args.include_bret_transformer)
+    dataset = load_dataset(
+        args.package,
+        include_bret_transformer=not args.exclude_bret_transformer,
+    )
     summary = profile(dataset)
     if args.json:
         print(json.dumps(summary, indent=2, sort_keys=True))
@@ -758,6 +875,12 @@ def main() -> int:
         print("Energy by group:")
         for group_key, stats in summary["energy"].items():
             print(f"  - {group_key}: {stats['rows']} rows, {stats['total_kwh']:.3f} kWh, {stats['start']} to {stats['end']}")
+        transformer = summary["auxiliary_energy"]["bret_transformer"]
+        print(
+            "Auxiliary reference energy:\n"
+            f"  - bret transformer: {transformer['rows']} rows, "
+            f"{transformer['total_kwh']:.3f} kWh, excluded from group totals"
+        )
         print("Production rows by machine:")
         for name, stats in sorted(summary["production"].items()):
             print(f"  - {name}: {stats['rows']} rows, {stats['total_units']} units, {stats['start']} to {stats['end']}")
@@ -773,6 +896,7 @@ def main() -> int:
         factory_name=args.factory_name,
         factory_id=args.factory_id,
         refresh_aggregates=not args.no_refresh_aggregates,
+        preserve_historical_data=not args.keep_default_retention,
     )
     if args.write_sql and not args.apply:
         args.write_sql.write_text(sql, encoding="utf-8")

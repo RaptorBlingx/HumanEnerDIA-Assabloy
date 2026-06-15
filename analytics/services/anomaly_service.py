@@ -136,6 +136,16 @@ class AnomalyService:
         # Save anomalies to database
         saved_anomalies = []
         for anomaly in detected_anomalies:
+            # Isolation Forest always returns a configured fraction of candidates.
+            # Candidates below the warning threshold are normal observations, not alerts.
+            if anomaly.get('severity') == 'normal':
+                logger.debug(
+                    "Skipping normal anomaly candidate for %s at %s",
+                    machine['name'],
+                    anomaly.get('detected_at')
+                )
+                continue
+
             # Check machine status before saving
             # Don't save anomalies during maintenance/fault modes
             machine_status = await _get_machine_status(machine_id)

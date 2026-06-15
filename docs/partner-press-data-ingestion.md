@@ -7,7 +7,9 @@ This is a dev-only ingestion path for the partner press-shop package received on
 
 The partner data is represented honestly:
 
-- Energy is imported only for the three meter groups: Bret, Raster, and Dimeco.
+- Energy is imported for the three meter groups: Bret, Raster, and Dimeco.
+- The separate Bret transformer workbook is retained as an auxiliary reference
+  meter and is excluded from press-group energy totals and SEC calculations.
 - Press-level energy is not invented.
 - SQDC production is imported per press.
 - Derived group production is also materialized for the three meter-group assets
@@ -55,9 +57,10 @@ SQDC production quantity uses column H (`LIBRE1`) as stated in the partner
 email. The importer aggregates duplicate SQDC rows to one daily row per press.
 
 The Bret archive also contains a separate March 2026 hourly transformer file
-for `Statia TRAFO-TRAFO 3`. The importer skips it by default because the normal
-Bret meter files already contain the press-group daily meter data. To include
-that separate transformer file intentionally, pass `--include-bret-transformer`.
+for `Statia TRAFO-TRAFO 3`. The importer includes it by default as
+`Bret Transformer Meter (TRAFO 3)`, with scope
+`upstream_reference_not_in_group_totals`. To omit that reference series, pass
+`--exclude-bret-transformer`.
 
 ## Dev Simulator Bypass
 
@@ -132,11 +135,13 @@ It refreshes Timescale continuous aggregates for the partner date range unless
 
 ## Expected Data Profile
 
-Default import, excluding the separate Bret transformer file:
+Default full import:
 
 ```text
-Partner machines: 16
-Energy rows: 1,235
+Partner machines: 17
+Energy rows: 1,978
+  Group-meter rows: 1,235
+  Auxiliary transformer rows: 743
 Production rows: 6,336
 Energy period: 2025-04-01 through 2026-05-31
 Production period: 2025-05-01 through 2026-05-31
@@ -150,6 +155,13 @@ Raster: 45,598.376 kWh
 Dimeco: 59,661.969 kWh
 ```
 
+Auxiliary reference total, excluded from the totals above:
+
+```text
+Bret Transformer Meter (TRAFO 3): 263,999.155 kWh
+2026-03-01 00:00 through 2026-03-31 23:00 source wall time
+```
+
 The dev pilot analytics profile uses `2025-05-01T00:00:00` through
 `2026-06-01T00:00:00`, matching the partner May 2025 through May 2026 scope and
 excluding April energy rows present in the Bret/Raster exports. In that pilot
@@ -159,7 +171,7 @@ period the group-meter energy totals are:
 Bret:   39,611.06 kWh
 Raster: 41,981.81 kWh
 Dimeco: 59,661.97 kWh
-Total: 141,254.84 kWh
+Total: 141,254.85 kWh
 ```
 
 Derived group production totals:
@@ -169,6 +181,14 @@ Bret Presses Meter Group:    7,797,167 units
 Raster Presses Meter Group:  7,756,785 units
 Dimeco Presses Meter Group: 12,071,713 units
 ```
+
+The SQDC source contains net quantity corrections in `LIBRE1`. The importer
+preserves the 13 negative daily net adjustments. The source does not contain
+good/bad quality classifications, so `production_count_good`,
+`production_count_bad`, and `quality_score` remain null.
+
+`Rast125-2` is intentionally mapped to the Dimeco physical group in the
+partner mapping, despite the `Rast` prefix.
 
 ## Validation Queries
 
@@ -287,3 +307,8 @@ Grafana:
   not show partner activity unless the dashboard/API time range is changed.
 - The importer does not allocate group energy to individual presses.
 - `Rast250-1` has zero production in SQDC column H for the imported period.
+
+## Presentation Evidence
+
+- [ASSA ABLOY data verification](ASSA-ABLOY-DATA-VERIFICATION.md)
+- [ASSA ABLOY OVOS demo queries](ASSA-ABLOY-OVOS-DEMO-QUERIES.md)

@@ -152,11 +152,15 @@ class CoverPage:
     
     def _get_logo_base64(self) -> str:
         """Load logo and encode as base64 for embedding in HTML."""
-        try:
-            logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'aplus-logo.png')
-            with open(logo_path, 'rb') as f:
-                logo_data = base64.b64encode(f.read()).decode()
-                return f"data:image/png;base64,{logo_data}"
-        except Exception as e:
-            logger.error(f"Failed to load logo: {e}")
-            return ""
+        image_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'images')
+        for filename in ("aplus-logo.png", "logo.png"):
+            logo_path = os.path.join(image_dir, filename)
+            if not os.path.exists(logo_path):
+                continue
+            try:
+                with open(logo_path, 'rb') as f:
+                    logo_data = base64.b64encode(f.read()).decode()
+                    return f"data:image/png;base64,{logo_data}"
+            except Exception as e:
+                logger.warning(f"Failed to load logo {logo_path}: {e}")
+        return ""

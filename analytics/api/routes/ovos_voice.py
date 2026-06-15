@@ -21,6 +21,7 @@ from typing import Optional
 import httpx
 import os
 import logging
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from database import db
 from services.energy_performance_engine import get_performance_engine
 from services.enpi_tracker import EnPITracker
 from api.routes.ovos import get_top_consumers
+from api.routes.partner_press import PARTNER_FACTORY_NAME, get_partner_press_summary
 from reports_v2.services.report_service import ReportGenerationService
 
 logger = logging.getLogger(__name__)
@@ -112,6 +114,42 @@ def _normalize_query(text: str) -> str:
     return " ".join((text or "").lower().strip().split())
 
 
+def _normalize_partner_speech_text(text: str) -> str:
+    """Correct common browser-STT mistakes for ASSA ABLOY pilot asset names."""
+    normalized = f" {text or ''} "
+    replacements = [
+        (r"\bthe breakfast club\b", "the Bret press group"),
+        (r"\bbreakfast club\b", "Bret press group"),
+        (r"\bbreakfast group\b", "Bret press group"),
+        (r"\bbread press(?:es)?\b", "Bret presses"),
+        (r"\bbrett press(?:es)?\b", "Bret presses"),
+        (r"\bbrett\b", "Bret"),
+        (r"\bbrent\b", "Bret"),
+        (r"\bbrat\b", "Bret"),
+        (r"\bbreath press(?:es)?\b", "Bret presses"),
+        (r"\bdime echo\b", "Dimeco"),
+        (r"\bdim echo\b", "Dimeco"),
+        (r"\bdynamo\b", "Dimeco"),
+        (r"\bdy meco\b", "Dimeco"),
+        (r"\bdie meco\b", "Dimeco"),
+        (r"\brasta\b", "Raster"),
+        (r"\brastor\b", "Raster"),
+        (r"\braster presses?\b", "Raster presses"),
+        (r"\bflexy\b", "Flexi"),
+        (r"\bshoe eighty\b", "Schu80"),
+        (r"\bshoe 80\b", "Schu80"),
+        (r"\bschu eighty\b", "Schu80"),
+        (r"\braster one sixty\b", "Rast160"),
+        (r"\brast one sixty\b", "Rast160"),
+        (r"\bbret one twenty five\b", "Bret125"),
+        (r"\bbret one sixty\b", "Bret160"),
+        (r"\bbret two fifty\b", "Bret250"),
+    ]
+    for pattern, replacement in replacements:
+        normalized = re.sub(pattern, replacement, normalized, flags=re.IGNORECASE)
+    return " ".join(normalized.split())
+
+
 def _is_enpi_query(text: str) -> bool:
     normalized = _normalize_query(text)
     phrases = [
@@ -159,6 +197,16 @@ def _is_partner_press_query(text: str) -> bool:
         "bret",
         "raster",
         "dimeco",
+        "dime echo",
+        "dim echo",
+        "dynamo",
+        "breakfast club",
+        "breakfast group",
+        "brett",
+        "brent",
+        "rasta",
+        "rastor",
+        "flexy",
         "sqdc",
     ]
     return any(term in normalized for term in terms)
@@ -256,6 +304,52 @@ def _top_consumer_limit(text: str) -> int:
     return 5
 
 
+async def _resolve_report_factory_id(normalized_text: str) -> str:
+    """Resolve report factory for the active pilot instead of using stale demo UUIDs."""
+    preferred_name = PARTNER_FACTORY_NAME if _is_partner_pilot_default_query(normalized_text) else None
+
+    async with db.pool.acquire() as conn:
+        if preferred_name:
+            factory_id = await conn.fetchval(
+                """
+                SELECT id::text
+                FROM factories
+                WHERE name = $1
+                  AND is_active = TRUE
+                LIMIT 1
+                """,
+                preferred_name,
+            )
+            if factory_id:
+                return factory_id
+
+        factory_id = await conn.fetchval(
+            """
+            SELECT id::text
+            FROM factories
+            WHERE id::text = $1
+              AND is_active = TRUE
+            LIMIT 1
+            """,
+            SIMULATED_PILOT_FACTORY_ID,
+        )
+        if factory_id:
+            return factory_id
+
+        factory_id = await conn.fetchval(
+            """
+            SELECT id::text
+            FROM factories
+            WHERE is_active = TRUE
+            ORDER BY name
+            LIMIT 1
+            """
+        )
+        if not factory_id:
+            raise ValueError("No active factory is available for report generation")
+        return factory_id
+
+
 def _humanize_status(value: str) -> str:
     return str(value or "unknown").replace("_", " ")
 
@@ -320,16 +414,47 @@ async def _build_enpi_fallback_response(session_id: str, start_time: datetime) -
 async def _build_top_consumers_fallback_response(session_id: str, start_time: datetime, normalized_text: str) -> VoiceQueryResponse:
     limit = _top_consumer_limit(normalized_text)
     if _is_partner_pilot_default_query(normalized_text):
-        ranking_data = await get_top_consumers(
-            metric="energy",
-            start_time=datetime(2025, 5, 1),
-            end_time=datetime(2026, 6, 1),
-            limit=limit,
-            factory_name="Partner Press Shop",
+        partner_data = await get_partner_press_summary(
+            question_type="top_energy",
+            group=None,
+            press=None,
+            start_time=None,
+            end_time=None,
         )
+        energy_by_group = partner_data.get("energy_by_group", [])[:limit]
+        total_value = float(partner_data.get("total_energy_kwh") or 0)
+        ranking = [
+            {
+                "rank": idx,
+                "machine_id": item.get("group"),
+                "machine_name": item.get("asset_name"),
+                "machine_type": "meter_group",
+                "value": round(float(item.get("energy_kwh") or 0), 2),
+                "percentage": round((float(item.get("energy_kwh") or 0) / total_value * 100), 1) if total_value else 0,
+                "energy_kwh": round(float(item.get("energy_kwh") or 0), 2),
+                "cost_usd": round(float(item.get("energy_kwh") or 0) * 0.15, 2),
+                "avg_power_kw": round(float(item.get("avg_power_kw") or 0), 2),
+            }
+            for idx, item in enumerate(energy_by_group, start=1)
+        ]
+        ranking_data = {
+            "metric": "energy",
+            "metric_label": "Energy Consumption",
+            "time_period": partner_data.get("period"),
+            "factory_filter": "Partner Press Shop",
+            "total_value": round(total_value, 2),
+            "unit": "kWh",
+            "machines_analyzed": len(ranking),
+            "ranking": ranking,
+            "scope_note": partner_data.get("scope_note"),
+            "source_dataset": partner_data.get("source_dataset"),
+            "auxiliary_energy": partner_data.get("auxiliary_energy", []),
+        }
+        response_override = partner_data.get("response")
         subtitle = "Partner press-shop dataset, May 2025 through May 2026"
     else:
         ranking_data = await get_top_consumers(metric="energy", limit=limit)
+        response_override = None
         subtitle = "Current ranking snapshot"
     ranking = ranking_data.get("ranking", [])
 
@@ -358,9 +483,11 @@ async def _build_top_consumers_fallback_response(session_id: str, start_time: da
         )
 
     total_value = ranking_data.get("total_value", 0)
-    response_text = f"Top {len(ranking)} energy consumers:\n" + "\n".join(
-        f"{item['rank']}. {item['machine_name']}: {item['value']} kWh ({item['percentage']}% of total)"
-        for item in ranking
+    response_text = response_override or (
+        f"Top {len(ranking)} energy consumers:\n" + "\n".join(
+            f"{item['rank']}. {item['machine_name']}: {item['value']} kWh ({item['percentage']}% of total)"
+            for item in ranking
+        )
     )
 
     top_item = ranking[0]
@@ -418,10 +545,11 @@ async def _build_report_download_response(
     month_name = datetime(year, month, 1).strftime("%B")
     report_id = str(uuid.uuid4())
     output_path = Path(f"/tmp/enms_report_v2_{report_id}.pdf")
+    factory_id = await _resolve_report_factory_id(normalized_text)
 
     service = ReportGenerationService(db)
     result_path = await service.generate_monthly_report(
-        factory_id=SIMULATED_PILOT_FACTORY_ID,
+        factory_id=factory_id,
         year=year,
         month=month,
         output_path=output_path,
@@ -441,7 +569,7 @@ async def _build_report_download_response(
         confidence=1.0,
         data={
             "success": True,
-            "factory_id": SIMULATED_PILOT_FACTORY_ID,
+            "factory_id": factory_id,
             "report_id": report_id,
             "report_type": "monthly_energy",
             "year": year,
@@ -658,7 +786,8 @@ async def voice_query(request: VoiceQueryRequest):
     Set OVOS_BRIDGE_HOST environment variable to the Windows/WSL2 machine IP.
     """
     start_time = datetime.now()
-    normalized_text = _normalize_query(request.text)
+    corrected_text = _normalize_partner_speech_text(request.text)
+    normalized_text = _normalize_query(corrected_text)
     fallback_session_id = request.session_id or "auto"
 
     if _is_top_consumers_query(normalized_text):
@@ -693,7 +822,7 @@ async def voice_query(request: VoiceQueryRequest):
             response = await client.post(
                 f"{OVOS_BRIDGE_URL}{endpoint}",
                 json={
-                    "text": request.text,
+                    "text": corrected_text,
                     "session_id": request.session_id
                 }
             )
