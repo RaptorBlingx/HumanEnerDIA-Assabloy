@@ -24,6 +24,7 @@ import logging
 import re
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 from database import db
 from services.energy_performance_engine import get_performance_engine
@@ -584,8 +585,8 @@ async def _build_report_download_response(
     return VoiceQueryResponse(
         success=True,
         response=(
-            f"Your monthly energy report for {month_name} {year} is ready. "
-            "The download should start automatically in your browser."
+            f"{month_name} {year} monthly energy report is ready. "
+            "The browser download should start now."
         ),
         intent="report_download",
         confidence=1.0,
