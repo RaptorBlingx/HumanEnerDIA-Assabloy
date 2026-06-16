@@ -67,6 +67,29 @@ For individual presses such as `Bret125-1` and `Rast125-2`, the correct answer i
 - `What are the significant energy uses in the partner press shop?`
 - `download the ASSA ABLOY partner press shop report for May 2026`
 
+## Voice-Optimized Expected OVOS Responses
+
+The Condition B OVOS responses are intentionally concise so the benchmark measures assisted task completion rather than long text-to-speech playback.
+
+- `Show KPIs for the ASSA ABLOY partner press shop`
+  Expected: total energy `141,254.85 kWh`, production `27,625,665 units`, and SEC values for Dimeco `0.004942`, Raster `0.005412`, and Bret `0.005080 kWh/unit`.
+- `Compare Bret, Raster, and Dimeco energy consumption`
+  Expected: Dimeco `59,661.97 kWh`, Raster `41,981.81 kWh`, and Bret `39,611.06 kWh`.
+- `Explain SEC for the partner press shop`
+  Expected: SEC is `kWh per produced unit`, with Dimeco `0.004942`, Raster `0.005412`, and Bret `0.005080 kWh/unit`.
+- `Which partner meter groups have baselines?`
+  Expected: `3 of 3` active baselines for the Bret, Dimeco, and Raster meter groups.
+- `How many readings and rows were imported for ASSA ABLOY?`
+  Expected: `1,978` energy readings and `6,336` production rows, including `1,235` group-meter, `743` transformer, and `5,148` per-press SQDC rows.
+- `What does the Bret transformer reference meter show?`
+  Expected: `743` readings and `263,999.16 kWh`, marked as reference-only and excluded from KPIs and SEC.
+- `Energy consumption of Bret125-1`
+  Expected: no direct per-press energy meter; energy is only available for Bret, Raster, and Dimeco groups.
+- `What are the significant energy uses in the partner press shop?`
+  Expected: Bret Presses Electricity, Dimeco Presses Electricity, and Raster Presses Electricity.
+- `download the ASSA ABLOY partner press shop report for May 2026`
+  Expected in the browser widget: May 2026 monthly report-ready/download response.
+
 ## Prompts To Avoid
 
 - Avoid old simulated-factory prompts such as `Compressor-1`, `Boiler-1`, `Injection-Molding-1`, or generic anomaly tasks.

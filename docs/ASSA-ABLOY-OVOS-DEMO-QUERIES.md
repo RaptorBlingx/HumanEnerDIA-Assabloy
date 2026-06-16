@@ -1,27 +1,26 @@
 # ASSA ABLOY OVOS Demo Queries
 
-Verified on 2026-06-15 against the running OVOS REST bridge:
+Official benchmark prompts should be tested against the running OVOS REST bridge:
 
 ```text
 POST http://localhost:5000/query
 ```
 
-Result: **40 of 40 queries passed** after the final OVOS image rebuild.
-Verification checked the spoken response, structured intent, partner question
-type, expected fact, analytics HTTP 200 response, and OVOS intent-match log.
+The recommended benchmark subset below uses voice-optimized responses: enough
+information to complete the task, without unnecessary text-to-speech playback.
 
 ## Recommended Demo Sequence
 
 1. `Show KPIs for the ASSA ABLOY partner press shop`
-   - 141,254.85 kWh, 27,625,665 units, and SEC for all three groups.
+   - Energy 141,254.85 kWh, production 27,625,665 units, and SEC for all three groups.
 2. `What are the top energy consumers in the partner press shop?`
    - Dimeco first, Raster second, Bret third.
 3. `Compare Bret, Raster, and Dimeco energy consumption`
-   - Dimeco 59,661.97; Raster 41,981.81; Bret 39,611.06 kWh.
+   - Dimeco 59,661.97 kWh, Raster 41,981.81 kWh, Bret 39,611.06 kWh.
 4. `What does the Bret transformer reference meter show?`
-   - 743 hourly rows and 263,999.16 kWh, explicitly excluded from KPIs.
+   - 743 readings and 263,999.16 kWh, reference-only and excluded from KPIs.
 5. `How many readings and rows were imported for ASSA ABLOY?`
-   - 1,978 energy rows and 6,336 materialized production rows.
+   - 1,978 energy readings, 6,336 production rows, plus the key row splits.
 6. `Energy consumption of Bret125-1`
    - Correctly refuses to invent per-press energy.
 
@@ -74,7 +73,7 @@ type, expected fact, analytics HTTP 200 response, and OVOS intent-match log.
 26. `Show the Dimeco performance indicators`
     - SEC 0.004942 kWh/unit.
 27. `Explain SEC for the partner press shop`
-    - Explains specific energy consumption and lists all group values.
+    - Defines SEC as kWh per produced unit and lists all group values.
 28. `What are the significant energy uses in the partner press shop?`
     - Bret, Dimeco, and Raster Presses Electricity.
 29. `Which partner meter groups have baselines?`
