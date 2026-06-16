@@ -5,6 +5,21 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEFAULT_PACKAGE="$ROOT/data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip"
 PACKAGE="${ASSAABLOY_PACKAGE:-${1:-$DEFAULT_PACKAGE}}"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.partner-press.yml)
+LAB_CONTAINERS=(
+  enms-nginx
+  enms-postgres
+  enms-mqtt
+  enms-redis
+  enms-simulator
+  enms-nodered
+  enms-grafana
+  enms-analytics
+  enms-query-service
+  enms-auth-service
+  enms-rasa-actions
+  enms-rasa
+  enms-chatbot
+)
 
 die() {
   echo "ERROR: $*" >&2
@@ -34,6 +49,50 @@ wait_for_postgres() {
     sleep 2
   done
   die "PostgreSQL did not become ready."
+}
+
+preflight_container_conflicts() {
+  local conflicts=()
+  local name
+  for name in "${LAB_CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -Fxq "$name"; then
+      conflicts+=("$name")
+    fi
+  done
+
+  if [[ ${#conflicts[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  if [[ "${ASSAABLOY_LAB_REPLACE_EXISTING:-false}" == "true" ]]; then
+    echo "Removing existing HumanEnerDIA containers because ASSAABLOY_LAB_REPLACE_EXISTING=true:"
+    printf '  %s\n' "${conflicts[@]}"
+    docker rm -f "${conflicts[@]}" >/dev/null
+    return 0
+  fi
+
+  cat >&2 <<EOF
+ERROR: Existing HumanEnerDIA/EnMS containers are already using the fixed lab names:
+$(printf '  - %s\n' "${conflicts[@]}")
+
+This ASSA ABLOY lab stack uses the same container names as the full HumanEnerDIA stack.
+Stop or remove the existing stack before running this bootstrap.
+
+If the existing stack is disposable on this Ubuntu machine, run:
+
+  docker rm -f ${conflicts[*]}
+
+Then rerun:
+
+  scripts/lab/bootstrap_assaabloy_lab.sh
+
+If you want the bootstrap script to remove the conflicting containers itself, run:
+
+  ASSAABLOY_LAB_REPLACE_EXISTING=true scripts/lab/bootstrap_assaabloy_lab.sh
+
+Do not use the replace option on a production or shared server.
+EOF
+  exit 1
 }
 
 cd "$ROOT"
@@ -67,6 +126,8 @@ The raw package is intentionally ignored by Git.
 EOF
   exit 1
 fi
+
+preflight_container_conflicts
 
 echo "Starting HumanEnerDIA ASSA ABLOY lab stack..."
 "${COMPOSE[@]}" up -d --build

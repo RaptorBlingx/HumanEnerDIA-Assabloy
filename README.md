@@ -25,6 +25,8 @@ The raw partner attachment is private and is not committed to Git.
 
 Do not run this stack beside another HumanEnerDIA stack on the same Docker host unless ports and container names are isolated.
 
+The lab compose file uses fixed container names such as `enms-mqtt`, `enms-postgres`, and `enms-nginx`. If another local EnMS/HumanEnerDIA stack is already present, stop or remove it before bootstrapping this lab.
+
 ## Install
 
 Clone the new repository:
@@ -57,6 +59,14 @@ Start the lab, import the data, train partner baselines, and verify the platform
 ```bash
 scripts/lab/bootstrap_assaabloy_lab.sh
 ```
+
+If Docker reports a container-name conflict such as `/enms-mqtt is already in use`, remove the old local lab containers first:
+
+```bash
+docker rm -f enms-nginx enms-postgres enms-mqtt enms-redis enms-simulator enms-nodered enms-grafana enms-analytics enms-query-service enms-auth-service enms-rasa-actions enms-rasa enms-chatbot
+```
+
+Then rerun the bootstrap script. Use this only on the isolated local benchmark machine, not on a production or shared server.
 
 ## Open The Lab
 
