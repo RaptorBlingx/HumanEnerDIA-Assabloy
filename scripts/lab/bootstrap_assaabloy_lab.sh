@@ -51,6 +51,35 @@ wait_for_postgres() {
   die "PostgreSQL did not become ready."
 }
 
+ensure_energy_baseline_schema() {
+  local has_energy_source_id
+
+  has_energy_source_id="$(docker exec enms-postgres psql \
+    -U "${POSTGRES_USER:-raptorblingx}" \
+    -d "${POSTGRES_DB:-enms}" \
+    -tAc "SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'energy_baselines'
+        AND column_name = 'energy_source_id'
+    );" | tr -d '[:space:]')"
+
+  if [[ "$has_energy_source_id" == "t" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f database/init/14-fix-multi-energy-baselines.sql ]]; then
+    die "energy_baselines.energy_source_id is missing and database/init/14-fix-multi-energy-baselines.sql was not found."
+  fi
+
+  echo "Applying multi-energy baseline schema migration..."
+  docker exec -i enms-postgres psql \
+    -U "${POSTGRES_USER:-raptorblingx}" \
+    -d "${POSTGRES_DB:-enms}" \
+    < database/init/14-fix-multi-energy-baselines.sql >/dev/null
+}
+
 preflight_container_conflicts() {
   local conflicts=()
   local name
@@ -146,6 +175,8 @@ if [[ -f database/init/12-forecast-predictions.sql ]]; then
     -d "${POSTGRES_DB:-enms}" \
     < database/init/12-forecast-predictions.sql >/dev/null
 fi
+
+ensure_energy_baseline_schema
 
 echo "Training partner baselines and short-horizon forecast models..."
 curl -fsS -X POST \
