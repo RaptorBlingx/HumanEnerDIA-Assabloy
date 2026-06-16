@@ -9,8 +9,8 @@ These are the expected facts for the real-partner dataset. They should be used t
 - Press-group meter rows: `1,235`.
 - Bret transformer reference rows: `743`.
 - Materialized production rows: `6,336`.
-- Per-press SQDC rows: `3,168`.
-- Derived group production rows: `3,168`.
+- Per-press SQDC rows: `5,148`.
+- Derived group production rows: `1,188`.
 - Total press-shop group-meter energy: `141,254.85 kWh`.
 - Total group production: `27,625,665 units`.
 

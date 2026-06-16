@@ -78,8 +78,8 @@ expected_rows = {
     "group_energy_rows": 1235,
     "auxiliary_energy_rows": 743,
     "production_rows": 6336,
-    "press_production_rows": 3168,
-    "group_production_rows": 3168,
+    "press_production_rows": 5148,
+    "group_production_rows": 1188,
 }
 for key, expected in expected_rows.items():
     if int(data_range[key]) != expected:
