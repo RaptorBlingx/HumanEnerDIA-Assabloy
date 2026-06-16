@@ -68,7 +68,9 @@
             })
             .catch(error => {
                 console.error('Auth verification failed:', error);
-                // On error, redirect to auth page for safety
+                // Avoid auth/index redirect loops if the token cannot be verified.
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_data');
                 window.location.replace('/auth.html');
             });
         })();
