@@ -5,83 +5,83 @@ const STORAGE_KEY = 'humanenerdia_pilot_extension_state_v1';
 const TASKS = [
   {
     id: 'O1',
-    title: 'Factory overview and top consumers',
+    title: 'Partner KPI overview',
     persona: 'Operational user',
     module: 'Monitoring',
-    task: 'Get a factory overview and identify the top 3 energy consumers.',
-    manual: 'Grafana Factory Overview: Energy Today, Current Power, Cost Today, Active Anomalies, Machine Status & Health, Energy by Machine (Today).',
-    assistant: 'OVOS: Give me a factory overview; Show top 3 energy consumers.',
-    stop: 'Stop when today/current factory status and top consumers Compressor-2, Injection-Molding-1, and Compressor-1 are visible.'
+    task: 'Retrieve the ASSA ABLOY press-shop KPI overview: total energy, total production, and group SEC values.',
+    manual: 'HumanEnerDIA partner KPI/dashboard views and reports.',
+    assistant: 'OVOS: Show KPIs for the ASSA ABLOY partner press shop.',
+    stop: 'Stop when total energy 141,254.85 kWh, total production 27,625,665 units, and Bret/Raster/Dimeco SEC values are visible.'
   },
   {
     id: 'O2',
-    title: "Compressor-1 status and today's energy",
+    title: 'Energy group comparison',
     persona: 'Operational user',
     module: 'Monitoring',
-    task: "Check the status and today's energy of Compressor-1.",
-    manual: 'Grafana Machine Health for Compressor-1. Use Operational Efficiency / Machine Status Overview if running status must be shown explicitly.',
-    assistant: "OVOS: What's the status of Compressor-1?",
-    stop: "Stop when Compressor-1 running status, current power, today's energy, and anomaly status are visible."
+    task: 'Compare Bret, Raster, and Dimeco group energy consumption for the partner KPI period.',
+    manual: 'HumanEnerDIA partner energy charts or partner summary API evidence.',
+    assistant: 'OVOS: Compare Bret, Raster, and Dimeco energy consumption.',
+    stop: 'Stop when Dimeco 59,661.97 kWh, Raster 41,981.81 kWh, and Bret 39,611.06 kWh are visible.'
   },
   {
     id: 'O3',
-    title: 'ISO 50001 and energy baseline',
+    title: 'Production and SEC meaning',
     persona: 'Operational user',
-    module: 'Documentation',
-    task: 'Understand what ISO 50001 is and what an energy baseline means.',
-    manual: '/energy-management-learning.html, optionally /api/analytics/ui/baseline.',
-    assistant: 'Rasa: What is ISO 50001?; What is an energy baseline?',
-    stop: 'Stop when both ISO 50001 and energy baseline definitions are visible.'
+    module: 'Analyses / Documentation',
+    task: 'Understand production-normalized performance using SEC and partner production totals.',
+    manual: 'HumanEnerDIA KPI view plus ISO/EnPI documentation.',
+    assistant: 'OVOS: Explain SEC for the partner press shop. Optional chatbot: What is SEC?',
+    stop: 'Stop when SEC is defined as kWh per produced unit and Bret/Raster/Dimeco SEC values are visible.'
   },
   {
     id: 'O4',
-    title: 'Anomaly or efficiency procedure',
+    title: 'Baseline concept and active baselines',
     persona: 'Operational user',
-    module: 'Documentation',
-    task: 'Find the policy and procedure guidance for responding to an anomaly or efficiency issue.',
-    manual: '/pilot-procedures.html, optionally /api/analytics/ui/anomaly.',
-    assistant: 'Rasa: What should we do when an anomaly appears?; What is the procedure for responding to an efficiency issue?',
-    stop: 'Stop when anomaly response and efficiency response guidance are visible.'
+    module: 'Documentation / Analyses',
+    task: 'Understand the energy-baseline concept and confirm which partner meter groups have active EnPI baselines.',
+    manual: 'HumanEnerDIA baseline UI and ISO 50001 documentation.',
+    assistant: 'Chatbot: What is an energy baseline? OVOS: Which partner meter groups have baselines?',
+    stop: 'Stop when the baseline concept and active EnPI baselines for 3 of 3 partner meter groups are visible.'
   },
   {
     id: 'T1',
-    title: 'Review anomalies',
+    title: 'Data inventory verification',
     persona: 'Technical user',
-    module: 'Monitoring',
-    task: 'Review anomalies and identify the issue requiring attention.',
-    manual: '/api/analytics/ui/anomaly, optionally Grafana Anomaly Detection with Last 7 days.',
-    assistant: 'OVOS: Show me recent anomalies.',
-    stop: 'Stop when the unresolved high-severity or critical issue is identified, normally Compressor-2 if it is active.'
+    module: 'Documentation',
+    task: 'Verify imported ASSA ABLOY energy and production row counts.',
+    manual: 'Partner data verification document and partner profile/API evidence.',
+    assistant: 'OVOS: How many readings and rows were imported for ASSA ABLOY?',
+    stop: 'Stop when 1,978 energy readings and 6,336 materialized production rows are visible.'
   },
   {
     id: 'T2',
-    title: 'Baseline analysis and recommendations',
+    title: 'Meter boundary and per-press guardrail',
     persona: 'Technical user',
-    module: 'Analyses',
-    task: 'Analyze Compressor-1 against baseline, check forecast context, and retrieve recommendations.',
-    manual: 'Grafana Machine Health, /api/analytics/ui/forecast with Short (1-4 hours), and /api/analytics/ui/opportunities.',
-    assistant: 'OVOS: Analyze performance of Compressor-1; Energy forecast for Compressor-1; What are the energy saving opportunities?',
-    stop: 'Stop after baseline evidence, forecast result, and top opportunities are found.'
+    module: 'Documentation / Analyses',
+    task: 'Confirm the Bret transformer reference-meter boundary and verify that per-press energy is not invented.',
+    manual: 'Partner ingestion/verification document and partner summary/API evidence.',
+    assistant: 'OVOS: What does the Bret transformer reference meter show? OVOS: Energy consumption of Bret125-1.',
+    stop: 'Stop when the transformer shows 743 rows and 263,999.16 kWh excluded from KPIs, and Bret125-1 per-press energy is refused.'
   },
   {
     id: 'T3',
-    title: 'KPI and EnPI status',
+    title: 'SEU and baseline readiness',
     persona: 'Technical user',
     module: 'Analyses',
-    task: 'Retrieve factory KPI and EnPI status for 2026-Q1.',
-    manual: '/api/analytics/ui/kpi with Factory - Simulated Romanian Pilot Factory selected; optionally /api/analytics/ui/enpi-report for SEU details.',
-    assistant: 'OVOS: Show energy performance indicators report.',
-    stop: 'Stop when 2026-Q1 status, deviation, and performance gap are visible.'
+    task: 'Identify partner SEUs and confirm baseline readiness for the three partner meter groups.',
+    manual: 'HumanEnerDIA baseline/model-performance views and partner ML readiness API evidence.',
+    assistant: 'OVOS: What are the significant energy uses in the partner press shop? OVOS: Which partner meter groups have baselines?',
+    stop: 'Stop when Bret, Dimeco, and Raster Presses Electricity are listed and active baselines are shown for 3 of 3 meter groups.'
   },
   {
     id: 'T4',
-    title: 'April 2026 report',
+    title: 'Monthly reporting',
     persona: 'Technical user',
     module: 'Analyses / Documentation',
-    task: 'Generate the April 2026 monthly report and summarize the result.',
-    manual: '/reports.html with the simulated Romanian pilot factory and April 2026 selected.',
-    assistant: 'OVOS: download report of Apr 2026.',
-    stop: 'Stop when the April 2026 report generation or download result is visible.'
+    task: 'Generate or retrieve a monthly reporting result for the partner press shop.',
+    manual: 'HumanEnerDIA reports page with ASSA ABLOY Partner Press Shop and May 2026 selected.',
+    assistant: 'OVOS: download the ASSA ABLOY partner press shop report for May 2026.',
+    stop: 'Stop when the May 2026 monthly energy report is generated/downloaded or the report-ready response is visible.'
   }
 ];
 

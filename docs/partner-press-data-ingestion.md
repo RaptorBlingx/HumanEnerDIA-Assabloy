@@ -1,7 +1,7 @@
 # Partner Press-Shop Data Ingestion
 
-This is a dev-only ingestion path for the partner press-shop package received on
-2026-06-10. It must not be run against production.
+This is a local-lab ingestion path for the partner press-shop package received
+on 2026-06-10. It must not be run against production.
 
 ## Scope
 
@@ -18,10 +18,10 @@ The partner data is represented honestly:
 
 ## Source Package
 
-Default package path:
+Default local-lab package path:
 
 ```bash
-/home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
+data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
 ```
 
 Expected contents:
@@ -62,9 +62,9 @@ for `Statia TRAFO-TRAFO 3`. The importer includes it by default as
 `upstream_reference_not_in_group_totals`. To omit that reference series, pass
 `--exclude-bret-transformer`.
 
-## Dev Simulator Bypass
+## Local Simulator Bypass
 
-Run the dev stack with the partner override:
+Run the local lab stack with the partner override:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.partner-press.yml up -d
@@ -78,7 +78,7 @@ SIMULATOR_AUTO_START=false
 SIMULATOR_ENABLE_ANOMALIES=false
 ```
 
-The same override also sets the dev pilot profile and OVOS bridge target for
+The same override also sets the partner lab profile and OVOS bridge target for
 analytics:
 
 ```text
@@ -99,24 +99,24 @@ Profile the package without touching the database:
 
 ```bash
 python3 scripts/import_partner_press_data.py \
-  --package /home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
+  --package data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
 ```
 
 Machine-readable profile:
 
 ```bash
 python3 scripts/import_partner_press_data.py \
-  --package /home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
+  --package data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
   --json
 ```
 
 ## Apply Import
 
-On the dev server (`10.33.10.103`) with PostgreSQL running:
+On the local lab with PostgreSQL running:
 
 ```bash
 python3 scripts/import_partner_press_data.py \
-  --package /home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
+  --package data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
   --apply
 ```
 
@@ -164,8 +164,8 @@ Bret Transformer Meter (TRAFO 3): 263,999.155 kWh
 
 The dev pilot analytics profile uses `2025-05-01T00:00:00` through
 `2026-06-01T00:00:00`, matching the partner May 2025 through May 2026 scope and
-excluding April energy rows present in the Bret/Raster exports. In that pilot
-period the group-meter energy totals are:
+excluding April energy rows present in the Bret/Raster exports. In that
+benchmark KPI period the group-meter energy totals are:
 
 ```text
 Bret:   39,611.06 kWh

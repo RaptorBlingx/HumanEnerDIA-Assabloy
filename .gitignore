@@ -22,6 +22,10 @@ secrets/
 Attachments_*.zip
 partner-data/
 data/partner-imports/
+data/raw/*
+!data/raw/.gitkeep
+evidence/measurements/*
+!evidence/measurements/.gitkeep
 
 # ----------------------------------------------------------------------------
 # Python
@@ -147,6 +151,9 @@ $RECYCLE.BIN/
 # Ignore docker volumes data (but keep folder structure)
 **/data/*
 !**/data/.gitkeep
+!data/README.md
+!data/raw/
+!data/raw/.gitkeep
 
 # ----------------------------------------------------------------------------
 # Database

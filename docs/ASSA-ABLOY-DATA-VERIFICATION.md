@@ -5,7 +5,7 @@ Verification date: **2026-06-15**
 Source:
 
 ```text
-/home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
+data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
 ```
 
 ## Package Integrity
@@ -167,7 +167,7 @@ See [ASSA-ABLOY-OVOS-DEMO-QUERIES.md](ASSA-ABLOY-OVOS-DEMO-QUERIES.md).
 python3 scripts/import_partner_press_data.py --json
 
 python3 scripts/import_partner_press_data.py \
-  --package /home/ubuntu/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
+  --package data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip \
   --apply
 
 curl -sS \

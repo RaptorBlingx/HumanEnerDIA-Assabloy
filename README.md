@@ -1,422 +1,160 @@
-# ⚡ EnMS - Energy Management System
+# HumanEnerDIA ASSA ABLOY Lab
 
-<div align="center">
+This repository is an isolated HumanEnerDIA lab package for the real ASSA ABLOY partner press-shop benchmark. It is intended for local Ubuntu deployment and A/B measurement of HumanEnerDIA without assistant support versus HumanEnerDIA with OVOS and chatbot support.
 
-**Production-ready, open-source Energy Management System for industrial facilities**
+The live production server at `https://assaabloy.intel50001.com/` must not be used for this benchmark. Use this repository on a separate Ubuntu machine or local Ubuntu laptop.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](docker-compose.yml)
-[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
-[![ISO 50001](https://img.shields.io/badge/ISO-50001-orange.svg)](https://www.iso.org/iso-50001-energy-management.html)
+## What This Repository Contains
 
-Part of the [WASABI Project](https://wasabiproject.eu/)
+- HumanEnerDIA platform services: portal, analytics, reports, Grafana, Rasa chatbot, PostgreSQL/TimescaleDB, Redis, MQTT, Node-RED.
+- ASSA ABLOY partner press-shop ingestion and API routes.
+- Partner-specific Docker Compose override: `docker-compose.partner-press.yml`.
+- Chrome measurement extension: `pilot-measurement-extension/`.
+- A/B benchmark protocol: `docs/assaabloy-benchmark/`.
+- Lab bootstrap and verification scripts: `scripts/lab/`.
 
-</div>
+The raw partner attachment is private and is not committed to Git.
 
----
+## Required Machine
 
-## 🎯 Overview
+- Ubuntu 22.04 or newer recommended.
+- Docker Engine and Docker Compose v2.
+- Python 3.
+- At least 8 GB RAM recommended.
+- Free ports: `8080`, `8443`, `5433`, `3001`, `1881`, `8001`, `8002`, `5005`, `5006`, `6380`.
 
-EnMS is a comprehensive energy monitoring and analytics platform designed for **real-world industrial facilities**. It provides ISO 50001-compliant energy performance monitoring, machine learning-powered insights, and voice interface capabilities.
+Do not run this stack beside another HumanEnerDIA stack on the same Docker host unless ports and container names are isolated.
 
-### ✨ Key Features
+## Install
 
-- **🏭 Real-time Monitoring**: Track energy consumption across all Significant Energy Users (SEUs)
-- **📊 Advanced Analytics**: ML-powered baselines, forecasting, and anomaly detection
-- **📈 Smart Dashboards**: Pre-built Grafana dashboards with customizable variables
-- **🎤 Voice Integration**: OVOS-ready with hybrid parsing and local Qwen3.5-2B fallback
-- **🔌 Modular Architecture**: Microservices-based, API-first design
-- **🐳 Zero-Touch Deployment**: Single command installation with Docker
-- **🔒 Production-Ready**: Security, monitoring, and backup built-in
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    NGINX (API Gateway)                       │
-└────┬────────────────────────────────────────────────────┬───┘
-     │                                                     │
-     ▼                                                     ▼
-┌─────────────────────┐                        ┌──────────────────┐
-│   Unified Portal    │                        │  External APIs   │
-│   Grafana           │                        │  (OVOS, etc.)    │
-│   Node-RED          │                        └──────────────────┘
-│   Analytics UI      │
-└─────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                     Core Services                            │
-├──────────────┬─────────────────┬─────────────────────────────┤
-│  Simulator   │    Analytics    │    Query Service            │
-│  Node-RED    │    Service      │    (NLP/Voice)              │
-└──────┬───────┴────────┬────────┴────────┬────────────────────┘
-       │                │                 │
-       └────────────────┴─────────────────┘
-                        │
-              ┌─────────┴─────────┐
-              │   PostgreSQL +    │
-              │   TimescaleDB     │
-              └───────────────────┘
-       ┌──────────────┬──────────────┐
-       │     MQTT     │    Redis     │
-       └──────────────┴──────────────┘
-```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Docker** 20.10+ and **Docker Compose** 2.0+
-- **Linux/macOS** (Windows with WSL2)
-- **4GB RAM** minimum (8GB recommended)
-- **10GB disk space**
-
-### Installation
-
-**Option 1: Automated Setup (Recommended)**
+Clone the new repository:
 
 ```bash
-# Clone the repository
-git clone https://github.com/raptorblingx/enms.git
-cd enms
-
-# Copy environment template
-cp .env.example .env
-
-# (Optional) Edit passwords - defaults work for development
-nano .env
-
-# Run the setup script
-chmod +x setup.sh
-./setup.sh
+git clone git@github.com:RaptorBlingx/HumanEnerDIA-Assabloy.git
+cd HumanEnerDIA-Assabloy
 ```
 
-**Option 2: Manual Setup**
+Prepare the environment:
 
 ```bash
-# Clone and configure
-git clone https://github.com/raptorblingx/enms.git
-cd enms
-cp .env.example .env
-
-# Build and start (defaults in .env.example work out of the box)
-docker compose build
-docker compose up -d
+cp .env.assaabloy.example .env
 ```
 
-That's it! 🎉 The system is ready to use with sensible defaults.
+Place the private partner ZIP here:
 
-### Access the System
+```text
+data/raw/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
+```
 
-After installation completes:
-
-- **Unified Portal**: http://localhost:8080
-- **Grafana**: http://localhost:8080/grafana (credentials in .env)
-- **Node-RED**: http://localhost:1880
-- **Analytics UI**: http://localhost:8080/analytics/ui/
-- **API Documentation**: http://localhost:8080/api/analytics/docs
-- **Simulator Control**: http://localhost:8003/docs
-
-> **Note**: Replace `localhost` with your server IP for remote access
-
-### ✨ **Automatic Dashboard Backup**
-
-**Your Grafana changes are automatically saved every 10 minutes!**
-
-Grafana dashboards are automatically exported to git-tracked JSON files. Just edit dashboards in the UI and commit when ready:
+Alternative:
 
 ```bash
-# 1. Edit dashboards in Grafana UI (changes auto-exported every 10 min)
-# 2. Wait for next backup cycle or run manually:
-./scripts/backup-grafana-dashboards.sh
-
-# 3. Commit your changes
-git add grafana/dashboards/*.json
-git commit -m "Update Grafana dashboards"
-git push
+export ASSAABLOY_PACKAGE=/absolute/path/to/Attachments_umut.ogur@aartimuhendislik.com_2026-06-10_08-03-41.zip
 ```
 
-**Setup auto-backup on new systems:**
-```bash
-sudo ./scripts/setup-grafana-auto-backup.sh
-```
-
-For detailed information, see: [docs/GRAFANA-PERSISTENCE.md](docs/GRAFANA-PERSISTENCE.md)
-
-> **Note**: Node-RED changes are also automatically saved to the filesystem.
-
----
-
-## 📊 Data Model
-
-### Core Entities
-
-- **Factories**: Industrial facilities
-- **Machines (SEUs)**: Significant Energy Users
-- **Energy Readings**: Time-series power and energy data
-- **Production Data**: Output metrics for normalization
-- **Environmental Data**: Temperature, humidity, pressure
-
-### Machine Types Supported
-
-1. **Compressor** (1-second intervals)
-2. **HVAC System** (10-second intervals)
-3. **Conveyor Motor** (10-second intervals)
-4. **Hydraulic Pump** (30-second intervals)
-5. **Injection Molding** (30-second intervals)
-
----
-
-## 🧠 Analytics & KPIs
-
-### Key Performance Indicators
-
-- **SEC**: Specific Energy Consumption (kWh/unit)
-- **Peak Demand**: Maximum power draw (kW)
-- **Load Factor**: Average/Peak ratio
-- **Energy Cost**: With time-of-use tariffs
-- **Carbon Intensity**: CO₂ emissions tracking
-
-### Machine Learning Models
-
-- **Energy Baseline (EnB)**: Multiple regression for normalization
-- **Anomaly Detection**: Isolation Forest for fault detection
-- **Forecasting**: ARIMA + Prophet for demand prediction
-
----
-
-## 🔌 API Endpoints
-
-### Analytics Service (Port 8001)
-
-```
-POST   /api/v1/baseline/train        # Train energy baseline model
-GET    /api/v1/baseline/deviation    # Get deviation from baseline
-GET    /api/v1/forecast/demand       # Get energy forecast
-GET    /api/v1/anomaly/detect        # Detect anomalies
-POST   /api/v1/kpi/calculate         # Calculate KPIs
-```
-
-### Query Service (Port 8002)
-
-```
-POST   /api/v1/voice/query           # Natural language query (OVOS)
-GET    /api/v1/energy/machine/{id}   # Get machine energy data
-GET    /api/v1/energy/machines       # Get all machines data
-GET    /api/v1/production/{id}       # Get production metrics
-```
-
-### Simulator Service (Port 8003)
-
-```
-POST   /simulator/start              # Start data generation
-POST   /simulator/stop               # Stop data generation
-GET    /simulator/status             # Get simulator status
-PUT    /simulator/config             # Update configuration
-POST   /simulator/inject-anomaly     # Inject anomaly for testing
-```
-
-Full API documentation: http://localhost/api/docs
-
----
-
-## 🎤 OVOS Integration
-
-EnMS is designed to work with Open Voice OS. Example voice commands:
-
-- *"What's the energy consumption of compressor 1 in the last hour?"*
-- *"Show me machines using more than 50 kilowatts"*
-- *"How is temperature affecting HVAC efficiency today?"*
-
-The current OVOS stack uses a hybrid routing path: heuristic and Adapt matching handle the normal fast path, and harder queries can escalate to a local Qwen3.5-2B GGUF fallback model. That fallback is validated before calling backend APIs, so the upgrade increases local model capacity without changing the main fast-path behavior.
-
-### Integration Endpoint
+Start the lab, import the data, train partner baselines, and verify the platform:
 
 ```bash
-curl -X POST http://localhost:8002/api/v1/voice/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "intent": "energy_consumption",
-    "entities": {
-      "machine": "compressor-1",
-      "timeframe": "last_hour"
-    }
-  }'
+scripts/lab/bootstrap_assaabloy_lab.sh
 ```
 
-See [OVOS Integration Guide](docs/ovos-integration.md) for details.
+## Open The Lab
 
----
+- Portal: `http://localhost:8080/`
+- Reports: `http://localhost:8080/reports.html`
+- Analytics UI: `http://localhost:8080/api/analytics/ui/`
+- Grafana: `http://localhost:8080/grafana`
+- Analytics API docs: `http://localhost:8080/api/analytics/docs`
 
-## 📁 Project Structure
+Partner pilot login:
 
-```
-enms/
-├── docker-compose.yml           # Service orchestration
-├── .env.example                 # Environment template
-├── setup.sh                     # One-command installer
-├── docs/                        # Documentation
-├── nginx/                       # API Gateway config
-├── portal/                      # Unified web interface
-├── grafana/                     # Dashboards & provisioning
-├── nodered/                     # Data pipeline flows
-├── database/                    # PostgreSQL schema & init
-├── simulator/                   # Factory data generator
-├── analytics/                   # ML service (Python/FastAPI)
-├── query-service/               # Query API (Python/FastAPI)
-├── mqtt/                        # Mosquitto configuration
-├── redis/                       # Redis configuration
-└── scripts/                     # Utility scripts
+```text
+Username: assaabloy
+Password: assaabloy
 ```
 
----
+## Start OVOS For Condition B
 
-## 🛠️ Development
-
-### Running in Development Mode
+The OVOS runtime is a separate repository. Start it after the HumanEnerDIA lab stack is running:
 
 ```bash
-# Use development compose file
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Enable hot-reload for services
-# See docker-compose.dev.yml for configuration
+git clone -b romania/stt-report-experiments https://github.com/RaptorBlingx/ovos-llm.git ../ovos-llm
+cd ../ovos-llm
+ENMS_API_URL=http://enms-analytics:8001/api/v1 \
+PARTNER_PRESS_PILOT_DEFAULT=true \
+docker compose up -d --build
 ```
 
-### Running Tests
+Verify strict platform + OVOS readiness:
 
 ```bash
-# Run all tests
-./scripts/test.sh
-
-# Run specific service tests
-docker-compose exec analytics pytest
-docker-compose exec query-service pytest
+cd ../HumanEnerDIA-Assabloy
+scripts/lab/verify_assaabloy_lab.sh --require-ovos
 ```
 
-### Viewing Logs
+More details: [docs/assaabloy-benchmark/ovos-runtime.md](docs/assaabloy-benchmark/ovos-runtime.md).
+
+## Install Measurement Extension
+
+1. Open Chrome.
+2. Go to `chrome://extensions`.
+3. Enable `Developer mode`.
+4. Click `Load unpacked`.
+5. Select:
+
+```text
+HumanEnerDIA-Assabloy/pilot-measurement-extension
+```
+
+The overlay appears on supported pages:
+
+- `http://localhost/*`
+- `http://127.0.0.1/*`
+- `http://10.33.10.103/*`
+
+The extension task list is ASSA ABLOY-specific.
+
+## Run The A/B Benchmark
+
+Use the fixed task set:
+
+- [docs/assaabloy-benchmark/task-set.md](docs/assaabloy-benchmark/task-set.md)
+- [docs/assaabloy-benchmark/manual-paths.md](docs/assaabloy-benchmark/manual-paths.md)
+- [docs/assaabloy-benchmark/expected-answers.md](docs/assaabloy-benchmark/expected-answers.md)
+- [docs/assaabloy-benchmark/measurement-protocol.md](docs/assaabloy-benchmark/measurement-protocol.md)
+
+After exporting the raw CSV from the extension, summarize KPI results:
 
 ```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f analytics
+scripts/lab/summarize_ab_results.py evidence/measurements/raw-extension-export.csv
 ```
 
----
+The script writes:
 
-## 📈 Performance
+```text
+evidence/measurements/assaabloy-kpi-summary.csv
+```
 
-- **Throughput**: Handles 5+ machines with 1-second intervals (5+ data points/second)
-- **Storage**: TimescaleDB compression reduces storage by 90%
-- **Queries**: Sub-100ms response times for dashboard queries
-- **Scalability**: Horizontal scaling ready with load balancer
+## Verified Partner Facts
 
----
+- Total group-meter energy: `141,254.85 kWh`.
+- Total group production: `27,625,665 units`.
+- Bret energy: `39,611.06 kWh`.
+- Raster energy: `41,981.81 kWh`.
+- Dimeco energy: `59,661.97 kWh`.
+- Imported energy rows: `1,978`.
+- Materialized production rows: `6,336`.
+- Active partner baselines: `3 of 3`.
+- Bret transformer reference: `263,999.16 kWh`, excluded from KPI totals.
 
-## 🔒 Security
-
-- **Authentication**: JWT tokens for API access
-- **Rate Limiting**: 100 requests/minute per IP
-- **Input Validation**: Pydantic models with strict typing
-- **SQL Injection**: Parameterized queries only
-- **HTTPS**: SSL/TLS support (configure in nginx/ssl/)
-
----
-
-## 🗄️ Backup & Recovery
-
-### Manual Backup
+## Stop The Lab
 
 ```bash
-./scripts/backup.sh
+docker compose -f docker-compose.yml -f docker-compose.partner-press.yml down
 ```
 
-### Restore from Backup
+To remove local database volumes:
 
 ```bash
-./scripts/restore.sh backups/enms_backup_2025-10-08.sql.gz
+docker compose -f docker-compose.yml -f docker-compose.partner-press.yml down -v
 ```
-
-### Automated Backups
-
-Configured in `.env`:
-```
-BACKUP_SCHEDULE=0 3 * * *  # Daily at 3 AM
-BACKUP_RETENTION_DAYS=30
-```
-
----
-
-## 📚 Documentation
-
-- [GRAFANA-PERSISTENCE.md](docs/GRAFANA-PERSISTENCE.md) - Dashboard backup & persistence
-- [Project Knowledge Base](Project-Knowledge-Base.md) - Architecture & development guide
-- [API Documentation](docs/api-documentation/) - REST API reference
-- [ISO 50001 Guide](docs/ISO-50001-IMPLEMENTATION-GUIDE.md) - Energy management standards
-- [OVOS Integration](docs/README-OVOS-INTEGRATION.md) - Voice assistant integration
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Part of the [WASABI Project](https://wasabiproject.eu/)
-- Built with [TimescaleDB](https://www.timescale.com/)
-- Powered by [FastAPI](https://fastapi.tiangolo.com/)
-- Visualized with [Grafana](https://grafana.com/)
-- Orchestrated with [Node-RED](https://nodered.org/)
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/raptorblingx/enms/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/raptorblingx/enms/discussions)
-
----
-
-## 🗺️ Roadmap
-
-- [x] Core monitoring and dashboards
-- [x] ML-powered analytics
-- [x] API-first architecture
-- [ ] OVOS voice integration (In Progress)
-- [ ] Mobile app
-- [ ] Multi-tenancy support
-- [ ] Cloud deployment templates (AWS, Azure, GCP)
-- [ ] Advanced predictive maintenance
-
----
-
-<div align="center">
-
-**Built with ❤️ for the industrial IoT community**
-
-⭐ Star us on GitHub — it motivates us a lot!
-
-</div>

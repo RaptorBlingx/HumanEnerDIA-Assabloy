@@ -1,6 +1,6 @@
 # ASSA ABLOY Partner Press Shop Pilot Operations
 
-This dev-only pilot uses the imported partner press-shop package for the
+This local lab uses the imported partner press-shop package for the
 `Partner Press Shop` factory. Production files remain private and are not stored
 in Git.
 
@@ -15,14 +15,14 @@ in Git.
 Energy is only modeled at the three meter-group assets. The system must not
 allocate or invent per-press energy.
 
-## Dev URLs
+## Local Lab URLs
 
-- Portal: `http://10.33.10.103:8080/`
-- Reports: `http://10.33.10.103:8080/reports.html`
-- Analytics UI: `http://10.33.10.103:8080/api/analytics/ui/`
-- Baseline UI: `http://10.33.10.103:8080/api/analytics/ui/baseline`
-- Forecast UI: `http://10.33.10.103:8080/api/analytics/ui/forecast`
-- Grafana: `http://10.33.10.103:3001/`
+- Portal: `http://localhost:8080/`
+- Reports: `http://localhost:8080/reports.html`
+- Analytics UI: `http://localhost:8080/api/analytics/ui/`
+- Baseline UI: `http://localhost:8080/api/analytics/ui/baseline`
+- Forecast UI: `http://localhost:8080/api/analytics/ui/forecast`
+- Grafana: `http://localhost:8080/grafana`
 
 Mock pilot login:
 

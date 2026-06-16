@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "HumanEnerDIA Pilot Measurement",
-  "version": "1.0.6",
-  "description": "Automatic browser click, screen, and task-time recorder for HumanEnerDIA simulated pilot videos.",
+  "version": "1.1.0",
+  "description": "Automatic browser click, screen, and task-time recorder for the HumanEnerDIA ASSA ABLOY A/B benchmark.",
   "permissions": [
     "storage",
     "tabs",

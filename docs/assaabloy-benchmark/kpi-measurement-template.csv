@@ -1,0 +1,9 @@
+persona,taskId,module,taskName,recordComplete,conditionAMedianSec,conditionBMedianSec,timeReductionPercent,conditionAMedianClicks,conditionBMedianClicks,clickReductionPercent,conditionAMedianScreens,conditionBMedianScreens,screenReductionPercent,measuredEffortReductionPercent,conditionAExpertHelp,conditionBExpertHelp,conditionAManualReasoning,conditionBManualReasoning,conditionASuccess,conditionBSuccess
+Operational user,O1,Monitoring,Partner KPI overview,0,,,,,,,,,,,0,0,1,0,1,1
+Operational user,O2,Monitoring,Energy group comparison,0,,,,,,,,,,,0,0,1,0,1,1
+Operational user,O3,Analyses / Documentation,Production and SEC meaning,0,,,,,,,,,,,0,0,1,0,1,1
+Operational user,O4,Documentation / Analyses,Baseline concept and active baselines,0,,,,,,,,,,,0,0,1,0,1,1
+Technical user,T1,Documentation,Data inventory verification,0,,,,,,,,,,,0,0,1,0,1,1
+Technical user,T2,Documentation / Analyses,Meter boundary and per-press guardrail,0,,,,,,,,,,,0,0,1,0,1,1
+Technical user,T3,Analyses,SEU and baseline readiness,0,,,,,,,,,,,0,0,1,0,1,1
+Technical user,T4,Analyses / Documentation,Monthly reporting,0,,,,,,,,,,,0,0,1,0,1,1
